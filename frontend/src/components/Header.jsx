@@ -99,6 +99,14 @@ const Header = ({ onSearchClick, onMenuClick }) => {
 
         {/* Icons / Profile */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <IconButton 
+            sx={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }} 
+            onClick={() => window.location.reload()}
+            title="Refresh Page"
+          >
+            <Icons.RotateCw size={18} color="#64748B" />
+          </IconButton>
+
           <IconButton sx={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }} onClick={() => navigate('/settings')}>
             <Icons.Settings size={18} color="#64748B" />
           </IconButton>

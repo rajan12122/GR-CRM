@@ -70,6 +70,14 @@
           "required": true,
           "showInTable": true,
           "editable": true
+        },
+        {
+          "name": "password",
+          "label": "Login Password",
+          "type": "text",
+          "required": true,
+          "showInTable": false,
+          "editable": true
         }
       ]
     },
@@ -252,95 +260,186 @@
       "fields": [
         {
           "name": "id",
-          "label": "Property ID",
+          "label": "Sr. No.",
           "type": "text",
           "required": true,
           "showInTable": true,
           "editable": false
         },
         {
-          "name": "name",
-          "label": "Property Title",
-          "type": "text",
-          "required": true,
-          "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "projectId",
-          "label": "Project Association",
-          "type": "ref",
-          "required": true,
-          "showInTable": true,
-          "editable": true,
-          "refModule": "projects"
-        },
-        {
-          "name": "propertyType",
-          "label": "Type",
-          "type": "select",
-          "required": true,
-          "showInTable": true,
-          "editable": true,
-          "chipGroup": "propertyTypes"
-        },
-        {
-          "name": "size",
-          "label": "Area (Sq.Ft.)",
-          "type": "number",
-          "required": true,
-          "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "price",
-          "label": "Price (INR)",
-          "type": "number",
-          "required": true,
-          "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "location",
-          "label": "Location/Sector",
-          "type": "text",
-          "required": true,
-          "showInTable": true,
-          "editable": true
-        },
-        {
           "name": "status",
           "label": "Status",
           "type": "select",
-          "required": true,
+          "required": false,
           "showInTable": true,
           "editable": true,
           "chipGroup": "propertyStatus"
         },
         {
-          "name": "ownerName",
-          "label": "Seller Name",
+          "name": "date",
+          "label": "Date",
           "type": "text",
-          "required": true,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "ownerPhone",
-          "label": "Seller Phone",
-          "type": "text",
-          "required": true,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "assignedEmployeeId",
-          "label": "Listing Manager",
-          "type": "ref",
           "required": false,
-          "showInTable": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "contact_person_name",
+          "label": "Contact Person Name",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "contact_number",
+          "label": "Contact Number",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "dealer_owner_booked",
+          "label": "Dealer/Owner/Booked",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
           "editable": true,
-          "refModule": "employees"
+          "chipGroup": "dealtype"
+        },
+        {
+          "name": "dealer_firm_name",
+          "label": "Dealer Firm Name",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "r_c_i",
+          "label": "R/C/I",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "rci"
+        },
+        {
+          "name": "propertyType",
+          "label": "Property Type",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "propertyTypes"
+        },
+        {
+          "name": "locality",
+          "label": "Locality",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sector_block",
+          "label": "Sector/ Block",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "address_number",
+          "label": "Address/Number",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "size",
+          "label": "Size of Property",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "bhk_and_washrooms",
+          "label": "BHK & Washroom",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "dimensions",
+          "label": "Dimensions",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "location_type",
+          "label": "Location Type",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "locationTypes"
+        },
+        {
+          "name": "facing",
+          "label": "Facing",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "facings"
+        },
+        {
+          "name": "white",
+          "label": "White",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "time",
+          "label": "Time",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "demand",
+          "label": "Demand",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "lead_source",
+          "label": "Lead Source",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "leadSources"
+        },
+        {
+          "name": "initial_notes",
+          "label": "Initial Notes",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
         }
       ]
     },
@@ -351,7 +450,7 @@
       "fields": [
         {
           "name": "id",
-          "label": "Project ID",
+          "label": "Sr No.",
           "type": "text",
           "required": true,
           "showInTable": true,
@@ -366,35 +465,142 @@
           "editable": true
         },
         {
-          "name": "location",
-          "label": "Location/City",
-          "type": "text",
-          "required": true,
-          "showInTable": true,
-          "editable": true
-        },
-        {
           "name": "builder",
-          "label": "Builder Name",
+          "label": "Developer",
           "type": "select",
-          "required": true,
+          "required": false,
           "showInTable": true,
           "editable": true,
           "chipGroup": "builders"
         },
         {
-          "name": "status",
-          "label": "Construction Status",
+          "name": "locality",
+          "label": "Locality",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sector_block",
+          "label": "Sector / Block",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "type",
+          "label": "Type",
           "type": "select",
-          "required": true,
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "rci"
+        },
+        {
+          "name": "property_category",
+          "label": "Property Category",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "propertyTypes"
+        },
+        {
+          "name": "total_land_area",
+          "label": "Total Land Area",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "configurations_sizes",
+          "label": "Configurations & Sizes",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "pricing_details",
+          "label": "Pricing Details",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "slab",
+          "label": "SLAB",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Possession / Status",
+          "type": "select",
+          "required": false,
           "showInTable": true,
           "editable": true,
           "chipGroup": "projectStatus"
         },
         {
-          "name": "totalUnits",
-          "label": "Total Units",
-          "type": "number",
+          "name": "rera_approved",
+          "label": "RERA Approved",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "reraStatus"
+        },
+        {
+          "name": "project_visited_by",
+          "label": "Project Visited By",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sales_team_phone",
+          "label": "Sales Team Phone no.",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "plc_percent",
+          "label": "PLC %",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "club_house_membership",
+          "label": "CLUB HOUSE MEMBERSHIP",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "parking_charges",
+          "label": "PARKING CHARGES",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "other_charges",
+          "label": "OTHER CHARGES(IFMS, Power Backup)",
+          "type": "text",
           "required": false,
           "showInTable": true,
           "editable": true
@@ -765,6 +971,61 @@
           "chipGroup": "taskStatus"
         }
       ]
+    },
+    "daily_prices": {
+      "id": "daily_prices",
+      "label": "Daily Price Lists",
+      "icon": "BadgePercent",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Sr No.",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "locality",
+          "label": "Locality",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sector_block",
+          "label": "Sector / Block",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "size",
+          "label": "Size",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "price",
+          "label": "Price/Rate",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "last_updated",
+          "label": "Last Updated Date",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": false
+        }
+      ]
     }
   },
   "chips": {
@@ -924,6 +1185,11 @@
         "value": "Commercial",
         "label": "Retail/Office Space",
         "color": "#F59E0B"
+      },
+      {
+        "value": "LOI",
+        "label": "LOI",
+        "color": "#EC4899"
       }
     ],
     "propertyStatus": [
@@ -1174,6 +1440,30 @@
         "label": "Zirakpur Bypass",
         "color": "#F59E0B"
       }
+    ],
+    "dealtype": [
+      { "value": "Dealer", "label": "Dealer", "color": "#2563EB" },
+      { "value": "Owner", "label": "Owner", "color": "#10B981" },
+      { "value": "Booked", "label": "Booked", "color": "#F59E0B" }
+    ],
+    "rci": [
+      { "value": "Residential", "label": "Residential", "color": "#3B82F6" },
+      { "value": "Commercial", "label": "Commercial", "color": "#F59E0B" },
+      { "value": "Industrial", "label": "Industrial", "color": "#10B981" }
+    ],
+    "locationTypes": [
+      { "value": "Normal", "label": "Normal", "color": "#6B7280" }
+    ],
+    "facings": [
+      { "value": "North", "label": "North Facing", "color": "#3B82F6" },
+      { "value": "South", "label": "South Facing", "color": "#EF4444" },
+      { "value": "East", "label": "East Facing", "color": "#10B981" },
+      { "value": "West", "label": "West Facing", "color": "#F59E0B" }
+    ],
+    "reraStatus": [
+      { "value": "Yes", "label": "Approved ✅", "color": "#22C55E" },
+      { "value": "No", "label": "Not Approved ❌", "color": "#EF4444" },
+      { "value": "Applied / Pending", "label": "Applied / Pending ⏳", "color": "#F59E0B" }
     ]
   },
   "rolesPermissions": {
@@ -1265,6 +1555,14 @@
         "delete",
         "export",
         "print"
+      ],
+      "daily_prices": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
       ]
     },
     "Manager": {
@@ -1331,6 +1629,13 @@
         "create",
         "edit",
         "delete"
+      ],
+      "daily_prices": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
       ]
     },
     "Sales": {
@@ -1379,6 +1684,11 @@
         "view",
         "create",
         "edit"
+      ],
+      "daily_prices": [
+        "view",
+        "create",
+        "edit"
       ]
     },
     "Employee": {
@@ -1416,13 +1726,16 @@
         "view",
         "create",
         "edit"
+      ],
+      "daily_prices": [
+        "view"
       ]
     }
   },
   "sheetsConfig": {
-    "spreadsheetId": "",
-    "clientEmail": "",
-    "privateKey": "",
-    "syncActive": false
+    "spreadsheetId": "1pIpnEeGd4CbWIu49Oit6qf0GsBYqt8BaQwMccOK2HL4",
+    "clientEmail": "crm-assistant@daring-charmer-449309-r6.iam.gserviceaccount.com",
+    "privateKey": "-----BEGIN PRIVATE KEY-----\\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDPQ+4lTeFGumH5\\nVE3NAZkQjYGZEhLdXK17G/SDxQlAyx3yczAwBYII8ZT1EUkZ791xoHvBZRkAcs9D\\nbajIs5gfr8kGqWCD0gKNKIUhA51Ax/bZnedjHosrVvCmw/nT8eEvFAtg5n5UWnvV\\n/V+wvbNa+4BBMl7gPOk7XGx1PqP5G9KMlMfnkUGKrcdxa23O7G3MA0UKlOkTsl6Z\\nyVs7nJDJLkkHR9xPIyU3+FYrf2CVIZSKYIOGOa+bze7eJR48Dn84LmSq/G98NhUu\\nDUUqE5dW1KH5ma2VfmraSmmcoRppeaQ5tIZpP6GR0NCUDegoxzsb5mf6v2loGCUC\\nq2MR1Ag9AgMBAAECggEAA1rv6WeEmKgZQGzv3Sb5YvDLfYkdnZBBGFpYP7l/lW6E\\nU6xaMMN8uqeAgrlu08OT3oxGHJgbSsF7tKAl6JPXCAJI5eRK3+9qeP2u2V033TiE\\nzjqLEvTHtMym6igyLI8V7F9tx2SL0dKXfnFoLGdca9dg7jfsxxgCquJA441UoF/J\\nBhxosfcgyj0Ze94paOHFoh8UgAWoh6IQ88zJv9UuoywS890f2tDVriED4tzCn6nn\\nuPJldLJZRAZeY/7CtWx80TTdD+ndUNfYDXaRu4RzCoKQKQIt0giEFRYAK44lE5bF\\ntNQNIfpVnhAY5l1psQBciK7P+wqDy1z5UYb0UqJjUQKBgQD7vLqdLAa04t9PsJwY\\n5UofrALRTBHXwmXMH/NWaUE+Uf61Cj0X8FNl8X70TCBmYya+/1Fk4aK4Flcnrmnf\\nGKyMfwl2KLQxKMxpRzFnJI+8jr0DzdvxcJ4u9eyoSaipQBX6qLq2DUq+jdTktOUn\\nhQnLnlodECpD8/bq3A/uqATgDQKBgQDSxmrfnipPMjgalCd68npi5xBJ0EowRkbS\\nF0l9TVswRra8mjDR23+JJvo7t1w0qy+vtvzDnCGK/JLj0D2KQkg2KQD+U+PETFYX\\nSXYNLMh4cPUhj9wE7Onbqz0EaY5/0xm2felGKtHQmdchyp0GmOiuHgzThyXOO5Sg\\nKRM3Yg6M8QKBgHEmDjbw//6z7q2x8yeZf+ymcwnCCE8TWJAcWFKhsqqhTjvvYzBs\\nW//5QRfrU7DRpiu5NMuEQ5A8smXqljmprHzl6MnMV9m0vdQgJMt4eobFHZ4lHFP0\\nS5VOAlZN7VpNrNNinbGQXeUyeNtnl4xg1ttHzLc9edHbSUOdMCgUK0TNAoGAHgGl\\nYWRw/YlWt2H0JOq0RbRDe16t0SWQG4S5L599pefLSBpjbNzk0S+9XBcEh3L/fPJ+\\nFZL6q4C9oLUarb417Y/01kA3ItEDSJlqtwFzIMJkA30pg4H+4QkFzMUCRmxVMsfG\\nF/ksmZftKqBfrnrCVVdt2AdbeHq+8/YlCDNrguECgYEA1tfIpIH0tG3p3sr1YcAj\\nMXaq3g+IzNXh0W0XDC5bytlQfDeEqo2yAxBIi9woocj2JOFSDU6IklqcK7q413Id\\nLnRavGurnrnNzE8JrFUDU3o11WFrJni5NSw4NQPDslCq/UbDkIHON11iOSn1roBd\\nOYRZ8SiJsg59QtKbCCLXySY=\\n-----END PRIVATE KEY-----",
+    "syncActive": true
   }
 }

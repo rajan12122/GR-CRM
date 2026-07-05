@@ -100,9 +100,9 @@ app.post('/api/auth/login', (req, res) => {
     return res.status(403).json({ message: 'Employee account is inactive.' });
   }
 
-  // Simple passcheck for enterprise demo: "admin123" for Admin/Manager, "pass123" for Sales/Employees. 
-  // Real world deployment would use bcrypt check, but we fallback gracefully for setup ease.
-  const isValidPassword = password === 'admin123' || password === 'pass123';
+  // Authenticate against database password, fall back to seed password if undefined.
+  const storedPassword = employee.password || (employee.role === 'Admin' ? 'admin123' : 'pass123');
+  const isValidPassword = password === storedPassword;
   if (!isValidPassword) {
     return res.status(401).json({ message: 'Invalid credentials.' });
   }
@@ -126,7 +126,25 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
 // --- METADATA ROUTES (Schema changes) ---
 
 app.get('/api/metadata', authenticateToken, (req, res) => {
-  res.json(readMetadata());
+  const metadata = readMetadata();
+  const { role } = req.user;
+
+  // Filter modules based on role's custom field permissions
+  if (role !== 'Admin' && metadata.fieldPermissions && metadata.fieldPermissions[role]) {
+    const roleFieldPerms = metadata.fieldPermissions[role];
+    const filteredMetadata = JSON.parse(JSON.stringify(metadata));
+    
+    Object.keys(filteredMetadata.modules).forEach(moduleName => {
+      const allowedFields = roleFieldPerms[moduleName];
+      if (allowedFields) {
+        const moduleObj = filteredMetadata.modules[moduleName];
+        moduleObj.fields = moduleObj.fields.filter(f => allowedFields.includes(f.name));
+      }
+    });
+    return res.json(filteredMetadata);
+  }
+
+  res.json(metadata);
 });
 
 app.post('/api/metadata', authenticateToken, checkPermission('settings', 'edit'), (req, res) => {
@@ -161,8 +179,31 @@ app.get('/api/data/:module', authenticateToken, (req, res, next) => {
   checkPermission(module, 'view')(req, res, next);
 }, (req, res) => {
   const { module } = req.params;
+  const { role } = req.user;
   const db = readDb();
   const records = db[module] || [];
+  
+  // Apply field-level filtering for non-Admin roles
+  const metadata = readMetadata();
+  if (role !== 'Admin' && metadata.fieldPermissions && metadata.fieldPermissions[role]) {
+    const allowedFields = metadata.fieldPermissions[role][module];
+    if (allowedFields) {
+      const filteredRecords = records.map(record => {
+        const filteredRecord = {};
+        allowedFields.forEach(field => {
+          if (record[field] !== undefined) {
+            filteredRecord[field] = record[field];
+          }
+        });
+        if (record.id) {
+          filteredRecord.id = record.id;
+        }
+        return filteredRecord;
+      });
+      return res.json(filteredRecords);
+    }
+  }
+
   res.json(records);
 });
 
@@ -187,6 +228,9 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   fields.forEach(f => {
     if (f.name === 'dateAdded' && !payload[f.name]) {
       payload[f.name] = new Date().toISOString().split('T')[0];
+    }
+    if (f.name === 'last_updated') {
+      payload[f.name] = new Date().toLocaleString('en-IN');
     }
   });
 
@@ -222,6 +266,15 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   
   const index = db[module].findIndex(rec => rec.id === id);
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
+
+  // Auto-update last_updated date on edits
+  const metadata = readMetadata();
+  const fields = metadata.modules[module].fields;
+  fields.forEach(f => {
+    if (f.name === 'last_updated') {
+      payload[f.name] = new Date().toLocaleString('en-IN');
+    }
+  });
 
   // Update record preserving fixed identifiers
   db[module][index] = { ...db[module][index], ...payload, id };
@@ -282,26 +335,56 @@ app.get('/api/search', authenticateToken, (req, res) => {
     return res.json({ results: {}, connections: {} });
   }
 
-  const query = q.toLowerCase();
+  const query = q.toLowerCase().trim();
+  const keywords = query.split(/\s+/).filter(word => word.length > 0);
   const db = readDb();
   const metadata = readMetadata();
   const results = {};
 
   // 1. Search all dynamic tables
   Object.keys(metadata.modules).forEach(moduleName => {
-    const records = db[moduleName] || [];
-    const fields = metadata.modules[moduleName].fields;
+    // Check if role has access to this module
+    const userRole = req.user.role;
+    const permissions = metadata.rolesPermissions[userRole] || {};
+    const modulePerms = permissions[moduleName] || [];
+    if (userRole !== 'Admin' && !modulePerms.includes('view')) {
+      return; // Skip search if role cannot view this module
+    }
 
+    const records = db[moduleName] || [];
+    
+    // Filter matching records (only search inside allowed fields)
     const matchedRecords = records.filter(rec => {
-      return Object.keys(rec).some(key => {
-        const val = rec[key];
-        if (val === undefined || val === null) return false;
-        return String(val).toLowerCase().includes(query);
+      return keywords.every(word => {
+        return Object.keys(rec).some(key => {
+          if (userRole !== 'Admin' && metadata.fieldPermissions && metadata.fieldPermissions[userRole]) {
+            const allowed = metadata.fieldPermissions[userRole][moduleName];
+            if (allowed && !allowed.includes(key)) return false;
+          }
+          const val = rec[key];
+          if (val === undefined || val === null) return false;
+          return String(val).toLowerCase().includes(word);
+        });
       });
     });
 
     if (matchedRecords.length > 0) {
-      results[moduleName] = matchedRecords;
+      // Filter out restricted keys from search results
+      let filtered = matchedRecords;
+      if (userRole !== 'Admin' && metadata.fieldPermissions && metadata.fieldPermissions[userRole]) {
+        const allowed = metadata.fieldPermissions[userRole][moduleName];
+        if (allowed) {
+          filtered = matchedRecords.map(rec => {
+            const resRec = {};
+            allowed.forEach(f => {
+              if (rec[f] !== undefined) resRec[f] = rec[f];
+            });
+            if (rec.id) resRec.id = rec.id;
+            return resRec;
+          });
+        }
+      }
+      results[moduleName] = filtered;
     }
   });
 

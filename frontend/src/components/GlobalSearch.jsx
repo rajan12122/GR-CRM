@@ -101,6 +101,46 @@ const GlobalSearch = ({ open, onClose }) => {
     }
   };
 
+  const renderRecordSubtitle = (moduleName, rec) => {
+    const parts = [];
+
+    if (moduleName === 'properties') {
+      if (rec.propertyType) parts.push(`Type: ${rec.propertyType}`);
+      if (rec.size) parts.push(`Size: ${rec.size}`);
+      if (rec.price) parts.push(`Price: ₹${rec.price.toLocaleString('en-IN')}`);
+      if (rec.location) parts.push(`Loc: ${rec.location}`);
+      if (rec.locality) parts.push(`Locality: ${rec.locality}`);
+      if (rec.sector_block) parts.push(`Sec/Blk: ${rec.sector_block}`);
+      if (rec.address_number) parts.push(`Addr: ${rec.address_number}`);
+      if (rec.status) parts.push(`Status: ${rec.status}`);
+      if (rec.deal_typr) parts.push(`Deal: ${rec.deal_typr}`);
+      if (rec.dealtype) parts.push(`Deal: ${rec.dealtype}`);
+    } else if (moduleName === 'customers') {
+      if (rec.phone) parts.push(`Ph: ${rec.phone}`);
+      if (rec.email) parts.push(rec.email);
+      if (rec.budget) parts.push(`Budget: ₹${rec.budget.toLocaleString('en-IN')}`);
+      if (rec.city) parts.push(`City: ${rec.city}`);
+      if (rec.status) parts.push(`Stage: ${rec.status}`);
+    } else if (moduleName === 'employees') {
+      if (rec.role) parts.push(rec.role);
+      if (rec.phone) parts.push(`Ph: ${rec.phone}`);
+      if (rec.email) parts.push(rec.email);
+      if (rec.status) parts.push(`Status: ${rec.status}`);
+    } else if (moduleName === 'leads') {
+      if (rec.phone) parts.push(`Ph: ${rec.phone}`);
+      if (rec.email) parts.push(rec.email);
+      if (rec.source) parts.push(`Src: ${rec.source}`);
+      if (rec.status) parts.push(`Status: ${rec.status}`);
+    } else {
+      if (rec.phone) parts.push(`Ph: ${rec.phone}`);
+      if (rec.email) parts.push(rec.email);
+      if (rec.price) parts.push(`₹${rec.price.toLocaleString('en-IN')}`);
+      if (rec.status) parts.push(rec.status);
+    }
+
+    return parts.length > 0 ? parts.join(' • ') : `ID: ${rec.id}`;
+  };
+
   return (
     <Dialog 
       open={open} 
@@ -162,7 +202,7 @@ const GlobalSearch = ({ open, onClose }) => {
         ) : (
           <Grid container sx={{ height: '100%', overflow: 'hidden' }}>
             {/* Left column - search list */}
-            <Grid item xs={12} md={activeRecord ? 5 : 12} sx={{ borderRight: activeRecord ? '1px solid #E2E8F0' : 'none', overflowY: 'auto', p: 2, height: '100%', '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#E2E8F0', borderRadius: '4px' } }}>
+            <Grid item xs={12} md={activeRecord ? 5 : 12} sx={{ borderRight: activeRecord ? '1px solid #E2E8F0' : 'none', maxHeight: 'calc(80vh - 100px)', overflowY: 'auto', p: 2, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#E2E8F0', borderRadius: '4px' } }}>
               {Object.keys(results).map(moduleName => (
                 <Box key={moduleName} mb={2.5}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1, px: 1 }}>
@@ -196,10 +236,10 @@ const GlobalSearch = ({ open, onClose }) => {
                           }}
                         >
                           <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A' }}>
-                            {rec.name || rec.title || rec.id}
+                            {rec.name || rec.title || `Property #${rec.id}`}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: '#64748B', display: 'block', noWrap: true }}>
-                            ID: {rec.id} {rec.phone && `• Ph: ${rec.phone}`} {rec.price && `• ₹${rec.price.toLocaleString('en-IN')}`} {rec.role && `• ${rec.role}`}
+                          <Typography variant="caption" sx={{ color: '#64748B', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            ID: {rec.id} • {renderRecordSubtitle(moduleName, rec)}
                           </Typography>
                         </Paper>
                       </ListItem>

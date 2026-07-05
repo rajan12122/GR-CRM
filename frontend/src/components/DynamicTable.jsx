@@ -76,11 +76,14 @@ const DynamicTable = ({
   // Filter out records based on SearchTerm AND StackedFilters
   const filteredRecords = useMemo(() => {
     return records.filter(rec => {
-      // 1. Check Global Search Match
-      const matchesSearch = Object.keys(rec).some(key => {
-        const val = rec[key];
-        if (val === undefined || val === null) return false;
-        return String(val).toLowerCase().includes(searchTerm.toLowerCase());
+      // 1. Check Global Search Match (multi-word support)
+      const keywords = searchTerm.toLowerCase().trim().split(/\s+/).filter(w => w.length > 0);
+      const matchesSearch = keywords.length === 0 || keywords.every(word => {
+        return Object.keys(rec).some(key => {
+          const val = rec[key];
+          if (val === undefined || val === null) return false;
+          return String(val).toLowerCase().includes(word);
+        });
       });
 
       // 2. Check Stacked Filter Matches
@@ -89,7 +92,8 @@ const DynamicTable = ({
         if (!filterVal || filterVal === 'ALL') return true;
         
         const recordVal = rec[key];
-        return String(recordVal) === String(filterVal);
+        if (recordVal === undefined || recordVal === null) return false;
+        return String(recordVal).toLowerCase() === String(filterVal).toLowerCase();
       });
 
       return matchesSearch && matchesFilters;

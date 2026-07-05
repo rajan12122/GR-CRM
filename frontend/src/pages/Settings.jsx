@@ -56,6 +56,21 @@ const Settings = () => {
   const [passwordSelectedEmp, setPasswordSelectedEmp] = useState('');
   const [newPasswordVal, setNewPasswordVal] = useState('');
 
+  // Google Sheets local form state
+  const [sheetsId, setSheetsId] = useState('');
+  const [sheetsEmail, setSheetsEmail] = useState('');
+  const [sheetsKey, setSheetsKey] = useState('');
+  const [sheetsActive, setSheetsActive] = useState(false);
+
+  useEffect(() => {
+    if (metadata?.sheetsConfig) {
+      setSheetsId(metadata.sheetsConfig.spreadsheetId || '');
+      setSheetsEmail(metadata.sheetsConfig.clientEmail || '');
+      setSheetsKey(metadata.sheetsConfig.privateKey || '');
+      setSheetsActive(metadata.sheetsConfig.syncActive || false);
+    }
+  }, [metadata]);
+
   // Field Add Form state
   const [newFieldName, setNewFieldName] = useState('');
   const [newFieldLabel, setNewFieldLabel] = useState('');
@@ -64,11 +79,14 @@ const Settings = () => {
   const [newFieldShowTable, setNewFieldShowTable] = useState(true);
   const [newFieldChipGroup, setNewFieldChipGroup] = useState('');
   const [newFieldRefModule, setNewFieldRefModule] = useState('');
+  const [editingField, setEditingField] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   // Chip Add Form state
   const [newChipVal, setNewChipVal] = useState('');
   const [newChipLabel, setNewChipLabel] = useState('');
   const [newChipColor, setNewChipColor] = useState('#2563EB');
+  const [newCategoryName, setNewCategoryName] = useState('');
 
   if (!metadata) return null;
 
@@ -88,12 +106,6 @@ const Settings = () => {
 
     const updated = { ...metadata };
     const fields = updated.modules[selectedModule].fields;
-    
-    // Check duplicate
-    if (fields.some(f => f.name === newFieldName)) {
-      showStatus('error', `Field name '${newFieldName}' already exists in this module.`);
-      return;
-    }
 
     const newField = {
       name: newFieldName.trim(),
@@ -111,14 +123,178 @@ const Settings = () => {
       newField.refModule = newFieldRefModule;
     }
 
-    fields.push(newField);
+    if (editingField) {
+      const idx = fields.findIndex(f => f.name === editingField.name);
+      if (idx !== -1) {
+        fields[idx] = newField;
+      }
+    } else {
+      // Check duplicate
+      if (fields.some(f => f.name === newFieldName)) {
+        showStatus('error', `Field name '${newFieldName}' already exists in this module.`);
+        return;
+      }
+      fields.push(newField);
+    }
+
     const res = await saveMetadata(updated);
     if (res.success) {
-      showStatus('success', `Added field '${newFieldLabel}' successfully.`);
+      showStatus('success', editingField ? `Field schema '${newFieldLabel}' updated successfully.` : `Added field '${newFieldLabel}' successfully.`);
+      setEditingField(null);
       setNewFieldName('');
       setNewFieldLabel('');
       setNewFieldType('text');
       setNewFieldRequired(false);
+      setNewFieldShowTable(true);
+      setNewFieldChipGroup('');
+      setNewFieldRefModule('');
+    } else {
+      showStatus('error', res.message);
+    }
+  };
+
+  const handleStartEditField = (field) => {
+    setEditingField(field);
+    setNewFieldName(field.name);
+    setNewFieldLabel(field.label);
+    setNewFieldType(field.type);
+    setNewFieldRequired(field.required || false);
+    setNewFieldShowTable(field.showInTable !== false);
+    setNewFieldChipGroup(field.chipGroup || '');
+    setNewFieldRefModule(field.refModule || '');
+  };
+
+  const handleCancelEditField = () => {
+    setEditingField(null);
+    setNewFieldName('');
+    setNewFieldLabel('');
+    setNewFieldType('text');
+    setNewFieldRequired(false);
+    setNewFieldShowTable(true);
+    setNewFieldChipGroup('');
+    setNewFieldRefModule('');
+  };
+
+  const handleMoveFieldUp = async (fieldName) => {
+    const updated = { ...metadata };
+    const fields = updated.modules[selectedModule].fields;
+    const idx = fields.findIndex(f => f.name === fieldName);
+    if (idx > 0) {
+      const temp = fields[idx];
+      fields[idx] = fields[idx - 1];
+      fields[idx - 1] = temp;
+
+      const res = await saveMetadata(updated);
+      if (res.success) {
+        showStatus('success', `Moved field '${fieldName}' up.`);
+      } else {
+        showStatus('error', res.message);
+      }
+    }
+  };
+
+  const handleMoveFieldDown = async (fieldName) => {
+    const updated = { ...metadata };
+    const fields = updated.modules[selectedModule].fields;
+    const idx = fields.findIndex(f => f.name === fieldName);
+    if (idx !== -1 && idx < fields.length - 1) {
+      const temp = fields[idx];
+      fields[idx] = fields[idx + 1];
+      fields[idx + 1] = temp;
+
+      const res = await saveMetadata(updated);
+      if (res.success) {
+        showStatus('success', `Moved field '${fieldName}' down.`);
+      } else {
+        showStatus('error', res.message);
+      }
+    }
+  };
+
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e, targetIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+    const updated = { ...metadata };
+    const fields = [...updated.modules[selectedModule].fields];
+    
+    // Swap item positions
+    const [draggedItem] = fields.splice(draggedIndex, 1);
+    fields.splice(targetIndex, 0, draggedItem);
+    
+    updated.modules[selectedModule].fields = fields;
+
+    const res = await saveMetadata(updated);
+    if (res.success) {
+      showStatus('success', 'Field alignment updated successfully.');
+    } else {
+      showStatus('error', res.message);
+    }
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
+  const indexToAlphabet = (index) => {
+    let temp = index;
+    let label = '';
+    while (temp >= 0) {
+      label = String.fromCharCode((temp % 26) + 65) + label;
+      temp = Math.floor(temp / 26) - 1;
+    }
+    return label;
+  };
+
+  const alphabetToIndex = (str) => {
+    const clean = str.toUpperCase().trim().replace(/[^A-Z]/g, '');
+    if (!clean) return -1;
+    let index = 0;
+    for (let i = 0; i < clean.length; i++) {
+      index = index * 26 + (clean.charCodeAt(i) - 64);
+    }
+    return index - 1;
+  };
+
+  const handleAlphabetPositionChange = async (fieldName, alphabetStr) => {
+    const cleanStr = alphabetStr.toUpperCase().trim().replace(/[^A-Z]/g, '');
+    if (!cleanStr) return;
+
+    const targetIdx = alphabetToIndex(cleanStr);
+    if (targetIdx < 0) return;
+
+    const updated = { ...metadata };
+    const fields = [...updated.modules[selectedModule].fields];
+    const idx = fields.findIndex(f => f.name === fieldName);
+    if (idx === -1) return;
+
+    let finalTargetIdx = targetIdx;
+    if (finalTargetIdx >= fields.length) {
+      finalTargetIdx = fields.length - 1;
+    }
+
+    if (idx === finalTargetIdx) return;
+
+    // Reposition item
+    const [item] = fields.splice(idx, 1);
+    fields.splice(finalTargetIdx, 0, item);
+
+    updated.modules[selectedModule].fields = fields;
+
+    const res = await saveMetadata(updated);
+    if (res.success) {
+      showStatus('success', `Position for '${fieldName}' updated to '${cleanStr}'.`);
     } else {
       showStatus('error', res.message);
     }
@@ -188,6 +364,50 @@ const Settings = () => {
       } else {
         showStatus('error', res.message);
       }
+    }
+  };
+
+  const handleFieldLabelChange = (val) => {
+    setNewFieldLabel(val);
+    const slug = val.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
+    setNewFieldName(slug);
+  };
+
+  const handleChipLabelChange = (val) => {
+    setNewChipLabel(val);
+    const slug = val.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
+    setNewChipVal(slug);
+  };
+
+  const handleCreateCategory = async (e) => {
+    e.preventDefault();
+    const name = newCategoryName.trim();
+    if (!name) {
+      showStatus('error', 'Please enter a category name.');
+      return;
+    }
+
+    // Validate key (lowercase, alphanumeric, no spaces, starts with letter)
+    if (!/^[a-z_][a-z0-9_]*$/.test(name)) {
+      showStatus('error', 'Category key must be lowercase alphanumeric with no spaces (e.g. lead_sources).');
+      return;
+    }
+
+    if (metadata.chips[name]) {
+      showStatus('error', 'A category with this key already exists.');
+      return;
+    }
+
+    const updated = { ...metadata };
+    updated.chips[name] = []; // initialize as empty array
+
+    const res = await saveMetadata(updated);
+    if (res.success) {
+      showStatus('success', `Dropdown Category '${name}' created successfully!`);
+      setSelectedChipGroup(name);
+      setNewCategoryName('');
+    } else {
+      showStatus('error', res.message);
     }
   };
 
@@ -272,6 +492,23 @@ const Settings = () => {
     const updated = { ...metadata };
     updated.sheetsConfig[field] = val;
     saveMetadata(updated);
+  };
+
+  const handleSaveSheetsConfig = async (e) => {
+    e.preventDefault();
+    const updated = { ...metadata };
+    updated.sheetsConfig = {
+      spreadsheetId: sheetsId.trim(),
+      clientEmail: sheetsEmail.trim(),
+      privateKey: sheetsKey,
+      syncActive: sheetsActive
+    };
+    const res = await saveMetadata(updated);
+    if (res.success) {
+      showStatus('success', 'Google Sheets configuration saved successfully!');
+    } else {
+      showStatus('error', res.message);
+    }
   };
 
   const handleTestSheets = async () => {
@@ -377,6 +614,8 @@ const Settings = () => {
                   <Table size="small">
                     <TableHead>
                       <TableRow>
+                        <TableCell sx={{ width: 40 }}></TableCell>
+                        <TableCell sx={{ width: 70 }}>Order</TableCell>
                         <TableCell>Field Name (key)</TableCell>
                         <TableCell>Display Label</TableCell>
                         <TableCell>Data Type</TableCell>
@@ -386,14 +625,63 @@ const Settings = () => {
                       </TableRow>
                     </TableHead>
                     <TableBody>
-                      {metadata.modules[selectedModule].fields.map(f => (
-                        <TableRow key={f.name}>
+                      {metadata.modules[selectedModule].fields.map((f, index) => (
+                        <TableRow 
+                          key={f.name}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, index)}
+                          onDragOver={(e) => handleDragOver(e, index)}
+                          onDrop={(e) => handleDrop(e, index)}
+                          onDragEnd={handleDragEnd}
+                          sx={{ 
+                            cursor: 'grab',
+                            backgroundColor: draggedIndex === index ? 'rgba(37, 99, 235, 0.08) !important' : 'transparent',
+                            opacity: draggedIndex === index ? 0.5 : 1,
+                            '&:hover': { backgroundColor: '#F8FAFC' },
+                            transition: 'opacity 0.15s, background-color 0.15s'
+                          }}
+                        >
+                          <TableCell sx={{ width: 40, color: '#94A3B8', borderBottom: 'none', py: 1.5 }}>
+                            <Icons.GripVertical size={16} style={{ cursor: 'grab' }} />
+                          </TableCell>
+                          <TableCell sx={{ width: 70, borderBottom: 'none' }}>
+                            <TextField
+                              size="small"
+                              value={indexToAlphabet(index)}
+                              onChange={(e) => handleAlphabetPositionChange(f.name, e.target.value)}
+                              inputProps={{ 
+                                style: { textAlign: 'center', padding: '4px 6px', textTransform: 'uppercase' } 
+                              }}
+                              sx={{ width: 55 }}
+                            />
+                          </TableCell>
                           <TableCell sx={{ fontWeight: 600 }}>{f.name}</TableCell>
                           <TableCell>{f.label}</TableCell>
                           <TableCell><Chip label={f.type} size="small" sx={{ height: 18, fontSize: '10px', textTransform: 'uppercase' }} /></TableCell>
                           <TableCell>{f.required ? 'Yes 🔴' : 'No'}</TableCell>
                           <TableCell>{f.showInTable !== false ? 'Yes' : 'Hidden'}</TableCell>
                           <TableCell align="right">
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleMoveFieldUp(f.name)} 
+                              disabled={index === 0}
+                              sx={{ mr: 0.5 }}
+                            >
+                              <Icons.ChevronUp size={14} />
+                            </IconButton>
+                            <IconButton 
+                              size="small" 
+                              onClick={() => handleMoveFieldDown(f.name)} 
+                              disabled={index === metadata.modules[selectedModule].fields.length - 1}
+                              sx={{ mr: 1 }}
+                            >
+                              <Icons.ChevronDown size={14} />
+                            </IconButton>
+                            {f.name !== 'id' && (
+                              <IconButton size="small" color="primary" onClick={() => handleStartEditField(f)} sx={{ mr: 1 }}>
+                                <Icons.Pencil size={14} />
+                              </IconButton>
+                            )}
                             <IconButton size="small" color="error" onClick={() => handleDeleteField(f.name)}>
                               <Icons.Trash2 size={14} />
                             </IconButton>
@@ -407,9 +695,21 @@ const Settings = () => {
                 <Divider sx={{ mb: 3 }} />
 
                 {/* Add new field form */}
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Register Custom Field</Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
+                  {editingField ? `Edit Field Schema: ${editingField.name}` : 'Register Custom Field'}
+                </Typography>
                 <Box component="form" onSubmit={handleAddField}>
                   <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <TextField 
+                        label="Display Title (e.g. Near Landmark)" 
+                        fullWidth
+                        size="small"
+                        value={newFieldLabel}
+                        onChange={(e) => handleFieldLabelChange(e.target.value)}
+                        required
+                      />
+                    </Grid>
                     <Grid item xs={6}>
                       <TextField 
                         label="Field API Name (lowercase, no spaces, e.g. landmark)" 
@@ -417,15 +717,8 @@ const Settings = () => {
                         size="small"
                         value={newFieldName}
                         onChange={(e) => setNewFieldName(e.target.value)}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <TextField 
-                        label="Display Title (e.g. Near Landmark)" 
-                        fullWidth
-                        size="small"
-                        value={newFieldLabel}
-                        onChange={(e) => setNewFieldLabel(e.target.value)}
+                        required
+                        disabled={!!editingField}
                       />
                     </Grid>
                     <Grid item xs={6}>
@@ -490,11 +783,16 @@ const Settings = () => {
                         label="Show in Table Grid"
                       />
                     </Grid>
-                    <Grid item xs={12} display="flex" justifyContent="flex-end">
-                      <Button type="submit" variant="contained" startIcon={<Icons.Plus size={16} />}>
-                        Add Field Schema
-                      </Button>
-                    </Grid>
+                     <Grid item xs={12} display="flex" justifyContent="flex-end" gap={2}>
+                       {editingField && (
+                         <Button variant="outlined" onClick={handleCancelEditField} startIcon={<Icons.X size={16} />}>
+                           Cancel
+                         </Button>
+                       )}
+                       <Button type="submit" variant="contained" startIcon={editingField ? <Icons.Save size={16} /> : <Icons.Plus size={16} />}>
+                         {editingField ? 'Update Field Schema' : 'Add Field Schema'}
+                       </Button>
+                     </Grid>
                   </Grid>
                 </Box>
               </CardContent>
@@ -555,20 +853,22 @@ const Settings = () => {
                   <Grid container spacing={2}>
                     <Grid item xs={4}>
                       <TextField 
-                        label="API value (e.g. Walk-in)" 
+                        label="Display Title (e.g. Dealer)" 
                         fullWidth
                         size="small"
-                        value={newChipVal}
-                        onChange={(e)=>setNewChipVal(e.target.value)}
+                        value={newChipLabel}
+                        onChange={(e)=>handleChipLabelChange(e.target.value)}
+                        required
                       />
                     </Grid>
                     <Grid item xs={4}>
                       <TextField 
-                        label="Display Title (e.g. Office Walk-in)" 
+                        label="API value (lowercase, no spaces, e.g. dealer)" 
                         fullWidth
                         size="small"
-                        value={newChipLabel}
-                        onChange={(e)=>setNewChipLabel(e.target.value)}
+                        value={newChipVal}
+                        onChange={(e)=>setNewChipVal(e.target.value)}
+                        required
                       />
                     </Grid>
                     <Grid item xs={3}>
@@ -584,6 +884,30 @@ const Settings = () => {
                     <Grid item xs={1} display="flex" alignItems="flex-end">
                       <Button type="submit" variant="contained" fullWidth sx={{ height: 40, p: 0 }}>
                         <Icons.Plus size={18} />
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Divider sx={{ my: 4 }} />
+
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Register New Dropdown Category</Typography>
+                <Box component="form" onSubmit={handleCreateCategory} sx={{ maxWidth: 500 }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={8}>
+                      <TextField 
+                        label="Category Key Name (e.g. lead_sources)" 
+                        fullWidth
+                        size="small"
+                        value={newCategoryName}
+                        onChange={(e)=>setNewCategoryName(e.target.value)}
+                        placeholder="lowercase_with_underscores"
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={4} display="flex" alignItems="flex-end">
+                      <Button type="submit" variant="contained" fullWidth sx={{ height: 40 }} startIcon={<Icons.Plus size={16} />}>
+                        Create Category
                       </Button>
                     </Grid>
                   </Grid>
@@ -774,47 +1098,67 @@ const Settings = () => {
 
                 <Divider sx={{ mb: 3 }} />
 
-                <Grid container spacing={3}>
-                  <Grid item xs={12} display="flex" justifyContent="space-between" alignItems="center">
-                    <Box>
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Google Sheets Active Synchronization</Typography>
-                      <Typography variant="caption" sx={{ color: '#64748B' }}>When active, writes auto-push and reads auto-cache from spreadsheets.</Typography>
-                    </Box>
-                    <Switch 
-                      checked={metadata.sheetsConfig.syncActive || false}
-                      onChange={(e) => handleSheetsConfigChange('syncActive', e.target.checked)}
-                    />
-                  </Grid>
+                <Box component="form" onSubmit={handleSaveSheetsConfig}>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} display="flex" justifyContent="space-between" alignItems="center">
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Google Sheets Active Synchronization</Typography>
+                        <Typography variant="caption" sx={{ color: '#64748B' }}>When active, writes auto-push and reads auto-cache from spreadsheets.</Typography>
+                      </Box>
+                      <Switch 
+                        checked={sheetsActive}
+                        onChange={(e) => setSheetsActive(e.target.checked)}
+                      />
+                    </Grid>
 
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Spreadsheet ID (URL String identifier)"
-                      fullWidth
-                      value={metadata.sheetsConfig.spreadsheetId || ''}
-                      onChange={(e) => handleSheetsConfigChange('spreadsheetId', e.target.value)}
-                    />
-                  </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Spreadsheet ID (URL String identifier)"
+                        fullWidth
+                        value={sheetsId}
+                        onChange={(e) => setSheetsId(e.target.value)}
+                        required
+                      />
+                    </Grid>
 
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Google Developer Service Account Client Email"
-                      fullWidth
-                      value={metadata.sheetsConfig.clientEmail || ''}
-                      onChange={(e) => handleSheetsConfigChange('clientEmail', e.target.value)}
-                    />
-                  </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Google Developer Service Account Client Email"
+                        fullWidth
+                        value={sheetsEmail}
+                        onChange={(e) => setSheetsEmail(e.target.value)}
+                        required
+                      />
+                    </Grid>
 
-                  <Grid item xs={12}>
-                    <TextField
-                      label="Private Key PEM string (including certificate blocks)"
-                      fullWidth
-                      multiline
-                      rows={4}
-                      value={metadata.sheetsConfig.privateKey || ''}
-                      onChange={(e) => handleSheetsConfigChange('privateKey', e.target.value)}
-                    />
-                  </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Private Key PEM string (including certificate blocks)"
+                        fullWidth
+                        multiline
+                        rows={4}
+                        value={sheetsKey}
+                        onChange={(e) => setSheetsKey(e.target.value)}
+                        required
+                      />
+                    </Grid>
 
+                    <Grid item xs={12}>
+                      <Button 
+                        type="submit" 
+                        variant="contained" 
+                        sx={{ backgroundColor: '#10B981', '&:hover': { backgroundColor: '#059669' }, mr: 2 }}
+                      >
+                        Save Configuration
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Box>
+
+                <Divider sx={{ my: 4 }} />
+
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Sync Actions</Typography>
+                <Grid container spacing={2}>
                   <Grid item xs={12} display="flex" gap={2}>
                     <Button 
                       variant="outlined" 

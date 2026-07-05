@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Box, 
   Card, 
@@ -36,14 +36,25 @@ const Settings = () => {
     metadata, 
     saveMetadata, 
     testSheetsSync, 
-    triggerFullSheetsSync 
+    triggerFullSheetsSync,
+    moduleData,
+    fetchModuleData,
+    updateRecord
   } = useApp();
+
+  useEffect(() => {
+    fetchModuleData('employees');
+  }, []);
 
   const [activeTab, setActiveTab] = useState('fields'); // 'fields', 'chips', 'permissions', 'sheets'
   const [selectedModule, setSelectedModule] = useState('customers');
   const [selectedChipGroup, setSelectedChipGroup] = useState('customerStages');
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' });
   const [syncLoading, setSyncLoading] = useState(false);
+  const [permSelectedRole, setPermSelectedRole] = useState('Employee');
+  const [permSelectedModule, setPermSelectedModule] = useState('customers');
+  const [passwordSelectedEmp, setPasswordSelectedEmp] = useState('');
+  const [newPasswordVal, setNewPasswordVal] = useState('');
 
   // Field Add Form state
   const [newFieldName, setNewFieldName] = useState('');
@@ -204,6 +215,57 @@ const Settings = () => {
     }
   };
 
+  const handleFieldPermissionToggle = async (roleName, moduleKey, fieldName) => {
+    const updated = { ...metadata };
+    if (!updated.fieldPermissions) {
+      updated.fieldPermissions = {};
+    }
+    if (!updated.fieldPermissions[roleName]) {
+      updated.fieldPermissions[roleName] = {};
+    }
+    if (!updated.fieldPermissions[roleName][moduleKey]) {
+      // Default to all fields allowed if never customized before
+      const allFields = updated.modules[moduleKey].fields.map(f => f.name);
+      updated.fieldPermissions[roleName][moduleKey] = allFields;
+    }
+
+    const allowed = updated.fieldPermissions[roleName][moduleKey];
+    if (allowed.includes(fieldName)) {
+      updated.fieldPermissions[roleName][moduleKey] = allowed.filter(f => f !== fieldName);
+    } else {
+      updated.fieldPermissions[roleName][moduleKey].push(fieldName);
+    }
+
+    const res = await saveMetadata(updated);
+    if (!res.success) {
+      showStatus('error', res.message);
+    }
+  };
+
+  const handleUpdatePassword = async (e) => {
+    e.preventDefault();
+    if (!passwordSelectedEmp || !newPasswordVal.trim()) {
+      showStatus('error', 'Please select an employee and enter a new password.');
+      return;
+    }
+
+    const employeesList = moduleData.employees || [];
+    const emp = employeesList.find(emp => emp.id === passwordSelectedEmp);
+    if (!emp) {
+      showStatus('error', 'Employee account not found.');
+      return;
+    }
+
+    const updatedPayload = { ...emp, password: newPasswordVal.trim() };
+    const res = await updateRecord('employees', passwordSelectedEmp, updatedPayload);
+    if (res.success) {
+      showStatus('success', `Password for '${emp.name}' updated successfully!`);
+      setNewPasswordVal('');
+    } else {
+      showStatus('error', res.message);
+    }
+  };
+
   // --- GOOGLE SHEETS SETTINGS MANAGEMENT ---
 
   const handleSheetsConfigChange = (field, val) => {
@@ -263,6 +325,10 @@ const Settings = () => {
                 <ListItem button onClick={() => setActiveTab('permissions')} selected={activeTab === 'permissions'} sx={{ borderRadius: '8px', mb: 0.5, py: 1.5, backgroundColor: activeTab === 'permissions' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'permissions' ? '#2563EB' : '#4B5563' }}>
                   <Icons.ShieldCheck size={18} style={{ marginRight: 10 }} />
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>Role Permissions Matrix</Typography>
+                </ListItem>
+                <ListItem button onClick={() => setActiveTab('passwords')} selected={activeTab === 'passwords'} sx={{ borderRadius: '8px', mb: 0.5, py: 1.5, backgroundColor: activeTab === 'passwords' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'passwords' ? '#2563EB' : '#4B5563' }}>
+                  <Icons.Lock size={18} style={{ marginRight: 10 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>Reset Passwords</Typography>
                 </ListItem>
                 <ListItem button onClick={() => setActiveTab('sheets')} selected={activeTab === 'sheets'} sx={{ borderRadius: '8px', py: 1.5, backgroundColor: activeTab === 'sheets' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'sheets' ? '#2563EB' : '#4B5563' }}>
                   <Icons.FileSpreadsheet size={18} style={{ marginRight: 10 }} />
@@ -617,6 +683,80 @@ const Settings = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+
+                <Box sx={{ mt: 5 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, fontSize: '16px', mb: 1, fontFamily: 'Poppins' }}>
+                    Field-Level Column Permissions (FLAC)
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                    Control which database fields (columns) are visible/editable to security roles. Check to allow, uncheck to hide.
+                  </Typography>
+
+                  <Divider sx={{ mb: 3 }} />
+
+                  <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>Select Target Role</InputLabel>
+                        <Select
+                          label="Select Target Role"
+                          value={permSelectedRole}
+                          onChange={(e) => setPermSelectedRole(e.target.value)}
+                        >
+                          {Object.keys(metadata.rolesPermissions).filter(r => r !== 'Admin').map(role => (
+                            <MenuItem key={role} value={role}>{role}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>Select Module</InputLabel>
+                        <Select
+                          label="Select Module"
+                          value={permSelectedModule}
+                          onChange={(e) => setPermSelectedModule(e.target.value)}
+                        >
+                          {Object.keys(metadata.modules).map(key => (
+                            <MenuItem key={key} value={key}>{metadata.modules[key].label}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+
+                  <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', p: 3, backgroundColor: '#F8FAFC' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>
+                      Visible Columns in '{metadata.modules[permSelectedModule].label}' for '{permSelectedRole}'
+                    </Typography>
+                    <Grid container spacing={2}>
+                      {metadata.modules[permSelectedModule].fields.map(field => {
+                        const allowedList = metadata.fieldPermissions?.[permSelectedRole]?.[permSelectedModule];
+                        const isChecked = allowedList ? allowedList.includes(field.name) : true;
+
+                        return (
+                          <Grid item xs={12} sm={6} md={4} key={field.name}>
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={isChecked}
+                                  onChange={() => handleFieldPermissionToggle(permSelectedRole, permSelectedModule, field.name)}
+                                  sx={{ '&.Mui-checked': { color: '#2563EB' } }}
+                                />
+                              }
+                              label={
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B' }}>{field.label}</Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B' }}>API: {field.name}</Typography>
+                                </Box>
+                              }
+                            />
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                  </Box>
+                </Box>
               </CardContent>
             </Card>
           )}
@@ -696,6 +836,64 @@ const Settings = () => {
                     </Button>
                   </Grid>
                 </Grid>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* TAB 5: RESET PASSWORDS CONTROL */}
+          {activeTab === 'passwords' && (
+            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 1, fontFamily: 'Poppins' }}>
+                  Employee Password Management
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                  Quickly set or reset the secure login password for any employee account.
+                </Typography>
+
+                <Divider sx={{ mb: 3 }} />
+
+                <Box component="form" onSubmit={handleUpdatePassword} sx={{ maxWidth: 500 }}>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <FormControl size="medium" fullWidth>
+                        <InputLabel>Select Employee</InputLabel>
+                        <Select
+                          label="Select Employee"
+                          value={passwordSelectedEmp}
+                          onChange={(e) => setPasswordSelectedEmp(e.target.value)}
+                        >
+                          {(moduleData.employees || []).map(emp => (
+                            <MenuItem key={emp.id} value={emp.id}>
+                              {emp.name} ({emp.email} - {emp.role})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="New Login Password"
+                        type="text"
+                        fullWidth
+                        size="medium"
+                        value={newPasswordVal}
+                        onChange={(e) => setNewPasswordVal(e.target.value)}
+                        placeholder="Enter secure new password"
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Button 
+                        type="submit" 
+                        variant="contained" 
+                        sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
+                      >
+                        Update Login Password
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Box>
               </CardContent>
             </Card>
           )}

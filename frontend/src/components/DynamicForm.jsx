@@ -196,7 +196,7 @@ const DynamicForm = ({
                 <Grid item xs={f.name === 'id' ? 12 : 6} key={f.name}>
                   <TextField
                     label={f.label}
-                    type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                    type={f.name === 'password' ? 'password' : (f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text')}
                     fullWidth
                     InputLabelProps={f.type === 'date' ? { shrink: true } : undefined}
                     value={formData[f.name] === undefined ? '' : formData[f.name]}

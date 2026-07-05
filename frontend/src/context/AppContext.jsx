@@ -124,7 +124,7 @@ export const AppProvider = ({ children }) => {
       // Update cache
       setModuleData(prev => ({
         ...prev,
-        [moduleName]: (prev[moduleName] || []).map(rec => rec.id === id ? res.data : rec)
+        [moduleName]: (prev[moduleName] || []).map(rec => String(rec.id) === String(id) ? res.data : rec)
       }));
       axios.get(`${API_BASE_URL}/data/activity_logs`).then(r => setActivityLogs(r.data)).catch(() => {});
       return { success: true, data: res.data };

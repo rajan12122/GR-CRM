@@ -106,14 +106,24 @@ const ModuleManager = () => {
             Browse, inspect relationships, configure columns, and export data records.
           </Typography>
         </Box>
-        <Button 
-          variant="contained" 
-          startIcon={<Icons.Plus size={18} />}
-          onClick={handleCreateClick}
-          sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
-        >
-          Add {moduleConfig.label.slice(0, -1)}
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button 
+            variant="outlined" 
+            startIcon={<Icons.RotateCw size={18} />}
+            onClick={() => fetchModuleData(moduleName)}
+            sx={{ borderColor: '#E2E8F0', color: '#64748B' }}
+          >
+            Refresh
+          </Button>
+          <Button 
+            variant="contained" 
+            startIcon={<Icons.Plus size={18} />}
+            onClick={handleCreateClick}
+            sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
+          >
+            Add {moduleConfig.label.slice(0, -1)}
+          </Button>
+        </Box>
       </Box>
 
       {errorMsg && (

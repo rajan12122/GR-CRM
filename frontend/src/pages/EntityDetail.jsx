@@ -50,7 +50,7 @@ const EntityDetail = () => {
     setLoading(true);
     // Fetch master modules list to match details
     const moduleRecords = await fetchModuleData(moduleName);
-    const item = moduleRecords.find(r => r.id === id);
+    const item = moduleRecords.find(r => String(r.id) === String(id));
     setRecord(item);
 
     if (item) {
@@ -137,6 +137,14 @@ const EntityDetail = () => {
             System ID Reference: <strong>{record.id}</strong>
           </Typography>
         </Box>
+        <Button 
+          variant="outlined" 
+          startIcon={<Icons.RotateCw size={16} />}
+          onClick={loadData}
+          sx={{ borderColor: '#E2E8F0', color: '#64748B' }}
+        >
+          Refresh Details
+        </Button>
       </Box>
 
       {/* Main content Split */}

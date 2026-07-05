@@ -356,7 +356,7 @@ const DynamicTable = ({
       </Box>
 
       {/* Grid Table Container */}
-      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E2E8F0', borderRadius: 0 }}>
+      <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E2E8F0', borderRadius: 0, overflowX: 'auto', maxWidth: '100%' }}>
         <Table stickyHeader size="medium">
           <TableHead>
             <TableRow>

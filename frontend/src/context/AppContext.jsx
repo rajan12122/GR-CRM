@@ -19,6 +19,9 @@ export const AppProvider = ({ children }) => {
   const [moduleData, setModuleData] = useState({});
   const [loadingData, setLoadingData] = useState(false);
   const [activityLogs, setActivityLogs] = useState([]);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  const triggerAppReload = () => setReloadKey(prev => prev + 1);
 
   // Load user profile and metadata if token exists
   useEffect(() => {
@@ -236,6 +239,8 @@ export const AppProvider = ({ children }) => {
         moduleData,
         loadingData,
         activityLogs,
+        reloadKey,
+        triggerAppReload,
         login,
         logout,
         fetchModuleData,

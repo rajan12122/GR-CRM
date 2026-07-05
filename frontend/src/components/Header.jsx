@@ -14,7 +14,7 @@ import {
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
-const Header = ({ onSearchClick, onMenuClick }) => {
+const Header = ({ onSearchClick, onMenuClick, onReload }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, metadata } = useApp();
@@ -34,8 +34,7 @@ const Header = ({ onSearchClick, onMenuClick }) => {
   };
 
   const handlePageReload = () => {
-    // Forces a clean hard reload by replacing the current URL in both mobile WebView and browsers
-    window.location.replace(window.location.href);
+    onReload();
   };
 
   return (

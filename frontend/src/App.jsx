@@ -16,7 +16,7 @@ import Attendance from './pages/Attendance';
 import Settings from './pages/Settings';
 
 const MainLayout = () => {
-  const { token, loadingMetadata } = useApp();
+  const { token, loadingMetadata, reloadKey, triggerAppReload } = useApp();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width:900px)');
@@ -71,9 +71,9 @@ const MainLayout = () => {
         flexDirection: 'column',
         minWidth: 0
       }}>
-        <Header onSearchClick={() => setSearchOpen(true)} onMenuClick={() => setMobileOpen(true)} />
+        <Header onSearchClick={() => setSearchOpen(true)} onMenuClick={() => setMobileOpen(true)} onReload={triggerAppReload} />
         
-        <Box component="main" sx={{ flexGrow: 1, overflowY: 'auto', pb: isMobile ? '80px' : '24px' }}>
+        <Box key={reloadKey} component="main" sx={{ flexGrow: 1, overflowY: 'auto', pb: isMobile ? '80px' : '24px' }}>
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/module/attendance" element={<Attendance />} />

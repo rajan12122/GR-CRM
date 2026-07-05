@@ -33,6 +33,11 @@ const Header = ({ onSearchClick, onMenuClick }) => {
     return 'System Portal';
   };
 
+  const handlePageReload = () => {
+    // Forces a clean hard reload by replacing the current URL in both mobile WebView and browsers
+    window.location.replace(window.location.href);
+  };
+
   return (
     <AppBar position="sticky" sx={{ zIndex: 1100 }}>
       <Toolbar sx={{ px: 3, display: 'flex', justifyContent: 'space-between', minHeight: 70 }}>
@@ -101,7 +106,7 @@ const Header = ({ onSearchClick, onMenuClick }) => {
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <IconButton 
             sx={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }} 
-            onClick={() => window.location.reload()}
+            onClick={handlePageReload}
             title="Refresh Page"
           >
             <Icons.RotateCw size={18} color="#64748B" />

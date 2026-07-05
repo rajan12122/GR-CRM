@@ -14,7 +14,7 @@ import {
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
-const Header = ({ onSearchClick }) => {
+const Header = ({ onSearchClick, onMenuClick }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, metadata } = useApp();
@@ -36,9 +36,18 @@ const Header = ({ onSearchClick }) => {
   return (
     <AppBar position="sticky" sx={{ zIndex: 1100 }}>
       <Toolbar sx={{ px: 3, display: 'flex', justifyContent: 'space-between', minHeight: 70 }}>
-        {/* Title / Breadcrumb */}
-        <Box>
-          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '20px', letterSpacing: '-0.02em', color: '#0F172A', fontFamily: 'Poppins' }}>
+        {/* Title / Breadcrumb / Hamburger */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <IconButton
+            color="inherit"
+            aria-label="open drawer"
+            edge="start"
+            onClick={onMenuClick}
+            sx={{ display: { md: 'none' }, color: '#475569', p: 0.5, mr: 0.5 }}
+          >
+            <Icons.Menu size={20} />
+          </IconButton>
+          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', sm: { fontSize: '20px' }, letterSpacing: '-0.02em', color: '#0F172A', fontFamily: 'Poppins' }}>
             {getPageTitle()}
           </Typography>
         </Box>

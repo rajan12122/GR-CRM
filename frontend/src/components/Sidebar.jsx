@@ -23,7 +23,7 @@ export const DynamicIcon = ({ name, size = 20, color = 'currentColor', ...props 
 
 const DRAWER_WIDTH = 260;
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   const { metadata, logout, user } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,24 +43,15 @@ const Sidebar = () => {
     return activePath === modulePath || activePath.startsWith(modulePath + '/');
   };
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        [`& .MuiDrawer-paper`]: { 
-          width: DRAWER_WIDTH, 
-          boxSizing: 'border-box',
-          backgroundColor: '#0F172A', // Navy Slate
-          color: '#E2E8F0',
-          borderRight: 'none',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between'
-        },
-      }}
-    >
+  const handleNavClick = (path) => {
+    navigate(path);
+    if (mobileOpen) {
+      handleDrawerToggle(); // close drawer on mobile click
+    }
+  };
+
+  const drawerContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
       <Box sx={{ overflowY: 'auto', flex: 1, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#334155', borderRadius: '4px' } }}>
         {/* Brand Header */}
         <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -74,7 +65,7 @@ const Sidebar = () => {
             justifyContent: 'center',
             boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
           }}>
-            <Typography variant="h6" sx={{ color: '#white', fontWeight: 800, fontFamily: 'Poppins' }}>G</Typography>
+            <Typography variant="h6" sx={{ color: 'white', fontWeight: 800, fontFamily: 'Poppins' }}>G</Typography>
           </Box>
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, color: '#FFFFFF', fontFamily: 'Poppins' }}>
@@ -92,7 +83,7 @@ const Sidebar = () => {
         <List sx={{ px: 1.5, py: 0 }}>
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={() => navigate('/')}
+              onClick={() => handleNavClick('/')}
               selected={activePath === '/'}
               sx={{
                 borderRadius: '8px',
@@ -126,7 +117,7 @@ const Sidebar = () => {
           {modules.map((mod) => (
             <ListItem key={mod.id} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
-                onClick={() => navigate(mod.path)}
+                onClick={() => handleNavClick(mod.path)}
                 selected={isModuleActive(mod.path)}
                 sx={{
                   borderRadius: '8px',
@@ -159,7 +150,7 @@ const Sidebar = () => {
         <List sx={{ px: 1.5, py: 0 }}>
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={() => navigate('/pipeline/properties')}
+              onClick={() => handleNavClick('/pipeline/properties')}
               selected={activePath === '/pipeline/properties'}
               sx={{
                 borderRadius: '8px',
@@ -184,7 +175,7 @@ const Sidebar = () => {
           </ListItem>
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={() => navigate('/pipeline/customers')}
+              onClick={() => handleNavClick('/pipeline/customers')}
               selected={activePath === '/pipeline/customers'}
               sx={{
                 borderRadius: '8px',
@@ -217,7 +208,7 @@ const Sidebar = () => {
         <List sx={{ px: 1.5, py: 0 }}>
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={() => navigate('/settings')}
+              onClick={() => handleNavClick('/settings')}
               selected={activePath === '/settings'}
               sx={{
                 borderRadius: '8px',
@@ -281,7 +272,56 @@ const Sidebar = () => {
           Sign Out
         </Button>
       </Box>
-    </Drawer>
+    </Box>
+  );
+
+  return (
+    <>
+      {/* 1. Mobile Drawer (Temporary overlay) */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          [`& .MuiDrawer-paper`]: { 
+            width: DRAWER_WIDTH, 
+            boxSizing: 'border-box',
+            backgroundColor: '#0F172A',
+            color: '#E2E8F0',
+            borderRight: 'none',
+            height: '100%'
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* 2. Desktop Drawer (Permanent sidebar) */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          [`& .MuiDrawer-paper`]: { 
+            width: DRAWER_WIDTH, 
+            boxSizing: 'border-box',
+            backgroundColor: '#0F172A',
+            color: '#E2E8F0',
+            borderRight: 'none',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            height: '100%'
+          },
+        }}
+        open
+      >
+        {drawerContent}
+      </Drawer>
+    </>
   );
 };
 

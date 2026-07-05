@@ -1,0 +1,364 @@
+{
+  "employees": [
+    {
+      "id": "EMP-001",
+      "name": "Pankaj Sharma",
+      "email": "pankaj@gaganrealtech.com",
+      "phone": "9876543210",
+      "role": "Admin",
+      "status": "Active",
+      "salary": 150000,
+      "joinDate": "2024-01-15"
+    }
+  ],
+  "customers": [
+    {
+      "id": "CUST-001",
+      "name": "Rajesh Singhal",
+      "email": "singhal.r@gmail.com",
+      "phone": "9814098140",
+      "stage": "Negotiation",
+      "assignedEmployeeId": "EMP-003",
+      "budget": 8500000,
+      "city": "Mohali",
+      "requirements": "Looking for a luxury 3BHK villa with power backup and gated security.",
+      "dateAdded": "2026-06-10"
+    },
+    {
+      "id": "CUST-002",
+      "name": "Simran Jeet",
+      "email": "simran.jeet@yahoo.com",
+      "phone": "9988776655",
+      "stage": "Site Visit",
+      "assignedEmployeeId": "EMP-003",
+      "budget": 12000000,
+      "city": "Chandigarh",
+      "requirements": "4BHK independent house or villa near the main highway.",
+      "dateAdded": "2026-06-15"
+    },
+    {
+      "id": "CUST-003",
+      "name": "Harpreet Singh",
+      "email": "harpreet.singh@outlook.com",
+      "phone": "9872198721",
+      "stage": "Booked",
+      "assignedEmployeeId": "EMP-004",
+      "budget": 6000000,
+      "city": "Zirakpur",
+      "requirements": "2BHK residential flat with ready possession.",
+      "dateAdded": "2026-06-01"
+    }
+  ],
+  "leads": [
+    {
+      "id": "LEAD-001",
+      "name": "Amit Pathak",
+      "email": "amit.pathak@gmail.com",
+      "phone": "9417094170",
+      "source": "Facebook",
+      "status": "In-Progress",
+      "assignedEmployeeId": "EMP-003",
+      "budget": 4500000,
+      "dateAdded": "2026-07-01"
+    },
+    {
+      "id": "LEAD-002",
+      "name": "Neha Sharma",
+      "email": "neha12@gmail.com",
+      "phone": "9815098150",
+      "source": "Google",
+      "status": "Open",
+      "assignedEmployeeId": "EMP-003",
+      "budget": 9500000,
+      "dateAdded": "2026-07-02"
+    },
+    {
+      "id": "LEAD-003",
+      "name": "Gaurav Malhotra",
+      "email": "gaurav@malhotra.com",
+      "phone": "9888877777",
+      "source": "Referral",
+      "status": "Open",
+      "assignedEmployeeId": "EMP-004",
+      "budget": 15000000,
+      "dateAdded": "2026-07-03"
+    }
+  ],
+  "properties": [
+    {
+      "id": "PROP-002",
+      "name": "Mohali Heights - Flat 502",
+      "projectId": "PROJ-002",
+      "propertyType": "Apartment",
+      "size": 1650,
+      "price": 6200000,
+      "location": "Sector 82, Mohali IT Park",
+      "status": "Available",
+      "ownerName": "Satish Mehta",
+      "ownerPhone": "9877788899",
+      "assignedEmployeeId": "EMP-004"
+    },
+    {
+      "id": "PROP-003",
+      "name": "Eco Farms - Plot 22",
+      "projectId": "PROJ-001",
+      "propertyType": "Plot",
+      "size": 4500,
+      "price": 11000000,
+      "location": "Airport Road, Mohali",
+      "status": "Reserved",
+      "ownerName": "Gurinder Singh",
+      "ownerPhone": "9811122233",
+      "assignedEmployeeId": "EMP-003"
+    }
+  ],
+  "projects": [
+    {
+      "id": "PROJ-001",
+      "name": "Green Valley Enclave",
+      "location": "Sector 125, Mohali",
+      "builder": "Gagan Developers",
+      "status": "Under Construction",
+      "totalUnits": 120
+    },
+    {
+      "id": "PROJ-002",
+      "name": "Mohali Premium Heights",
+      "location": "Sector 82, Mohali",
+      "builder": "Gagan Developers",
+      "status": "Ready to Move",
+      "totalUnits": 80
+    }
+  ],
+  "site_visits": [
+    {
+      "id": "VISIT-001",
+      "customerId": "CUST-001",
+      "propertyId": "PROP-001",
+      "employeeId": "EMP-003",
+      "date": "2026-06-18",
+      "time": "11:30 AM",
+      "result": "Interested"
+    },
+    {
+      "id": "VISIT-002",
+      "customerId": "CUST-002",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-003",
+      "date": "2026-06-25",
+      "time": "04:00 PM",
+      "result": "Negotiation"
+    },
+    {
+      "id": "VISIT-003",
+      "customerId": "CUST-003",
+      "propertyId": "PROP-002",
+      "employeeId": "EMP-004",
+      "date": "2026-06-05",
+      "time": "02:30 PM",
+      "result": "Completed"
+    }
+  ],
+  "follow_ups": [
+    {
+      "id": "FOLLOW-001",
+      "customerId": "CUST-001",
+      "employeeId": "EMP-003",
+      "date": "2026-07-04",
+      "time": "11:00 AM",
+      "status": "Pending"
+    },
+    {
+      "id": "FOLLOW-002",
+      "customerId": "CUST-002",
+      "employeeId": "EMP-003",
+      "date": "2026-07-04",
+      "time": "03:00 PM",
+      "status": "Pending"
+    },
+    {
+      "id": "FOLLOW-003",
+      "customerId": "CUST-003",
+      "employeeId": "EMP-004",
+      "date": "2026-06-06",
+      "time": "12:00 PM",
+      "status": "Completed"
+    }
+  ],
+  "attendance": [
+    {
+      "id": "ATT-002",
+      "employeeId": "EMP-002",
+      "date": "2026-07-03",
+      "inTime": "09:30 AM",
+      "outTime": "06:15 PM",
+      "status": "Present"
+    },
+    {
+      "id": "ATT-003",
+      "employeeId": "EMP-003",
+      "date": "2026-07-03",
+      "inTime": "09:05 AM",
+      "outTime": "07:00 PM",
+      "status": "Present"
+    },
+    {
+      "id": "ATT-004",
+      "employeeId": "EMP-004",
+      "date": "2026-07-03",
+      "inTime": "10:15 AM",
+      "outTime": "06:00 PM",
+      "status": "Late"
+    },
+    {
+      "employeeId": "EMP-001",
+      "date": "2026-07-03",
+      "inTime": "09:00 AM",
+      "outTime": "06:00 PM",
+      "status": "Present",
+      "id": "ATTE-105"
+    }
+  ],
+  "leaves": [
+    {
+      "id": "LV-001",
+      "employeeId": "EMP-003",
+      "startDate": "2026-07-10",
+      "endDate": "2026-07-12",
+      "leaveType": "Casual",
+      "status": "Pending"
+    }
+  ],
+  "sales": [
+    {
+      "id": "SALE-001",
+      "customerId": "CUST-003",
+      "propertyId": "PROP-002",
+      "employeeId": "EMP-004",
+      "salePrice": 6100000,
+      "agreementDate": "2026-06-08",
+      "status": "Completed"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "TSK-001",
+      "title": "Obtain registry documents for Flat 502",
+      "assignedTo": "EMP-002",
+      "dueDate": "2026-07-05",
+      "priority": "High",
+      "status": "In Progress"
+    },
+    {
+      "id": "TSK-002",
+      "title": "Call Suresh Gupta regarding Villa A4 pricing details",
+      "assignedTo": "EMP-003",
+      "dueDate": "2026-07-04",
+      "priority": "Medium",
+      "status": "Pending"
+    },
+    {
+      "id": "TSK-003",
+      "title": "Submit monthly GST file",
+      "assignedTo": "EMP-001",
+      "dueDate": "2026-07-10",
+      "priority": "High",
+      "status": "Pending"
+    }
+  ],
+  "remarks": [
+    {
+      "id": "REM-001",
+      "targetModule": "customers",
+      "targetId": "CUST-001",
+      "employeeName": "Raj Sharma",
+      "dateTime": "2026-06-18 12:00 PM",
+      "comment": "Customer liked the garden area of the villa, but requested a discount on registry charges."
+    },
+    {
+      "id": "REM-002",
+      "targetModule": "customers",
+      "targetId": "CUST-001",
+      "employeeName": "Rajesh Kumar",
+      "dateTime": "2026-06-20 02:30 PM",
+      "comment": "Approved a discount of up to 1.5 Lakhs on final negotiations."
+    },
+    {
+      "id": "REM-003",
+      "targetModule": "properties",
+      "targetId": "PROP-001",
+      "employeeName": "Raj Sharma",
+      "dateTime": "2026-06-15 10:00 AM",
+      "comment": "Owner Suresh Gupta confirmed he will clear all society dues by end of this month."
+    }
+  ],
+  "documents": [
+    {
+      "id": "DOC-001",
+      "targetModule": "properties",
+      "targetId": "PROP-002",
+      "name": "NOC_Clearance_Cert.pdf",
+      "fileUrl": "/uploads/NOC_Clearance_Cert.pdf",
+      "uploadedBy": "Pankaj Sharma",
+      "dateAdded": "2026-06-02"
+    }
+  ],
+  "reminders": [
+    {
+      "id": "REM-001",
+      "title": "Follow up with Rajesh Singhal regarding discount approval",
+      "dateTime": "2026-07-04T11:00:00",
+      "status": "Pending"
+    }
+  ],
+  "activity_logs": [
+    {
+      "id": "LOG-1783231026813",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record EMP-004 in employees",
+      "dateTime": "5/7/2026, 11:27:06 am"
+    },
+    {
+      "id": "LOG-1783231025839",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record EMP-003 in employees",
+      "dateTime": "5/7/2026, 11:27:05 am"
+    },
+    {
+      "id": "LOG-1783231024511",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record EMP-002 in employees",
+      "dateTime": "5/7/2026, 11:27:04 am"
+    },
+    {
+      "id": "LOG-1783231003105",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record PROP-001 in properties",
+      "dateTime": "5/7/2026, 11:26:43 am"
+    },
+    {
+      "id": "LOG-1783086202853",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record ATT-001 in attendance",
+      "dateTime": "3/7/2026, 7:13:22 pm"
+    },
+    {
+      "id": "LOG-1783086199071",
+      "employeeName": "Pankaj Sharma",
+      "action": "Created record ATTE-105 in attendance",
+      "dateTime": "3/7/2026, 7:13:19 pm"
+    },
+    {
+      "id": "LOG-001",
+      "employeeName": "Pankaj Sharma",
+      "action": "Created customer record CUST-001",
+      "dateTime": "2026-06-10 11:00 AM"
+    },
+    {
+      "id": "LOG-002",
+      "employeeName": "Raj Sharma",
+      "action": "Logged site visit VISIT-001 for Rajesh Singhal",
+      "dateTime": "2026-06-18 11:35 AM"
+    }
+  ]
+}

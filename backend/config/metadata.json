@@ -1,0 +1,1428 @@
+{
+  "modules": {
+    "employees": {
+      "id": "employees",
+      "label": "Employees",
+      "icon": "Users",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Employee ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "name",
+          "label": "Full Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "email",
+          "label": "Email Address",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "phone",
+          "label": "Phone Number",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "role",
+          "label": "Role",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "roles"
+        },
+        {
+          "name": "status",
+          "label": "Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "employeeStatus"
+        },
+        {
+          "name": "salary",
+          "label": "Base Salary (Monthly)",
+          "type": "number",
+          "required": true,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "joinDate",
+          "label": "Joining Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        }
+      ]
+    },
+    "customers": {
+      "id": "customers",
+      "label": "Customers",
+      "icon": "UserCheck",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Customer ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "name",
+          "label": "Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "email",
+          "label": "Email",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "phone",
+          "label": "Phone Number",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "stage",
+          "label": "Pipeline Stage",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "customerStages"
+        },
+        {
+          "name": "assignedEmployeeId",
+          "label": "Relationship Manager",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "budget",
+          "label": "Budget (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "city",
+          "label": "Preferred City",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "cities"
+        },
+        {
+          "name": "requirements",
+          "label": "Specific Requirements",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "dateAdded",
+          "label": "Date Added",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        }
+      ]
+    },
+    "leads": {
+      "id": "leads",
+      "label": "Leads",
+      "icon": "Magnet",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Lead ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "name",
+          "label": "Contact Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "email",
+          "label": "Email",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "phone",
+          "label": "Phone Number",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "source",
+          "label": "Lead Source",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "leadSources"
+        },
+        {
+          "name": "status",
+          "label": "Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "leadStatus"
+        },
+        {
+          "name": "assignedEmployeeId",
+          "label": "Assigned Exec",
+          "type": "ref",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "budget",
+          "label": "Budget (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "dateAdded",
+          "label": "Date Captured",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        }
+      ]
+    },
+    "properties": {
+      "id": "properties",
+      "label": "Properties",
+      "icon": "Home",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Property ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "name",
+          "label": "Property Title",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "projectId",
+          "label": "Project Association",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "projects"
+        },
+        {
+          "name": "propertyType",
+          "label": "Type",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "propertyTypes"
+        },
+        {
+          "name": "size",
+          "label": "Area (Sq.Ft.)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "price",
+          "label": "Price (INR)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "location",
+          "label": "Location/Sector",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "propertyStatus"
+        },
+        {
+          "name": "ownerName",
+          "label": "Seller Name",
+          "type": "text",
+          "required": true,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "ownerPhone",
+          "label": "Seller Phone",
+          "type": "text",
+          "required": true,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "assignedEmployeeId",
+          "label": "Listing Manager",
+          "type": "ref",
+          "required": false,
+          "showInTable": false,
+          "editable": true,
+          "refModule": "employees"
+        }
+      ]
+    },
+    "projects": {
+      "id": "projects",
+      "label": "Projects",
+      "icon": "Building",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Project ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "name",
+          "label": "Project Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "location",
+          "label": "Location/City",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "builder",
+          "label": "Builder Name",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "builders"
+        },
+        {
+          "name": "status",
+          "label": "Construction Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "projectStatus"
+        },
+        {
+          "name": "totalUnits",
+          "label": "Total Units",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        }
+      ]
+    },
+    "site_visits": {
+      "id": "site_visits",
+      "label": "Site Visits",
+      "icon": "Eye",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Visit ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "customerId",
+          "label": "Customer",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "customers"
+        },
+        {
+          "name": "propertyId",
+          "label": "Property Showcased",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "properties"
+        },
+        {
+          "name": "employeeId",
+          "label": "Showed By (Employee)",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "date",
+          "label": "Visit Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "time",
+          "label": "Visit Time",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "result",
+          "label": "Feedback/Result",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "visitResults"
+        }
+      ]
+    },
+    "follow_ups": {
+      "id": "follow_ups",
+      "label": "Follow Ups",
+      "icon": "PhoneCall",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Follow Up ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "customerId",
+          "label": "Customer",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "customers"
+        },
+        {
+          "name": "employeeId",
+          "label": "Assigned Exec",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "date",
+          "label": "Scheduled Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "time",
+          "label": "Scheduled Time",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "followUpStatus"
+        }
+      ]
+    },
+    "attendance": {
+      "id": "attendance",
+      "label": "Attendance",
+      "icon": "CalendarDays",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Record ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "employeeId",
+          "label": "Employee",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "date",
+          "label": "Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "inTime",
+          "label": "Punch In Time",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "outTime",
+          "label": "Punch Out Time",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "attendanceStatus"
+        }
+      ]
+    },
+    "leaves": {
+      "id": "leaves",
+      "label": "Leaves",
+      "icon": "Briefcase",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Leave ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "employeeId",
+          "label": "Employee",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "startDate",
+          "label": "From Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "endDate",
+          "label": "To Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "leaveType",
+          "label": "Leave Type",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "leaveTypes"
+        },
+        {
+          "name": "status",
+          "label": "Approval Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "leaveStatus"
+        }
+      ]
+    },
+    "sales": {
+      "id": "sales",
+      "label": "Sales Bookings",
+      "icon": "IndianRupee",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Sales ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "customerId",
+          "label": "Buyer",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "customers"
+        },
+        {
+          "name": "propertyId",
+          "label": "Property Booked",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "properties"
+        },
+        {
+          "name": "employeeId",
+          "label": "Sales Rep",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "salePrice",
+          "label": "Sold Price (INR)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "agreementDate",
+          "label": "Agreement Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Sales Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "salesStatus"
+        }
+      ]
+    },
+    "tasks": {
+      "id": "tasks",
+      "label": "Tasks",
+      "icon": "CheckSquare",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Task ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "title",
+          "label": "Task Details",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "assignedTo",
+          "label": "Assigned To",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "dueDate",
+          "label": "Due Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "priority",
+          "label": "Priority",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "priorities"
+        },
+        {
+          "name": "status",
+          "label": "Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "taskStatus"
+        }
+      ]
+    }
+  },
+  "chips": {
+    "roles": [
+      {
+        "value": "Admin",
+        "label": "Administrator",
+        "color": "#EF4444",
+        "icon": "ShieldAlert"
+      },
+      {
+        "value": "Manager",
+        "label": "General Manager",
+        "color": "#F59E0B",
+        "icon": "ShieldCheck"
+      },
+      {
+        "value": "Sales",
+        "label": "Sales Consultant",
+        "color": "#3B82F6",
+        "icon": "TrendingUp"
+      },
+      {
+        "value": "Employee",
+        "label": "Standard Office Staff",
+        "color": "#6B7280",
+        "icon": "User"
+      }
+    ],
+    "employeeStatus": [
+      {
+        "value": "Active",
+        "label": "Active Duty",
+        "color": "#22C55E",
+        "icon": "Activity"
+      },
+      {
+        "value": "Inactive",
+        "label": "Suspended / Off Duty",
+        "color": "#EF4444",
+        "icon": "Power"
+      }
+    ],
+    "customerStages": [
+      {
+        "value": "New Lead",
+        "label": "Fresh Lead",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Contacted",
+        "label": "Contacted",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Interested",
+        "label": "Interested / Nurture",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Site Visit",
+        "label": "Site Visit Arranged",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Negotiation",
+        "label": "Under Negotiation",
+        "color": "#10B981"
+      },
+      {
+        "value": "Booked",
+        "label": "Property Booked",
+        "color": "#059669"
+      },
+      {
+        "value": "Closed",
+        "label": "Deal Closed",
+        "color": "#111827"
+      },
+      {
+        "value": "Lost",
+        "label": "Lost Lead",
+        "color": "#EF4444"
+      }
+    ],
+    "leadSources": [
+      {
+        "value": "Facebook",
+        "label": "Facebook Ad",
+        "color": "#1877F2"
+      },
+      {
+        "value": "Google",
+        "label": "Google Search PPC",
+        "color": "#EA4335"
+      },
+      {
+        "value": "Instagram",
+        "label": "Instagram DM",
+        "color": "#E1306C"
+      },
+      {
+        "value": "Referral",
+        "label": "Agent Referral",
+        "color": "#10B981"
+      },
+      {
+        "value": "Walk-in",
+        "label": "Office Walk-in",
+        "color": "#6B7280"
+      },
+      {
+        "value": "Gagan",
+        "label": "Gagan",
+        "color": "#2563EB"
+      }
+    ],
+    "leadStatus": [
+      {
+        "value": "Open",
+        "label": "Unassigned / Open",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "In-Progress",
+        "label": "Active Communication",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Converted",
+        "label": "Moved to Customers",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Junk",
+        "label": "Junk / Wrong Number",
+        "color": "#EF4444"
+      }
+    ],
+    "propertyTypes": [
+      {
+        "value": "Villa",
+        "label": "Luxury Villa",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Plot",
+        "label": "Residential Land Plot",
+        "color": "#10B981"
+      },
+      {
+        "value": "Apartment",
+        "label": "Multistory Apartment",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Commercial",
+        "label": "Retail/Office Space",
+        "color": "#F59E0B"
+      }
+    ],
+    "propertyStatus": [
+      {
+        "value": "Available",
+        "label": "Available for Purchase",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Reserved",
+        "label": "Reserved Deposit Received",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Booked",
+        "label": "Token Money Booked",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Agreement",
+        "label": "Sales Agreement Signed",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Registered",
+        "label": "Property Registered / Deed Done",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Sold",
+        "label": "Sold out completely",
+        "color": "#111827"
+      },
+      {
+        "value": "Blocked",
+        "label": "Blocked by Builder",
+        "color": "#EF4444"
+      }
+    ],
+    "builders": [
+      {
+        "value": "Gagan Developers",
+        "label": "Gagan Developers & Infra",
+        "color": "#2563EB"
+      },
+      {
+        "value": "DLF Group",
+        "label": "DLF Group India",
+        "color": "#10B981"
+      },
+      {
+        "value": "Omaxe",
+        "label": "Omaxe Construction",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Hero Homes",
+        "label": "Hero Realty Homes",
+        "color": "#EF4444"
+      }
+    ],
+    "projectStatus": [
+      {
+        "value": "Pre-launch",
+        "label": "Pre-launch Stage",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Under Construction",
+        "label": "Active Construction",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Ready to Move",
+        "label": "Ready to Occupy / O.C Recd",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Completed",
+        "label": "Project Delivered",
+        "color": "#111827"
+      }
+    ],
+    "visitResults": [
+      {
+        "value": "Interested",
+        "label": "Highly Interested",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Rejected",
+        "label": "Rejected / Disliked Loc",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Negotiation",
+        "label": "Negotiation Phase",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Reschedule",
+        "label": "Request Reschedule",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Completed",
+        "label": "Visit Executed",
+        "color": "#6B7280"
+      }
+    ],
+    "followUpStatus": [
+      {
+        "value": "Pending",
+        "label": "Pending Call",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Completed",
+        "label": "Call Completed",
+        "color": "#22C55E"
+      },
+      {
+        "value": "No Answer",
+        "label": "No Response / Ringing",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Rescheduled",
+        "label": "Shifted Date",
+        "color": "#3B82F6"
+      }
+    ],
+    "attendanceStatus": [
+      {
+        "value": "Present",
+        "label": "Present On-Duty",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Absent",
+        "label": "Unexcused Absent",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Late",
+        "label": "Late Punch-In",
+        "color": "#F59E0B"
+      }
+    ],
+    "leaveTypes": [
+      {
+        "value": "Casual",
+        "label": "Casual Leave (C.L.)",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Sick",
+        "label": "Medical Sick Leave (S.L.)",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Privilege",
+        "label": "Paid Privilege Leave (P.L.)",
+        "color": "#22C55E"
+      }
+    ],
+    "leaveStatus": [
+      {
+        "value": "Pending",
+        "label": "Awaiting Admin Review",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Approved",
+        "label": "Approved with Pay",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Rejected",
+        "label": "Rejected by HR",
+        "color": "#EF4444"
+      }
+    ],
+    "salesStatus": [
+      {
+        "value": "Pending",
+        "label": "Token stage (Pending Docs)",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Completed",
+        "label": "Fully Realised Booking",
+        "color": "#22C55E"
+      }
+    ],
+    "priorities": [
+      {
+        "value": "High",
+        "label": "Urgent High Priority",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Medium",
+        "label": "Standard Medium Priority",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Low",
+        "label": "Low Action Queue",
+        "color": "#3B82F6"
+      }
+    ],
+    "taskStatus": [
+      {
+        "value": "Pending",
+        "label": "Not Started",
+        "color": "#6B7280"
+      },
+      {
+        "value": "In Progress",
+        "label": "Active Working",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Completed",
+        "label": "Completed Task",
+        "color": "#22C55E"
+      }
+    ],
+    "cities": [
+      {
+        "value": "Mohali",
+        "label": "Mohali Tri-city",
+        "color": "#10B981"
+      },
+      {
+        "value": "Chandigarh",
+        "label": "Chandigarh City",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Panchkula",
+        "label": "Panchkula Sector",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Zirakpur",
+        "label": "Zirakpur Bypass",
+        "color": "#F59E0B"
+      }
+    ]
+  },
+  "rolesPermissions": {
+    "Admin": {
+      "employees": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "customers": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "leads": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "properties": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "projects": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "site_visits": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "follow_ups": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "attendance": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "leaves": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "sales": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "tasks": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ]
+    },
+    "Manager": {
+      "employees": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "customers": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
+      ],
+      "leads": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
+      ],
+      "properties": [
+        "view",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "projects": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "site_visits": [
+        "view",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "follow_ups": [
+        "view",
+        "create",
+        "edit",
+        "delete"
+      ],
+      "attendance": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "leaves": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "sales": [
+        "view",
+        "create",
+        "edit",
+        "export"
+      ],
+      "tasks": [
+        "view",
+        "create",
+        "edit",
+        "delete"
+      ]
+    },
+    "Sales": {
+      "employees": [
+        "view"
+      ],
+      "customers": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "leads": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "properties": [
+        "view"
+      ],
+      "projects": [
+        "view"
+      ],
+      "site_visits": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "follow_ups": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "attendance": [
+        "view",
+        "create"
+      ],
+      "leaves": [
+        "view",
+        "create"
+      ],
+      "sales": [
+        "view",
+        "create"
+      ],
+      "tasks": [
+        "view",
+        "create",
+        "edit"
+      ]
+    },
+    "Employee": {
+      "employees": [
+        "view"
+      ],
+      "customers": [
+        "view"
+      ],
+      "leads": [
+        "view"
+      ],
+      "properties": [
+        "view"
+      ],
+      "projects": [
+        "view"
+      ],
+      "site_visits": [
+        "view"
+      ],
+      "follow_ups": [
+        "view"
+      ],
+      "attendance": [
+        "view",
+        "create"
+      ],
+      "leaves": [
+        "view",
+        "create"
+      ],
+      "sales": [],
+      "tasks": [
+        "view",
+        "create",
+        "edit"
+      ]
+    }
+  },
+  "sheetsConfig": {
+    "spreadsheetId": "",
+    "clientEmail": "",
+    "privateKey": "",
+    "syncActive": false
+  }
+}

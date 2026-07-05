@@ -3,7 +3,7 @@ import axios from 'axios';
 
 const AppContext = createContext();
 
-const API_BASE_URL = 'http://192.168.1.8:5000/api';
+const API_BASE_URL = 'https://gr-crm-backend.onrender.com/api';
 
 // Set default auth token header if cached
 const cachedToken = localStorage.getItem('gr_crm_token');

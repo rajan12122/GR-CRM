@@ -1026,6 +1026,77 @@
           "editable": false
         }
       ]
+    },
+    "dealers": {
+      "id": "dealers",
+      "label": "Property Dealers",
+      "icon": "Building",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Sr No",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "firm_name",
+          "label": "Firm Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "address",
+          "label": "Address",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sector_block",
+          "label": "Area/Sector/Block",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "person_name",
+          "label": "Person Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "contact_num",
+          "label": "Contact Num",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "contacted_num",
+          "label": "The Number I contacted",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "remarks",
+          "label": "Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        }
+      ]
     }
   },
   "chips": {
@@ -1563,6 +1634,14 @@
         "delete",
         "export",
         "print"
+      ],
+      "dealers": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
       ]
     },
     "Manager": {
@@ -1636,6 +1715,13 @@
         "edit",
         "delete",
         "export"
+      ],
+      "dealers": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
       ]
     },
     "Sales": {
@@ -1689,6 +1775,11 @@
         "view",
         "create",
         "edit"
+      ],
+      "dealers": [
+        "view",
+        "create",
+        "edit"
       ]
     },
     "Employee": {
@@ -1728,6 +1819,9 @@
         "edit"
       ],
       "daily_prices": [
+        "view"
+      ],
+      "dealers": [
         "view"
       ]
     }

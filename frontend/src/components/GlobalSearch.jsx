@@ -131,6 +131,11 @@ const GlobalSearch = ({ open, onClose }) => {
       if (rec.email) parts.push(rec.email);
       if (rec.source) parts.push(`Src: ${rec.source}`);
       if (rec.status) parts.push(`Status: ${rec.status}`);
+    } else if (moduleName === 'dealers') {
+      if (rec.firm_name) parts.push(`Firm: ${rec.firm_name}`);
+      if (rec.person_name) parts.push(`Person: ${rec.person_name}`);
+      if (rec.contact_num) parts.push(`Ph: ${rec.contact_num}`);
+      if (rec.sector_block) parts.push(`Area/Sec/Blk: ${rec.sector_block}`);
     } else {
       if (rec.phone) parts.push(`Ph: ${rec.phone}`);
       if (rec.email) parts.push(rec.email);

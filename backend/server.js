@@ -264,7 +264,7 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
 
   if (!db[module]) return res.status(404).json({ message: `Module ${module} is empty.` });
   
-  const index = db[module].findIndex(rec => rec.id === id);
+  const index = db[module].findIndex(rec => String(rec.id) === String(id));
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
 
   // Auto-update last_updated date on edits
@@ -305,7 +305,7 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
 
   if (!db[module]) return res.status(404).json({ message: `Module ${module} is empty.` });
 
-  const index = db[module].findIndex(rec => rec.id === id);
+  const index = db[module].findIndex(rec => String(rec.id) === String(id));
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
 
   db[module].splice(index, 1);
@@ -418,30 +418,30 @@ app.get('/api/search', authenticateToken, (req, res) => {
       data.remarks = allRemarks.filter(r => r.targetModule === 'employees' && r.targetId === id);
       data.documents = allDocs.filter(d => d.targetModule === 'employees' && d.targetId === id);
     } else if (type === 'customers') {
-      const cust = allCustomers.find(c => c.id === id);
-      data.employee = allEmployees.find(e => e.id === (cust && cust.assignedEmployeeId));
-      data.site_visits = allSiteVisits.filter(s => s.customerId === id).map(sv => ({
+      const cust = allCustomers.find(c => String(c.id) === String(id));
+      data.employee = allEmployees.find(e => String(e.id) === String(cust && cust.assignedEmployeeId));
+      data.site_visits = allSiteVisits.filter(s => String(s.customerId) === String(id)).map(sv => ({
         ...sv,
-        property: allProperties.find(p => p.id === sv.propertyId)
+        property: allProperties.find(p => String(p.id) === String(sv.propertyId))
       }));
-      data.follow_ups = allFollowUps.filter(f => f.customerId === id);
-      data.tasks = allTasks.filter(t => t.title.toLowerCase().includes(id.toLowerCase()) || (t.description && t.description.toLowerCase().includes(id.toLowerCase())));
-      data.sales = allSales.filter(s => s.customerId === id).map(sa => ({
+      data.follow_ups = allFollowUps.filter(f => String(f.customerId) === String(id));
+      data.tasks = allTasks.filter(t => t.title.toLowerCase().includes(String(id).toLowerCase()) || (t.description && t.description.toLowerCase().includes(String(id).toLowerCase())));
+      data.sales = allSales.filter(s => String(s.customerId) === String(id)).map(sa => ({
         ...sa,
-        property: allProperties.find(p => p.id === sa.propertyId)
+        property: allProperties.find(p => String(p.id) === String(sa.propertyId))
       }));
-      data.remarks = allRemarks.filter(r => r.targetModule === 'customers' && r.targetId === id);
-      data.documents = allDocs.filter(d => d.targetModule === 'customers' && d.targetId === id);
+      data.remarks = allRemarks.filter(r => r.targetModule === 'customers' && String(r.targetId) === String(id));
+      data.documents = allDocs.filter(d => d.targetModule === 'customers' && String(d.targetId) === String(id));
     } else if (type === 'properties') {
-      const prop = allProperties.find(p => p.id === id);
-      data.employee = allEmployees.find(e => e.id === (prop && prop.assignedEmployeeId));
-      data.site_visits = allSiteVisits.filter(s => s.propertyId === id).map(sv => ({
+      const prop = allProperties.find(p => String(p.id) === String(id));
+      data.employee = allEmployees.find(e => String(e.id) === String(prop && prop.assignedEmployeeId));
+      data.site_visits = allSiteVisits.filter(s => String(s.propertyId) === String(id)).map(sv => ({
         ...sv,
-        customer: allCustomers.find(c => c.id === sv.customerId)
+        customer: allCustomers.find(c => String(c.id) === String(sv.customerId))
       }));
-      data.sales = allSales.filter(s => s.propertyId === id);
-      data.remarks = allRemarks.filter(r => r.targetModule === 'properties' && r.targetId === id);
-      data.documents = allDocs.filter(d => d.targetModule === 'properties' && d.targetId === id);
+      data.sales = allSales.filter(s => String(s.propertyId) === String(id));
+      data.remarks = allRemarks.filter(r => r.targetModule === 'properties' && String(r.targetId) === String(id));
+      data.documents = allDocs.filter(d => d.targetModule === 'properties' && String(d.targetId) === String(id));
       // Track views (represented by distinct site visits + customer expressions)
       data.viewsCount = data.site_visits.length;
       data.viewedBy = data.site_visits.map(v => v.customer).filter(Boolean);
@@ -486,29 +486,29 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     data.remarks = allRemarks.filter(r => r.targetModule === 'employees' && r.targetId === id);
     data.documents = allDocs.filter(d => d.targetModule === 'employees' && d.targetId === id);
   } else if (module === 'customers') {
-    const cust = allCustomers.find(c => c.id === id);
-    data.employee = allEmployees.find(e => e.id === (cust && cust.assignedEmployeeId));
-    data.site_visits = allSiteVisits.filter(s => s.customerId === id).map(sv => ({
+    const cust = allCustomers.find(c => String(c.id) === String(id));
+    data.employee = allEmployees.find(e => String(e.id) === String(cust && cust.assignedEmployeeId));
+    data.site_visits = allSiteVisits.filter(s => String(s.customerId) === String(id)).map(sv => ({
       ...sv,
-      property: allProperties.find(p => p.id === sv.propertyId)
+      property: allProperties.find(p => String(p.id) === String(sv.propertyId))
     }));
-    data.follow_ups = allFollowUps.filter(f => f.customerId === id);
-    data.sales = allSales.filter(s => s.customerId === id).map(sa => ({
+    data.follow_ups = allFollowUps.filter(f => String(f.customerId) === String(id));
+    data.sales = allSales.filter(s => String(s.customerId) === String(id)).map(sa => ({
       ...sa,
-      property: allProperties.find(p => p.id === sa.propertyId)
+      property: allProperties.find(p => String(p.id) === String(sa.propertyId))
     }));
-    data.remarks = allRemarks.filter(r => r.targetModule === 'customers' && r.targetId === id);
-    data.documents = allDocs.filter(d => d.targetModule === 'customers' && d.targetId === id);
+    data.remarks = allRemarks.filter(r => r.targetModule === 'customers' && String(r.targetId) === String(id));
+    data.documents = allDocs.filter(d => d.targetModule === 'customers' && String(d.targetId) === String(id));
   } else if (module === 'properties') {
-    const prop = allProperties.find(p => p.id === id);
-    data.employee = allEmployees.find(e => e.id === (prop && prop.assignedEmployeeId));
-    data.site_visits = allSiteVisits.filter(s => s.propertyId === id).map(sv => ({
+    const prop = allProperties.find(p => String(p.id) === String(id));
+    data.employee = allEmployees.find(e => String(e.id) === String(prop && prop.assignedEmployeeId));
+    data.site_visits = allSiteVisits.filter(s => String(s.propertyId) === String(id)).map(sv => ({
       ...sv,
-      customer: allCustomers.find(c => c.id === sv.customerId)
+      customer: allCustomers.find(c => String(c.id) === String(sv.customerId))
     }));
-    data.sales = allSales.filter(s => s.propertyId === id);
-    data.remarks = allRemarks.filter(r => r.targetModule === 'properties' && r.targetId === id);
-    data.documents = allDocs.filter(d => d.targetModule === 'properties' && d.targetId === id);
+    data.sales = allSales.filter(s => String(s.propertyId) === String(id));
+    data.remarks = allRemarks.filter(r => r.targetModule === 'properties' && String(r.targetId) === String(id));
+    data.documents = allDocs.filter(d => d.targetModule === 'properties' && String(d.targetId) === String(id));
     data.viewsCount = data.site_visits.length;
     data.viewedBy = data.site_visits.map(v => v.customer).filter(Boolean);
   } else {

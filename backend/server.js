@@ -215,11 +215,38 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   const db = readDb();
   const payload = req.body;
 
-  // Generate automated primary key if not provided (e.g. CUST-102)
+  // Generate automated primary key if not provided (e.g. CUST-003)
   if (!payload.id) {
-    const count = (db[module] || []).length + 1;
-    const prefix = module.substring(0, 4).toUpperCase();
-    payload.id = `${prefix}-${String(100 + count)}`;
+    const prefixMap = {
+      employees: 'EMP',
+      customers: 'CUST',
+      leads: 'LEAD',
+      properties: 'PROP',
+      projects: 'PROJ',
+      site_visits: 'VISIT',
+      follow_ups: 'FOLLOW',
+      remarks: 'REM',
+      tasks: 'TASK',
+      sales: 'SALE',
+      documents: 'DOC',
+      attendance: 'ATT',
+      daily_prices: 'PRICE'
+    };
+    const prefix = prefixMap[module] || module.substring(0, 4).toUpperCase();
+    
+    // Find max number among existing IDs starting with this prefix
+    const existingIds = (db[module] || []).map(r => r.id).filter(id => id && String(id).startsWith(prefix));
+    let maxNum = 0;
+    existingIds.forEach(id => {
+      const parts = id.split('-');
+      const num = parseInt(parts[1]);
+      if (!isNaN(num) && num > maxNum) {
+        maxNum = num;
+      }
+    });
+    
+    const nextNum = maxNum > 0 ? maxNum + 1 : (db[module] || []).length + 1;
+    payload.id = `${prefix}-${String(nextNum).padStart(3, '0')}`;
   }
 
   // Populate basic date tracker if applicable
@@ -231,6 +258,12 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     }
     if (f.name === 'last_updated') {
       payload[f.name] = new Date().toLocaleString('en-IN');
+    }
+    if (f.name === 'created_by' && !payload[f.name]) {
+      payload[f.name] = req.user.name;
+    }
+    if (f.name === 'date' && !payload[f.name]) {
+      payload[f.name] = new Date().toLocaleDateString('en-IN');
     }
   });
 
@@ -325,6 +358,49 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   // Sync to Google sheets
   syncToSheets(module);
   res.json({ success: true, message: `Record ${id} deleted successfully.` });
+});
+
+// --- EMPLOYEE LOCATION TRACKING SYSTEM ---
+
+// Log location entry
+app.post('/api/location/log', authenticateToken, (req, res) => {
+  const { employeeId, employeeName, latitude, longitude, status } = req.body;
+  const db = readDb();
+  
+  if (!db.location_logs) db.location_logs = [];
+  
+  const logEntry = {
+    id: `LOC-${Date.now()}`,
+    employeeId,
+    employeeName,
+    latitude,  // Encrypted from frontend
+    longitude, // Encrypted from frontend
+    status,    // 'sharing' or 'ended'
+    timestamp: new Date().toISOString()
+  };
+  
+  db.location_logs.push(logEntry);
+  writeDb(db);
+  res.json({ success: true, log: logEntry });
+});
+
+// Fetch active location logs
+app.get('/api/location/active', authenticateToken, (req, res) => {
+  const db = readDb();
+  const logs = db.location_logs || [];
+  
+  // Find the latest entry for each employee
+  const activeLocs = {};
+  logs.forEach(log => {
+    const empId = log.employeeId;
+    if (!activeLocs[empId] || new Date(log.timestamp) > new Date(activeLocs[empId].timestamp)) {
+      activeLocs[empId] = log;
+    }
+  });
+  
+  // Only return those who are actively 'sharing'
+  const result = Object.values(activeLocs).filter(loc => loc.status === 'sharing');
+  res.json(result);
 });
 
 // --- GLOBAL 360° SEARCH ENGINE ---
@@ -618,6 +694,111 @@ app.post('/api/settings/sync-now', authenticateToken, checkPermission('settings'
     res.status(500).json({ message: 'Failed full sync: ' + err.message });
   }
 });
+
+// --- LEAD ROTATION AUTO-REASSIGNMENT SCHEDULER ---
+const rotateLeadsTask = () => {
+  try {
+    const metadata = readMetadata();
+    const config = metadata.automationConfig || { leadRotationActive: true, rotationHours: 24 };
+    
+    // Check if lead rotation engine is active
+    if (!config.leadRotationActive) return;
+
+    const db = readDb();
+    const leads = db.leads || [];
+    // Only assign to active employees with 'Sales' or 'Employee' roles
+    const employees = (db.employees || []).filter(e => e.status === 'Active' && (e.role === 'Sales' || e.role === 'Employee'));
+    if (employees.length === 0) return;
+    
+    const remarks = db.remarks || [];
+    const now = Date.now();
+    
+    // Inactivity rotation threshold (read dynamically from config)
+    const rotationHours = parseFloat(config.rotationHours) || 24;
+    const ROTATION_TIMEOUT = rotationHours * 60 * 60 * 1000; 
+    const rotatedSources = config.rotatedSources || [];
+    
+    let dbChanged = false;
+    
+    leads.forEach(lead => {
+      // Skip finalized leads
+      if (lead.status === 'Won' || lead.status === 'Closed' || lead.status === 'Lost') return;
+      
+      // Skip if rotation is explicitly disabled for this specific lead
+      if (lead.enableRotation === false) return;
+      
+      // Skip rotation if this source is not enabled in preferences
+      if (rotatedSources.length > 0 && !rotatedSources.includes(lead.source)) return;
+      
+      // Calculate baseline activity time
+      let lastActionTime = new Date(lead.dateAdded || new Date()).getTime();
+      
+      // Find latest remark follow-up
+      const leadRemarks = remarks.filter(r => r.targetModule === 'leads' && String(r.targetId) === String(lead.id));
+      if (leadRemarks.length > 0) {
+        const latestRemark = leadRemarks.sort((a, b) => new Date(b.timestamp || b.date) - new Date(a.timestamp || a.date))[0];
+        lastActionTime = new Date(latestRemark.timestamp || latestRemark.date).getTime();
+      }
+      
+      if (now - lastActionTime > ROTATION_TIMEOUT) {
+        // Filter rotation assignment pool by lead's preferred employees list if set
+        let pool = employees;
+        if (lead.preferredEmployees) {
+          const preferredIds = String(lead.preferredEmployees).split(',').map(id => id.trim()).filter(Boolean);
+          if (preferredIds.length > 0) {
+            const eligibleEmps = employees.filter(e => preferredIds.includes(String(e.id)));
+            if (eligibleEmps.length > 0) {
+              pool = eligibleEmps;
+            }
+          }
+        }
+
+        const currentEmpId = lead.assignedEmployeeId;
+        const currentIndex = pool.findIndex(e => String(e.id) === String(currentEmpId));
+        
+        // Find next employee index from the pool
+        const nextIndex = (currentIndex + 1) % pool.length;
+        const nextEmp = pool[nextIndex];
+        
+        if (nextEmp && String(nextEmp.id) !== String(currentEmpId)) {
+          lead.assignedEmployeeId = nextEmp.id;
+          
+          // Append system audit remark noting the rotation
+          if (!db.remarks) db.remarks = [];
+          db.remarks.push({
+            id: `REM-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            targetModule: 'leads',
+            targetId: lead.id,
+            comment: `System: Lead rotated automatically from ${pool[currentIndex]?.name || 'unassigned'} to ${nextEmp.name} due to inactivity.`,
+            author: 'System Rotation Engine',
+            date: new Date().toLocaleDateString('en-IN'),
+            timestamp: new Date().toISOString()
+          });
+          
+          // Log recent activity update
+          if (!db.activity_logs) db.activity_logs = [];
+          db.activity_logs.unshift({
+            user: 'System',
+            action: `Auto-rotated Lead "${lead.name}" to ${nextEmp.name} (inactivity)`,
+            timestamp: new Date().toISOString()
+          });
+          
+          dbChanged = true;
+        }
+      }
+    });
+    
+    if (dbChanged) {
+      writeDb(db);
+    }
+  } catch (err) {
+    console.error('Lead Rotation Scheduler Error:', err);
+  }
+};
+
+// Start background task: Check immediately after 10 seconds, and run every 5 minutes
+setTimeout(rotateLeadsTask, 10000);
+setInterval(rotateLeadsTask, 5 * 60 * 1000);
 
 app.listen(PORT, () => {
   console.log(`Gagan Realtech ERP+CRM API Server running on port ${PORT}`);

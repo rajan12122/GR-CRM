@@ -12,7 +12,10 @@ import {
   Select, 
   MenuItem, 
   FormHelperText,
-  Grid
+  Grid,
+  Chip,
+  Switch,
+  FormControlLabel
 } from '@mui/material';
 import { useApp } from '../context/AppContext';
 
@@ -27,6 +30,7 @@ const DynamicForm = ({
   const { moduleData, fetchModuleData, metadata } = useApp();
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
+  const [customValues, setCustomValues] = useState({});
 
   // Trigger references fetches on form open
   useEffect(() => {
@@ -40,13 +44,41 @@ const DynamicForm = ({
 
       // Populate form data
       if (initialData) {
-        setFormData({ ...initialData });
+        const initialForm = {};
+        const initialCustom = {};
+        fields.forEach(f => {
+          const val = initialData[f.name];
+          if (f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup]) {
+            const options = metadata.chips[f.chipGroup];
+            const hasOption = options.some(opt => opt.value === val);
+            if (val && !hasOption) {
+              initialForm[f.name] = 'Other';
+              initialCustom[f.name] = val;
+            } else {
+              initialForm[f.name] = val || '';
+            }
+          } else if (f.type === 'ref' && f.refModule) {
+            const options = moduleData[f.refModule] || [];
+            const hasOption = options.some(opt => opt.id === val);
+            if (val && !hasOption) {
+              initialForm[f.name] = 'Other';
+              initialCustom[f.name] = val;
+            } else {
+              initialForm[f.name] = val || '';
+            }
+          } else {
+            initialForm[f.name] = val || '';
+          }
+        });
+        setFormData(initialForm);
+        setCustomValues(initialCustom);
       } else {
         const defaultForm = {};
         fields.forEach(f => {
-          defaultForm[f.name] = f.type === 'number' ? '' : '';
+          defaultForm[f.name] = '';
         });
         setFormData(defaultForm);
+        setCustomValues({});
       }
       setErrors({});
     }
@@ -64,12 +96,29 @@ const DynamicForm = ({
     }
   };
 
+  const handleCustomChange = (name, val) => {
+    setCustomValues(prev => ({
+      ...prev,
+      [name]: val
+    }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+  };
+
   const validate = () => {
     const newErrors = {};
     fields.forEach(f => {
+      if (f.name === 'id' && !initialData) return; // Skip validation for auto-assigned ID
+      
       if (f.required) {
         const val = formData[f.name];
-        if (val === undefined || val === null || String(val).trim() === '') {
+        if (val === 'Other') {
+          const custVal = customValues[f.name];
+          if (!custVal || String(custVal).trim() === '') {
+            newErrors[f.name] = `Please specify the custom ${f.label}.`;
+          }
+        } else if (val === undefined || val === null || String(val).trim() === '') {
           newErrors[f.name] = `${f.label} is required.`;
         }
       }
@@ -81,7 +130,13 @@ const DynamicForm = ({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validate()) {
-      onSubmit(formData);
+      const payload = { ...formData };
+      fields.forEach(f => {
+        if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
+          payload[f.name] = customValues[f.name] || '';
+        }
+      });
+      onSubmit(payload);
     }
   };
 
@@ -111,12 +166,15 @@ const DynamicForm = ({
         <DialogContent sx={{ py: 2 }}>
           <Grid container spacing={2}>
             {fields.map(f => {
+              if (f.name === 'id' && !initialData) return null; // Hide auto-generated ID field on create
+              
               // Primary keys or non-editable fields (like ID on edit) should be read-only
               const isReadOnly = f.editable === false && initialData;
 
               // 1. SELECT TYPE FIELD
               if (f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup]) {
                 const options = metadata.chips[f.chipGroup];
+                const isOther = formData[f.name] === 'Other';
                 return (
                   <Grid item xs={12} key={f.name}>
                     <FormControl 
@@ -136,9 +194,26 @@ const DynamicForm = ({
                             {opt.label}
                           </MenuItem>
                         ))}
+                        <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                          Other (Specify...)
+                        </MenuItem>
                       </Select>
                       {errors[f.name] && <FormHelperText>{errors[f.name]}</FormHelperText>}
                     </FormControl>
+
+                    {isOther && (
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        label={`Specify Custom ${f.label}`}
+                        value={customValues[f.name] || ''}
+                        onChange={(e) => handleCustomChange(f.name, e.target.value)}
+                        placeholder="Type custom details here..."
+                        sx={{ mt: 1.5 }}
+                        required
+                      />
+                    )}
                   </Grid>
                 );
               }
@@ -146,6 +221,7 @@ const DynamicForm = ({
               // 2. REFERENCE TYPE FIELD (Lookups)
               if (f.type === 'ref' && f.refModule) {
                 const options = getReferenceOptions(f.refModule);
+                const isOther = formData[f.name] === 'Other';
                 return (
                   <Grid item xs={12} key={f.name}>
                     <FormControl 
@@ -165,9 +241,99 @@ const DynamicForm = ({
                             {opt.name ? `${opt.name} (${opt.id})` : opt.id}
                           </MenuItem>
                         ))}
+                        <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                          Other (Specify...)
+                        </MenuItem>
                       </Select>
                       {errors[f.name] && <FormHelperText>{errors[f.name]}</FormHelperText>}
                     </FormControl>
+
+                    {isOther && (
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={2}
+                        label={`Specify Custom ${f.label}`}
+                        value={customValues[f.name] || ''}
+                        onChange={(e) => handleCustomChange(f.name, e.target.value)}
+                        placeholder="Type custom reference here..."
+                        sx={{ mt: 1.5 }}
+                        required
+                      />
+                    )}
+                  </Grid>
+                );
+              }
+
+              // 2.5 MULTI-REFERENCE TYPE FIELD (Multi-Select Lookups)
+              if (f.type === 'multiref' && f.refModule) {
+                const options = getReferenceOptions(f.refModule);
+                const valArray = Array.isArray(formData[f.name]) 
+                  ? formData[f.name] 
+                  : formData[f.name] 
+                    ? String(formData[f.name]).split(',').filter(Boolean) 
+                    : [];
+                
+                return (
+                  <Grid item xs={12} key={f.name}>
+                    <FormControl 
+                      fullWidth 
+                      error={!!errors[f.name]}
+                      size="medium"
+                    >
+                      <InputLabel>{f.label}</InputLabel>
+                      <Select
+                        multiple
+                        label={f.label}
+                        value={valArray}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleChange(f.name, Array.isArray(val) ? val.join(',') : val);
+                        }}
+                        disabled={isReadOnly}
+                        renderValue={(selected) => (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {selected.map((value) => {
+                              const emp = options.find(o => String(o.id) === String(value));
+                              return (
+                                <Chip 
+                                  key={value} 
+                                  label={emp ? emp.name : value} 
+                                  size="small" 
+                                  sx={{ borderRadius: '4px' }}
+                                />
+                              );
+                            })}
+                          </Box>
+                        )}
+                      >
+                        {options.map(opt => (
+                          <MenuItem key={opt.id} value={opt.id}>
+                            {opt.name ? `${opt.name} (${opt.id})` : opt.id}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                      {errors[f.name] && <FormHelperText>{errors[f.name]}</FormHelperText>}
+                    </FormControl>
+                  </Grid>
+                );
+              }
+
+              // 2.7 BOOLEAN / SWITCH FIELD
+              if (f.type === 'boolean') {
+                return (
+                  <Grid item xs={12} key={f.name}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={!!formData[f.name]}
+                          onChange={(e) => handleChange(f.name, e.target.checked)}
+                          disabled={isReadOnly}
+                          color="primary"
+                        />
+                      }
+                      label={f.label}
+                    />
                   </Grid>
                 );
               }

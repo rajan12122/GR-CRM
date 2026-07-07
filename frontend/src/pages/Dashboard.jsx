@@ -12,8 +12,11 @@ import {
   ListItemText,
   Divider,
   Paper,
-  Chip
+  Chip,
+  Menu,
+  MenuItem
 } from '@mui/material';
+import EntityTooltip from '../components/EntityTooltip';
 import * as Icons from 'lucide-react';
 import { 
   AreaChart, 
@@ -42,6 +45,23 @@ const Dashboard = () => {
   } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+
+  // Dashboard quick-add dropdown menu controls
+  const [addMenuAnchor, setAddMenuAnchor] = useState(null);
+  const addMenuOpen = Boolean(addMenuAnchor);
+  
+  const handleAddClick = (event) => {
+    setAddMenuAnchor(event.currentTarget);
+  };
+  
+  const handleAddClose = () => {
+    setAddMenuAnchor(null);
+  };
+  
+  const handleAddOption = (moduleKey) => {
+    handleAddClose();
+    navigate(`/module/${moduleKey}?add=true`);
+  };
 
   // Load modules on dashboard boot
   useEffect(() => {
@@ -89,7 +109,7 @@ const Dashboard = () => {
   const presentToday = attendance.filter(a => a.date === '2026-07-03' && (a.status === 'Present' || a.status === 'Late')).length;
   
   // 3. Properties available vs sold
-  const availableProperties = properties.filter(p => p.status === 'Available').length;
+  const availableProperties = properties.filter(p => !p.status || p.status === 'Available').length;
   
   // 4. Pending followups today
   const pendingFollowupsToday = followUps.filter(f => f.status === 'Pending').length;
@@ -153,18 +173,64 @@ const Dashboard = () => {
           <Button 
             variant="contained" 
             startIcon={<Icons.Plus size={18} />} 
-            onClick={() => navigate('/module/customers')}
+            onClick={handleAddClick}
             sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
           >
-            Register Client
+            + Add
           </Button>
+          <Menu
+            anchorEl={addMenuAnchor}
+            open={addMenuOpen}
+            onClose={handleAddClose}
+            PaperProps={{
+              sx: {
+                borderRadius: '12px',
+                mt: 1,
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                border: '1px solid #E2E8F0',
+                minWidth: 180
+              }
+            }}
+          >
+            <MenuItem onClick={() => handleAddOption('properties')}>
+              <Icons.Home size={16} style={{ marginRight: 8, color: '#64748B' }} />
+              Property
+            </MenuItem>
+            <MenuItem onClick={() => handleAddOption('customers')}>
+              <Icons.Users size={16} style={{ marginRight: 8, color: '#64748B' }} />
+              Customer
+            </MenuItem>
+            <MenuItem onClick={() => handleAddOption('leads')}>
+              <Icons.Compass size={16} style={{ marginRight: 8, color: '#64748B' }} />
+              Lead
+            </MenuItem>
+            <MenuItem onClick={() => handleAddOption('employees')}>
+              <Icons.UserSquare2 size={16} style={{ marginRight: 8, color: '#64748B' }} />
+              Employee
+            </MenuItem>
+            <MenuItem onClick={() => handleAddOption('projects')}>
+              <Icons.Layers size={16} style={{ marginRight: 8, color: '#64748B' }} />
+              Project
+            </MenuItem>
+            <MenuItem onClick={() => handleAddOption('daily_prices')}>
+              <Icons.BadgePercent size={16} style={{ marginRight: 8, color: '#64748B' }} />
+              Daily Price List
+            </MenuItem>
+            <MenuItem onClick={() => handleAddOption('dealers')}>
+              <Icons.Building size={16} style={{ marginRight: 8, color: '#64748B' }} />
+              Property Dealer
+            </MenuItem>
+          </Menu>
         </Box>
       </Box>
 
       {/* KPI Cards Row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card 
+            onClick={() => navigate('/module/sales')}
+            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
+          >
             <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -185,7 +251,10 @@ const Dashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card 
+            onClick={() => navigate('/module/customers')}
+            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
+          >
             <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -206,7 +275,10 @@ const Dashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card 
+            onClick={() => navigate('/module/properties')}
+            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
+          >
             <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -227,7 +299,10 @@ const Dashboard = () => {
         </Grid>
 
         <Grid item xs={12} sm={6} md={3}>
-          <Card>
+          <Card 
+            onClick={() => navigate('/module/attendance')}
+            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
+          >
             <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Box>
                 <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
@@ -348,9 +423,18 @@ const Dashboard = () => {
                         <ListItem key={f.id} disablePadding sx={{ py: 1.5, borderBottom: '1px solid #F1F5F9' }}>
                           <ListItemText 
                             primary={client.name}
-                            secondary={`Scheduled: ${f.time || '10:00 AM'} • Assigned RM ID: ${f.employeeId}`}
+                            secondary={
+                              <span>
+                                Scheduled: {f.time || '10:00 AM'} • Assigned RM ID:{' '}
+                                <EntityTooltip moduleName="employees" id={f.employeeId}>
+                                  <strong style={{ borderBottom: '1px dotted #94A3B8', cursor: 'help' }}>
+                                    {f.employeeId}
+                                  </strong>
+                                </EntityTooltip>
+                              </span>
+                            }
                             primaryTypographyProps={{ fontWeight: 600, fontSize: '14px' }}
-                            secondaryTypographyProps={{ fontSize: '12px' }}
+                            secondaryTypographyProps={{ fontSize: '12px', component: 'div' }}
                           />
                           <Chip label={f.status} size="small" color={f.status === 'Pending' ? 'warning' : 'success'} sx={{ borderRadius: '4px', fontSize: '10px', height: 20 }} />
                         </ListItem>

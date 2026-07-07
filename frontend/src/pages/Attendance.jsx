@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { 
   Box, 
   Card, 
@@ -25,7 +25,11 @@ import {
   List,
   ListItem,
   ListItemText,
-  IconButton
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -35,9 +39,170 @@ const Attendance = () => {
     moduleData, 
     fetchModuleData, 
     createRecord, 
+    updateRecord,
     deleteRecord,
-    user 
+    user,
+    logEmployeeLocation 
   } = useApp();
+
+  const [sharingLocation, setSharingLocation] = useState(
+    localStorage.getItem('gr_sharing_location') === 'true'
+  );
+  const [sharingError, setSharingError] = useState('');
+  const watchIdRef = useRef(null);
+  const intervalIdRef = useRef(null);
+
+  // Self-service Punch Card states
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayRecord = useMemo(() => {
+    return (moduleData.attendance || []).find(a => String(a.employeeId) === String(user?.id) && a.date === todayStr);
+  }, [moduleData.attendance, user, todayStr]);
+
+  const [issueDialogOpen, setIssueDialogOpen] = useState(false);
+  const [issueDate, setIssueDate] = useState(todayStr);
+  const [issueDesc, setIssueDesc] = useState('');
+  const [issueError, setIssueError] = useState('');
+  const [issueSuccess, setIssueSuccess] = useState('');
+
+  const handlePunchIn = async () => {
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 30);
+      const statusStr = isLate ? 'Late' : 'Present';
+      
+      const payload = {
+        employeeId: user?.id || 'EMP-001',
+        date: todayStr,
+        inTime: timeStr,
+        outTime: '--',
+        status: statusStr
+      };
+      await createRecord('attendance', payload);
+      fetchModuleData('attendance');
+
+      // Automatically start location sharing upon punching in
+      startLocationSharing();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handlePunchOut = async () => {
+    if (!todayRecord) return;
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      await updateRecord('attendance', todayRecord.id, {
+        ...todayRecord,
+        outTime: timeStr
+      });
+      fetchModuleData('attendance');
+
+      // Automatically stop location sharing upon punching out
+      await endLocationSharing();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleRaiseIssueSubmit = async (e) => {
+    e.preventDefault();
+    if (!issueDesc.trim()) {
+      setIssueError('Please specify the correction details.');
+      return;
+    }
+    try {
+      setIssueError('');
+      setIssueSuccess('');
+      await createRecord('notices', {
+        employeeId: user?.id || 'EMP-001',
+        category: 'Attendance Dispute',
+        note_content: `Dispute Date: ${issueDate} | Issue details: ${issueDesc}`
+      });
+      setIssueSuccess('Attendance correction dispute raised successfully. Admin notified!');
+      setIssueDesc('');
+      setTimeout(() => {
+        setIssueDialogOpen(false);
+        setIssueSuccess('');
+      }, 2000);
+    } catch (err) {
+      setIssueError('Failed to raise dispute request. Please try again.');
+    }
+  };
+
+  const startLocationSharing = () => {
+    if (!navigator.geolocation) {
+      setSharingError("Geolocation is not supported by your browser/device.");
+      return;
+    }
+
+    setSharingError("");
+    setSharingLocation(true);
+    localStorage.setItem('gr_sharing_location', 'true');
+
+    // Run initial capture
+    const captureLocation = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
+        },
+        (err) => {
+          console.error("Error logging position", err);
+        },
+        { enableHighAccuracy: true }
+      );
+    };
+
+    captureLocation();
+
+    // Watch position updates for instant movement updates
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      async (pos) => {
+        await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
+      },
+      (err) => {
+        setSharingError("Failed to lock location. Please enable GPS permissions.");
+        console.error(err);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+
+    // Setup 10-second interval timer for stationary updates
+    intervalIdRef.current = setInterval(captureLocation, 10000);
+  };
+
+  const endLocationSharing = async () => {
+    setSharingLocation(false);
+    localStorage.removeItem('gr_sharing_location');
+    setSharingError("");
+
+    if (watchIdRef.current) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+
+    if (intervalIdRef.current) {
+      clearInterval(intervalIdRef.current);
+      intervalIdRef.current = null;
+    }
+
+    await logEmployeeLocation(0, 0, 'ended');
+  };
+
+  useEffect(() => {
+    if (sharingLocation) {
+      startLocationSharing();
+    }
+    return () => {
+      if (watchIdRef.current) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      if (intervalIdRef.current) {
+        clearInterval(intervalIdRef.current);
+      }
+    };
+  }, []);
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
@@ -139,16 +304,104 @@ const Attendance = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      
-      {/* Title */}
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '26px', color: '#0F172A', fontFamily: 'Poppins' }}>
-          Attendance Log station
-        </Typography>
-        <Typography variant="body2" sx={{ color: '#64748B' }}>
-          Log employee timings manually, inspect monthly payouts, and calculate salary estimations.
-        </Typography>
-      </Box>
+      {/* Title & Self-Service Attendance Dashboard Grid */}
+      <Grid container spacing={3} sx={{ mb: 4 }} alignItems="stretch">
+        <Grid item xs={12} md={4} sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '26px', color: '#0F172A', fontFamily: 'Poppins' }}>
+            Attendance Log station
+          </Typography>
+          <Typography variant="body2" sx={{ color: '#64748B', mt: 1 }}>
+            Log employee timings manually, inspect monthly payouts, and calculate salary estimations.
+          </Typography>
+        </Grid>
+        
+        {/* Combined Punch In / Punch Out & Geolocation Tracking Card */}
+        <Grid item xs={12} sm={6} md={4}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', height: '100%', boxShadow: 'none', backgroundColor: sharingLocation ? 'rgba(34,197,94,0.03)' : '#FFFFFF' }}>
+            <CardContent sx={{ p: 2, '&:last-child': { pb: 2 }, display: 'flex', alignItems: 'center', gap: 2, height: '100%', boxSizing: 'border-box' }}>
+              <Box sx={{ 
+                backgroundColor: sharingLocation ? '#22C55E' : '#94A3B8', 
+                borderRadius: '50%', 
+                width: 10, 
+                height: 10, 
+                animation: sharingLocation ? 'pulse 1.8s infinite' : 'none' 
+              }} />
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', fontSize: '13px' }}>
+                  Duty Punch Terminal
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                  {todayRecord ? `Checked In: ${todayRecord.inTime}` : 'Not Punched In Today'}
+                </Typography>
+                {todayRecord && todayRecord.outTime !== '--' && (
+                  <Typography variant="caption" sx={{ color: '#16A34A', display: 'block', fontWeight: 600 }}>
+                    Checked Out: {todayRecord.outTime} ✅
+                  </Typography>
+                )}
+                <Typography variant="caption" sx={{ color: sharingLocation ? '#16A34A' : '#64748B', display: 'block', fontWeight: 600, mt: 0.5 }}>
+                  {sharingLocation ? '📡 GPS Tracking Active' : '🛑 GPS Tracking Paused'}
+                </Typography>
+                {sharingError && (
+                  <Typography variant="caption" sx={{ color: '#EF4444', display: 'block', fontSize: '10px' }}>
+                    {sharingError}
+                  </Typography>
+                )}
+              </Box>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {!todayRecord ? (
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="small"
+                    onClick={handlePunchIn}
+                    sx={{ borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'none', backgroundColor: '#22C55E' }}
+                  >
+                    Punch In
+                  </Button>
+                ) : todayRecord.outTime === '--' ? (
+                  <Button
+                    variant="contained"
+                    color="error"
+                    size="small"
+                    onClick={handlePunchOut}
+                    sx={{ borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'none' }}
+                  >
+                    Punch Out
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled
+                    sx={{ borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'none' }}
+                  >
+                    Completed
+                  </Button>
+                )}
+                
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => setIssueDialogOpen(true)}
+                  sx={{ fontSize: '10px', fontWeight: 700, textTransform: 'none', color: '#64748B', p: 0 }}
+                >
+                  Raise Issue ⚠️
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* CSS Pulse Animation rule */}
+      <style>{`
+        @keyframes pulse {
+          0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+          70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+          100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+      `}</style>
 
       {/* Stats Cards Row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -350,6 +603,64 @@ const Attendance = () => {
         </Grid>
       </Grid>
 
+    {/* Raise Attendance Issue Correction Dialog */}
+      <Dialog 
+        open={issueDialogOpen} 
+        onClose={() => setIssueDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: { borderRadius: '12px', p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', fontFamily: 'Poppins' }}>
+          Raise Attendance Issue
+        </DialogTitle>
+        <form onSubmit={handleRaiseIssueSubmit}>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 1 }}>
+            {issueError && <Alert severity="error" sx={{ fontSize: '12px' }}>{issueError}</Alert>}
+            {issueSuccess && <Alert severity="success" sx={{ fontSize: '12px' }}>{issueSuccess}</Alert>}
+            
+            <TextField
+              type="date"
+              label="Disputed Date"
+              value={issueDate}
+              onChange={(e) => setIssueDate(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+              required
+            />
+            
+            <TextField
+              multiline
+              rows={3}
+              label="Reason / Details"
+              placeholder="Explain the correction request (e.g. forgot to check out, client meeting from home)..."
+              value={issueDesc}
+              onChange={(e) => setIssueDesc(e.target.value)}
+              fullWidth
+              required
+            />
+          </DialogContent>
+          
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button 
+              size="small"
+              onClick={() => setIssueDialogOpen(false)} 
+              sx={{ textTransform: 'none', fontWeight: 700, color: '#64748B' }}
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary"
+              size="small"
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '6px' }}
+            >
+              Submit Issue
+            </Button>
+          </DialogActions>
+        </form>
+      </Dialog>
     </Box>
   );
 };

@@ -1,9 +1,10 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import axios from 'axios';
+import { encryptData } from '../utils/crypto';
 
 const AppContext = createContext();
 
-const API_BASE_URL = 'https://gr-crm-backend.onrender.com/api';
+export const API_BASE_URL = 'http://localhost:5000/api';
 
 // Set default auth token header if cached
 const cachedToken = localStorage.getItem('gr_crm_token');
@@ -45,6 +46,21 @@ export const AppProvider = ({ children }) => {
       // Fetch metadata config
       const metaRes = await axios.get(`${API_BASE_URL}/metadata`);
       setMetadata(metaRes.data);
+
+      // Pre-load reference lists to resolve ID names globally
+      const modulesToPreload = ['employees', 'customers', 'properties'];
+      const loaded = {};
+      await Promise.all(
+        modulesToPreload.map(async (m) => {
+          try {
+            const res = await axios.get(`${API_BASE_URL}/data/${m}`);
+            loaded[m] = res.data;
+          } catch (e) {
+            console.error(`Failed to preload lookup module ${m}:`, e);
+          }
+        })
+      );
+      setModuleData(prev => ({ ...prev, ...loaded }));
 
       // Fetch activity logs
       const logsRes = await axios.get(`${API_BASE_URL}/data/activity_logs`).catch(() => ({ data: [] }));
@@ -154,6 +170,25 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Log employee coordinates securely
+  const logEmployeeLocation = async (lat, lng, status) => {
+    try {
+      const encLat = encryptData(lat);
+      const encLng = encryptData(lng);
+      await axios.post(`${API_BASE_URL}/location/log`, {
+        employeeId: user?.id,
+        employeeName: user?.name,
+        latitude: encLat,
+        longitude: encLng,
+        status
+      });
+      return { success: true };
+    } catch (err) {
+      console.error('Failed to log location:', err);
+      return { success: false };
+    }
+  };
+
   // Remarks Timeline Operations
   const createRemark = async (targetModule, targetId, comment) => {
     try {
@@ -253,7 +288,8 @@ export const AppProvider = ({ children }) => {
         searchAll,
         saveMetadata,
         testSheetsSync,
-        triggerFullSheetsSync
+        triggerFullSheetsSync,
+        logEmployeeLocation
       }}
     >
       {children}

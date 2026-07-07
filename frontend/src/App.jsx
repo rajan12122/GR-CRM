@@ -14,6 +14,7 @@ import PipelineView from './pages/PipelineView';
 import EntityDetail from './pages/EntityDetail';
 import Attendance from './pages/Attendance';
 import Settings from './pages/Settings';
+import LocationTracker from './pages/LocationTracker';
 import PullToRefresh from './components/PullToRefresh';
 
 const MainLayout = () => {
@@ -79,6 +80,7 @@ const MainLayout = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/module/attendance" element={<Attendance />} />
+              <Route path="/module/location_tracker" element={<LocationTracker />} />
               <Route path="/module/:moduleName" element={<ModuleManager />} />
               <Route path="/module/:moduleName/:id" element={<EntityDetail />} />
               <Route path="/pipeline/:pipelineType" element={<PipelineView />} />

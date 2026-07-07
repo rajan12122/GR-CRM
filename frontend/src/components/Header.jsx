@@ -9,7 +9,10 @@ import {
   InputAdornment, 
   IconButton, 
   Badge,
-  Chip
+  Chip,
+  Menu,
+  MenuItem,
+  Divider
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -17,7 +20,17 @@ import { useApp } from '../context/AppContext';
 const Header = ({ onSearchClick, onMenuClick, onReload }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, metadata } = useApp();
+  const { user, metadata, activityLogs } = useApp();
+
+  const [notiAnchor, setNotiAnchor] = React.useState(null);
+  const notiOpen = Boolean(notiAnchor);
+
+  const handleNotiClick = (e) => {
+    setNotiAnchor(e.currentTarget);
+  };
+  const handleNotiClose = () => {
+    setNotiAnchor(null);
+  };
 
   // Helper to determine title from path
   const getPageTitle = () => {
@@ -115,11 +128,60 @@ const Header = ({ onSearchClick, onMenuClick, onReload }) => {
             <Icons.Settings size={18} color="#64748B" />
           </IconButton>
           
-          <IconButton sx={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
-            <Badge color="error" variant="dot">
+          <IconButton 
+            sx={{ backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}
+            onClick={handleNotiClick}
+            title="Activity Notifications"
+          >
+            <Badge color="error" badgeContent={activityLogs?.slice(0, 5).length || 0}>
               <Icons.Bell size={18} color="#64748B" />
             </Badge>
           </IconButton>
+          
+          <Menu
+            anchorEl={notiAnchor}
+            open={notiOpen}
+            onClose={handleNotiClose}
+            PaperProps={{
+              sx: {
+                borderRadius: '12px',
+                mt: 1.5,
+                boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+                border: '1px solid #E2E8F0',
+                width: 320,
+                maxHeight: 400
+              }
+            }}
+          >
+            <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>
+                Recent Activities
+              </Typography>
+              <Chip label="Live Feed" color="success" size="small" sx={{ height: 18, fontSize: '9px', fontWeight: 800 }} />
+            </Box>
+            <Divider />
+            {(!activityLogs || activityLogs.length === 0) ? (
+              <Box sx={{ p: 3, textAlign: 'center' }}>
+                <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                  No recent activities recorded.
+                </Typography>
+              </Box>
+            ) : (
+              activityLogs.slice(0, 5).map((log, index) => (
+                <Box key={index} sx={{ p: 1.5, borderBottom: '1px solid #F1F5F9', '&:last-child': { borderBottom: 'none' } }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: '#0F172A' }}>
+                    {log.user || 'System'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#475569', fontSize: '11px', mt: 0.5 }}>
+                    {log.action}
+                  </Typography>
+                  <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '9px', display: 'block', mt: 0.5 }}>
+                    {log.timestamp ? new Date(log.timestamp).toLocaleTimeString() : 'Just now'}
+                  </Typography>
+                </Box>
+              ))
+            )}
+          </Menu>
 
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, pl: 1, borderLeft: '1px solid #E2E8F0' }}>
             <Chip 

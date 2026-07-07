@@ -10,17 +10,6 @@
       "salary": 150000,
       "joinDate": "2024-01-15",
       "password": ""
-    },
-    {
-      "id": 2,
-      "name": "Rajan Gupta",
-      "email": "gupta.rajan1212@gmail.com",
-      "phone": 6239978577,
-      "role": "Admin",
-      "status": "Active",
-      "salary": 0,
-      "joinDate": "2026-05-19",
-      "password": "rajan123"
     }
   ],
   "customers": [
@@ -47,30 +36,6 @@
       "city": "Chandigarh",
       "requirements": "4BHK independent house or villa near the main highway.",
       "dateAdded": "2026-06-15"
-    },
-    {
-      "id": "CUST-003",
-      "name": "Harpreet Singh",
-      "email": "harpreet.singh@outlook.com",
-      "phone": 9872198721,
-      "stage": "Booked",
-      "assignedEmployeeId": "EMP-004",
-      "budget": 6000000,
-      "city": "Zirakpur",
-      "requirements": "2BHK residential flat with ready possession.",
-      "dateAdded": "2026-06-01"
-    },
-    {
-      "id": 12,
-      "name": "Mansi",
-      "email": "gdsfd",
-      "phone": 7888737816,
-      "stage": "New Lead",
-      "assignedEmployeeId": "EMP-001",
-      "budget": 2.5,
-      "city": "Mohali",
-      "requirements": "f",
-      "dateAdded": "2026-07-05"
     }
   ],
   "leads": [
@@ -420,126 +385,6 @@
       "demand": "8.40 Cr",
       "lead_source": "Whatsapp",
       "initial_notes": "       25% built up, Booked Deal"
-    },
-    {
-      "id": 453,
-      "status": "",
-      "date": "",
-      "contact_person_name": "",
-      "contact_number": "",
-      "dealer_owner_booked": "",
-      "dealer_firm_name": "",
-      "r_c_i": "",
-      "propertyType": "Booth LOI",
-      "locality": "",
-      "sector_block": "",
-      "address_number": "",
-      "size": "25 Sq.yd",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "",
-      "time": "",
-      "demand": "",
-      "lead_source": "",
-      "initial_notes": ""
-    },
-    {
-      "id": 454,
-      "status": "",
-      "date": "",
-      "contact_person_name": "",
-      "contact_number": "",
-      "dealer_owner_booked": "",
-      "dealer_firm_name": "",
-      "r_c_i": "",
-      "propertyType": "Bayshop LOI",
-      "locality": "",
-      "sector_block": "",
-      "address_number": "",
-      "size": "60 Sq.yd",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "",
-      "time": "",
-      "demand": "",
-      "lead_source": "",
-      "initial_notes": ""
-    },
-    {
-      "id": 455,
-      "status": "",
-      "date": "",
-      "contact_person_name": "",
-      "contact_number": "",
-      "dealer_owner_booked": "",
-      "dealer_firm_name": "",
-      "r_c_i": "",
-      "propertyType": "Bayshop LOI",
-      "locality": "",
-      "sector_block": "",
-      "address_number": "",
-      "size": "60 Sq.yd",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "",
-      "time": "",
-      "demand": "",
-      "lead_source": "",
-      "initial_notes": ""
-    },
-    {
-      "id": 456,
-      "status": "",
-      "date": "",
-      "contact_person_name": "",
-      "contact_number": "",
-      "dealer_owner_booked": "",
-      "dealer_firm_name": "",
-      "r_c_i": "",
-      "propertyType": "Plot ",
-      "locality": "",
-      "sector_block": "",
-      "address_number": "",
-      "size": "275 Sq.Yd.",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "",
-      "time": "",
-      "demand": "",
-      "lead_source": "",
-      "initial_notes": ""
-    },
-    {
-      "id": 457,
-      "status": "",
-      "date": "",
-      "contact_person_name": "",
-      "contact_number": "",
-      "dealer_owner_booked": "",
-      "dealer_firm_name": "",
-      "r_c_i": "",
-      "propertyType": "",
-      "locality": "",
-      "sector_block": "",
-      "address_number": "",
-      "size": "",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "",
-      "time": "",
-      "demand": "",
-      "lead_source": "",
-      "initial_notes": ""
     }
   ],
   "projects": [
@@ -1802,11 +1647,27 @@
     },
     {
       "id": "ATTE-105",
+      "employeeId": 2,
+      "date": "2026-07-07",
+      "inTime": "05:01 PM",
+      "outTime": "05:01 PM",
+      "status": "Late"
+    },
+    {
+      "id": "ATTE-105",
+      "employeeId": 2,
+      "date": "2026-07-07",
+      "inTime": "05:01 PM",
+      "outTime": "--",
+      "status": "Late"
+    },
+    {
+      "id": "ATT-106",
       "employeeId": "EMP-001",
-      "date": "2026-07-03",
-      "inTime": "09:00 AM",
-      "outTime": "06:00 PM",
-      "status": "Present"
+      "date": "2026-07-07",
+      "inTime": "06:10 PM",
+      "outTime": "06:12 PM",
+      "status": "Late"
     }
   ],
   "leaves": [
@@ -1855,6 +1716,15 @@
     },
     {
       "id": "REM-003"
+    },
+    {
+      "id": "REM-1783423938267"
+    },
+    {
+      "id": "REM-1783423940780"
+    },
+    {
+      "id": "REM-1783423942630"
     }
   ],
   "documents": [
@@ -1871,6 +1741,78 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783430152566",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record 453 in properties",
+      "dateTime": "7/7/2026, 6:45:52 pm"
+    },
+    {
+      "id": "LOG-1783430151262",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record 454 in properties",
+      "dateTime": "7/7/2026, 6:45:51 pm"
+    },
+    {
+      "id": "LOG-1783430150036",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record 455 in properties",
+      "dateTime": "7/7/2026, 6:45:50 pm"
+    },
+    {
+      "id": "LOG-1783430148372",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record 456 in properties",
+      "dateTime": "7/7/2026, 6:45:48 pm"
+    },
+    {
+      "id": "LOG-1783430147843",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record 457 in properties",
+      "dateTime": "7/7/2026, 6:45:47 pm"
+    },
+    {
+      "id": "LOG-1783428317874",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record CUST-003 in customers",
+      "dateTime": "7/7/2026, 6:15:17 pm"
+    },
+    {
+      "id": "LOG-1783428275711",
+      "employeeName": "Pankaj Sharma",
+      "action": "Created record CUST-003 in customers",
+      "dateTime": "7/7/2026, 6:14:35 pm"
+    },
+    {
+      "id": "LOG-1783428179362",
+      "employeeName": "Pankaj Sharma",
+      "action": "Updated record ATT-106 in attendance",
+      "dateTime": "7/7/2026, 6:12:59 pm"
+    },
+    {
+      "id": "LOG-1783428024562",
+      "employeeName": "Pankaj Sharma",
+      "action": "Created record ATT-106 in attendance",
+      "dateTime": "7/7/2026, 6:10:24 pm"
+    },
+    {
+      "id": "LOG-1783426621932",
+      "employeeName": "Rajan Gupta",
+      "action": "Deleted record 2 in employees",
+      "dateTime": "7/7/2026, 5:47:01 pm"
+    },
+    {
+      "id": "LOG-1783423892816",
+      "employeeName": "Rajan Gupta",
+      "action": "Updated record ATTE-105 in attendance",
+      "dateTime": "7/7/2026, 5:01:32 pm"
+    },
+    {
+      "id": "LOG-1783423885436",
+      "employeeName": "Rajan Gupta",
+      "action": "Created record ATTE-105 in attendance",
+      "dateTime": "7/7/2026, 5:01:25 pm"
+    },
     {
       "id": "LOG-1783258869126",
       "employeeName": "Pankaj Sharma",
@@ -1938,5 +1880,358 @@
       "dateTime": "2026-06-18 11:35 AM"
     }
   ],
-  "daily_prices": []
+  "daily_prices": [],
+  "location_logs": [
+    {
+      "id": "LOC-1783419387726",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
+      "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:16:27.728Z"
+    },
+    {
+      "id": "LOC-1783419387757",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
+      "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:16:27.757Z"
+    },
+    {
+      "id": "LOC-1783419408119",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
+      "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:16:48.119Z"
+    },
+    {
+      "id": "LOC-1783419408124",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
+      "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:16:48.125Z"
+    },
+    {
+      "id": "LOC-1783419408135",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
+      "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:16:48.135Z"
+    },
+    {
+      "id": "LOC-1783419965636",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
+      "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:26:05.636Z"
+    },
+    {
+      "id": "LOC-1783419965641",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
+      "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:26:05.641Z"
+    },
+    {
+      "id": "LOC-1783419965645",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
+      "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:26:05.645Z"
+    },
+    {
+      "id": "LOC-1783419976292",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
+      "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:26:16.292Z"
+    },
+    {
+      "id": "LOC-1783419976296",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
+      "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:26:16.296Z"
+    },
+    {
+      "id": "LOC-1783419976299",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
+      "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:26:16.299Z"
+    },
+    {
+      "id": "LOC-1783420183192",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
+      "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:29:43.192Z"
+    },
+    {
+      "id": "LOC-1783420245420",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnV0eGFwdHtrZXE=",
+      "longitude": "cHdpdn1nanJwf2JwdXBqa3I=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:30:45.420Z"
+    },
+    {
+      "id": "LOC-1783420307775",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnR0e2E=",
+      "longitude": "cHdpdn1nanN1dW18enFmanw=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:31:47.775Z"
+    },
+    {
+      "id": "LOC-1783420370045",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd3dGZ3e3hqY3c=",
+      "longitude": "cHdpdn1nanFydGVwen9vZ3Y=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:32:50.045Z"
+    },
+    {
+      "id": "LOC-1783420432342",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:33:52.343Z"
+    },
+    {
+      "id": "LOC-1783420494469",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
+      "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:34:54.469Z"
+    },
+    {
+      "id": "LOC-1783421330625",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd3fGx1dHxoZXB3",
+      "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T10:48:50.625Z"
+    },
+    {
+      "id": "LOC-1783422149398",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
+      "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T11:02:29.398Z"
+    },
+    {
+      "id": "LOC-1783422149406",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
+      "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T11:02:29.406Z"
+    },
+    {
+      "id": "LOC-1783422149412",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
+      "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T11:02:29.412Z"
+    },
+    {
+      "id": "LOC-1783423884443",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd2eGR0d31oYXJ2",
+      "longitude": "cHdpdn1nanZ2eWB8d35oYHM=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T11:31:24.443Z"
+    },
+    {
+      "id": "LOC-1783423884455",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd2eGR0d31oYXJ2",
+      "longitude": "cHdpdn1nanZ2eWB8d35oYHM=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T11:31:24.455Z"
+    },
+    {
+      "id": "LOC-1783423884462",
+      "employeeId": 2,
+      "employeeName": "Rajan Gupta",
+      "latitude": "dHFpd3tpZnd2eGR0d31oYXJ2",
+      "longitude": "cHdpdn1nanZ2eWB8d35oYHM=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T11:31:24.462Z"
+    },
+    {
+      "id": "LOC-1783426962992",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnR0eWZ8e3ln",
+      "longitude": "cHdpdn1nanBxfWZyd3prY3c=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:22:42.992Z"
+    },
+    {
+      "id": "LOC-1783426962997",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnR0eWZ8e3ln",
+      "longitude": "cHdpdn1nanBxfWZyd3prY3c=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:22:42.997Z"
+    },
+    {
+      "id": "LOC-1783426962999",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnR0eWZ8e3ln",
+      "longitude": "cHdpdn1nanBxfWZyd3prY3c=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:22:42.999Z"
+    },
+    {
+      "id": "LOC-1783426963129",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dw==",
+      "longitude": "dw==",
+      "status": "ended",
+      "timestamp": "2026-07-07T12:22:43.129Z"
+    },
+    {
+      "id": "LOC-1783427585685",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:33:05.685Z"
+    },
+    {
+      "id": "LOC-1783427585690",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:33:05.690Z"
+    },
+    {
+      "id": "LOC-1783427593579",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:33:13.579Z"
+    },
+    {
+      "id": "LOC-1783427593583",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:33:13.583Z"
+    },
+    {
+      "id": "LOC-1783427593586",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:33:13.586Z"
+    },
+    {
+      "id": "LOC-1783427594454",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dw==",
+      "longitude": "dw==",
+      "status": "ended",
+      "timestamp": "2026-07-07T12:33:14.454Z"
+    },
+    {
+      "id": "LOC-1783428025162",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:40:25.162Z"
+    },
+    {
+      "id": "LOC-1783428025165",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
+      "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:40:25.165Z"
+    },
+    {
+      "id": "LOC-1783428179383",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dw==",
+      "longitude": "dw==",
+      "status": "ended",
+      "timestamp": "2026-07-07T12:42:59.383Z"
+    },
+    {
+      "id": "LOC-1783428180079",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnd3fGx1dHxoZXB3",
+      "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:43:00.079Z"
+    },
+    {
+      "id": "LOC-1783428180082",
+      "employeeId": "EMP-001",
+      "employeeName": "Pankaj Sharma",
+      "latitude": "dHFpd3tpZnd3fGx1dHxoZXB3",
+      "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",
+      "status": "sharing",
+      "timestamp": "2026-07-07T12:43:00.082Z"
+    }
+  ]
 }

@@ -31,6 +31,25 @@ import {
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import EntityTooltip from './EntityTooltip';
+
+const EntityChip = ({ moduleName, id, onClick }) => {
+  const { moduleData } = useApp();
+  const list = moduleData[moduleName] || [];
+  const record = list.find(r => String(r.id) === String(id));
+  const resolvedName = record ? (record.name || record.title || record.firm_name || record.person_name || 'Unnamed') : `ID: ${id}`;
+  
+  return (
+    <Tooltip title={`${moduleName.slice(0, -1).toUpperCase()}: ${resolvedName}`} arrow placement="top">
+      <Chip 
+        label={id} 
+        size="small"
+        onClick={onClick}
+        sx={{ cursor: 'pointer', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}
+      />
+    </Tooltip>
+  );
+};
 
 const DynamicTable = ({ 
   moduleKey, 
@@ -181,12 +200,27 @@ const DynamicTable = ({
 
     if (field.type === 'ref') {
       return (
-        <Chip 
-          label={val} 
-          size="small"
-          onClick={() => onInspectClick(field.refModule, val)}
-          sx={{ cursor: 'pointer', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}
+        <EntityChip 
+          moduleName={field.refModule} 
+          id={val} 
+          onClick={() => onInspectClick(field.refModule, val)} 
         />
+      );
+    }
+
+    if (field.type === 'multiref') {
+      const items = String(val).split(',').filter(Boolean);
+      return (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {items.map(itemId => (
+            <EntityChip 
+              key={itemId}
+              moduleName={field.refModule} 
+              id={itemId} 
+              onClick={() => onInspectClick(field.refModule, itemId)} 
+            />
+          ))}
+        </Box>
       );
     }
 

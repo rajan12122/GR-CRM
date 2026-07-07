@@ -17,10 +17,12 @@ import {
   ListItem, 
   ListItemText,
   CircularProgress,
-  Alert
+  Alert,
+  Tooltip
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import EntityTooltip from '../components/EntityTooltip';
 
 const EntityDetail = () => {
   const { moduleName, id } = useParams();
@@ -168,12 +170,27 @@ const EntityDetail = () => {
                             sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} 
                           />
                         ) : f.type === 'ref' ? (
-                          <Chip 
-                            label={val} 
-                            size="small" 
-                            onClick={() => navigate(`/module/${f.refModule}/${val}`)}
-                            sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
-                          />
+                          <EntityTooltip moduleName={f.refModule} id={val}>
+                            <Chip 
+                              label={val} 
+                              size="small" 
+                              onClick={() => navigate(`/module/${f.refModule}/${val}`)}
+                              sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
+                            />
+                          </EntityTooltip>
+                        ) : f.type === 'multiref' ? (
+                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                            {String(val).split(',').filter(Boolean).map(itemId => (
+                              <EntityTooltip key={itemId} moduleName={f.refModule} id={itemId}>
+                                <Chip 
+                                  label={itemId} 
+                                  size="small" 
+                                  onClick={() => navigate(`/module/${f.refModule}/${itemId}`)}
+                                  sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
+                                />
+                              </EntityTooltip>
+                            ))}
+                          </Box>
                         ) : f.name === 'price' || f.name === 'budget' || f.name === 'salary' ? (
                           `₹${Number(val).toLocaleString('en-IN')}`
                         ) : (
@@ -269,7 +286,7 @@ const EntityDetail = () => {
                                 <Paper key={index} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
                                   <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: {sv.customer?.name || sv.customerId}</Typography>
                                   <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                                    Visit Date: {sv.date} • RM Showed: {sv.employeeId} • Outcome: <strong>{sv.result}</strong>
+                                    Visit Date: {sv.date} • RM Showed: <EntityTooltip moduleName="employees" id={sv.employeeId}><strong style={{ borderBottom: '1px dotted #94A3B8', cursor: 'help' }}>{sv.employeeId}</strong></EntityTooltip> • Outcome: <strong>{sv.result}</strong>
                                   </Typography>
                                 </Paper>
                               ))

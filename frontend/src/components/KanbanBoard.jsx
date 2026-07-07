@@ -6,8 +6,10 @@ import {
   Card, 
   CardContent, 
   IconButton,
-  Chip
+  Chip,
+  Tooltip
 } from '@mui/material';
+import EntityTooltip from './EntityTooltip';
 import * as Icons from 'lucide-react';
 
 const KanbanBoard = ({ 
@@ -153,11 +155,13 @@ const KanbanBoard = ({
                           {item.price ? `₹${(item.price/100000).toFixed(1)} Lacs` : item.budget ? `Budget: ₹${(item.budget/100000).toFixed(1)}L` : ''}
                         </Typography>
                         {item.assignedEmployeeId && (
-                          <Chip 
-                            label={`RM: ${item.assignedEmployeeId}`} 
-                            size="small" 
-                            sx={{ height: 18, fontSize: '9px', fontWeight: 600, borderRadius: '4px' }} 
-                          />
+                          <EntityTooltip moduleName="employees" id={item.assignedEmployeeId}>
+                            <Chip 
+                              label={`RM: ${item.assignedEmployeeId}`} 
+                              size="small" 
+                              sx={{ height: 18, fontSize: '9px', fontWeight: 600, borderRadius: '4px', cursor: 'help' }} 
+                            />
+                          </EntityTooltip>
                         )}
                       </Box>
                     </CardContent>

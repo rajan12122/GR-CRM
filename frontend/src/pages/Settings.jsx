@@ -56,6 +56,11 @@ const Settings = () => {
   const [passwordSelectedEmp, setPasswordSelectedEmp] = useState('');
   const [newPasswordVal, setNewPasswordVal] = useState('');
 
+  // Lead Rotation local form states
+  const [rotationActive, setRotationActive] = useState(false);
+  const [rotationHours, setRotationHours] = useState('24');
+  const [rotatedSources, setRotatedSources] = useState([]);
+
   // Google Sheets local form state
   const [sheetsId, setSheetsId] = useState('');
   const [sheetsEmail, setSheetsEmail] = useState('');
@@ -69,7 +74,29 @@ const Settings = () => {
       setSheetsKey(metadata.sheetsConfig.privateKey || '');
       setSheetsActive(metadata.sheetsConfig.syncActive || false);
     }
+    if (metadata?.automationConfig) {
+      setRotationActive(metadata.automationConfig.leadRotationActive || false);
+      setRotationHours(metadata.automationConfig.rotationHours || '24');
+      setRotatedSources(metadata.automationConfig.rotatedSources || []);
+    }
   }, [metadata]);
+
+  const handleSaveRotationSettings = async () => {
+    const updated = {
+      ...metadata,
+      automationConfig: {
+        leadRotationActive: rotationActive,
+        rotationHours: rotationHours,
+        rotatedSources: rotatedSources
+      }
+    };
+    const res = await saveMetadata(updated);
+    if (res.success) {
+      showStatus('success', 'Lead rotation engine settings updated successfully!');
+    } else {
+      showStatus('error', res.message);
+    }
+  };
 
   // Field Add Form state
   const [newFieldName, setNewFieldName] = useState('');
@@ -567,9 +594,13 @@ const Settings = () => {
                   <Icons.Lock size={18} style={{ marginRight: 10 }} />
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>Reset Passwords</Typography>
                 </ListItem>
-                <ListItem button onClick={() => setActiveTab('sheets')} selected={activeTab === 'sheets'} sx={{ borderRadius: '8px', py: 1.5, backgroundColor: activeTab === 'sheets' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'sheets' ? '#2563EB' : '#4B5563' }}>
+                 <ListItem button onClick={() => setActiveTab('sheets')} selected={activeTab === 'sheets'} sx={{ borderRadius: '8px', mb: 0.5, py: 1.5, backgroundColor: activeTab === 'sheets' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'sheets' ? '#2563EB' : '#4B5563' }}>
                   <Icons.FileSpreadsheet size={18} style={{ marginRight: 10 }} />
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>Google Sheets Config</Typography>
+                </ListItem>
+                <ListItem button onClick={() => setActiveTab('rotation')} selected={activeTab === 'rotation'} sx={{ borderRadius: '8px', mb: 0.5, py: 1.5, backgroundColor: activeTab === 'rotation' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'rotation' ? '#2563EB' : '#4B5563' }}>
+                  <Icons.RefreshCw size={18} style={{ marginRight: 10 }} />
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>Lead Rotation Engine</Typography>
                 </ListItem>
               </List>
             </CardContent>
@@ -1237,6 +1268,106 @@ const Settings = () => {
                       </Button>
                     </Grid>
                   </Grid>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* TAB 6: AUTO LEAD ROTATION ENGINE */}
+          {activeTab === 'rotation' && (
+            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: '20px', fontFamily: 'Poppins', mb: 1 }}>
+                  Auto Lead Rotation Engine
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                  Reassign leads automatically when assigned representatives do not record any follow-up actions within the specified timeframe.
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={rotationActive}
+                          onChange={(e) => setRotationActive(e.target.checked)}
+                          color="primary"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                            Enable Automated Lead Rotation
+                          </Typography>
+                          <Typography variant="caption" sx={{ color: '#64748B' }}>
+                            Leads will cycle to other active sales representatives if they remain untouched.
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Inactivity Reassignment Limit (Hours)"
+                      type="number"
+                      value={rotationHours}
+                      onChange={(e) => setRotationHours(e.target.value)}
+                      fullWidth
+                      disabled={!rotationActive}
+                      placeholder="e.g. 24"
+                      InputProps={{ inputProps: { min: 0.1, step: 0.1 } }}
+                      helperText="Leads untouched for this length of time will rotate round-robin to the next sales agent."
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>
+                      Rotate Leads from these Sources:
+                    </Typography>
+                    <Grid container spacing={1}>
+                      {(metadata.chips.leadSources || []).map(source => {
+                        const isChecked = rotatedSources.includes(source.value);
+                        return (
+                          <Grid item xs={6} sm={4} key={source.value}>
+                            <FormControlLabel
+                              control={
+                                <Checkbox
+                                  checked={isChecked}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setRotatedSources(prev => [...prev, source.value]);
+                                    } else {
+                                      setRotatedSources(prev => prev.filter(s => s !== source.value));
+                                    }
+                                  }}
+                                  disabled={!rotationActive}
+                                  color="primary"
+                                />
+                              }
+                              label={source.label}
+                            />
+                          </Grid>
+                        );
+                      })}
+                    </Grid>
+                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 1 }}>
+                      If no sources are checked, all lead sources will cycle by default.
+                    </Typography>
+                  </Grid>
+                </Grid>
+
+                <Divider sx={{ my: 3 }} />
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSaveRotationSettings}
+                    sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' }, borderRadius: '8px', px: 4, py: 1, textTransform: 'none', fontWeight: 700 }}
+                  >
+                    Save Rotation Settings
+                  </Button>
                 </Box>
               </CardContent>
             </Card>

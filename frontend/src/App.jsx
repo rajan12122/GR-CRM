@@ -14,6 +14,7 @@ import PipelineView from './pages/PipelineView';
 import EntityDetail from './pages/EntityDetail';
 import Attendance from './pages/Attendance';
 import Settings from './pages/Settings';
+import PullToRefresh from './components/PullToRefresh';
 
 const MainLayout = () => {
   const { token, loadingMetadata, reloadKey, triggerAppReload } = useApp();
@@ -73,16 +74,18 @@ const MainLayout = () => {
       }}>
         <Header onSearchClick={() => setSearchOpen(true)} onMenuClick={() => setMobileOpen(true)} onReload={triggerAppReload} />
         
-        <Box key={reloadKey} component="main" sx={{ flexGrow: 1, overflowY: 'auto', pb: isMobile ? '80px' : '24px' }}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/module/attendance" element={<Attendance />} />
-            <Route path="/module/:moduleName" element={<ModuleManager />} />
-            <Route path="/module/:moduleName/:id" element={<EntityDetail />} />
-            <Route path="/pipeline/:pipelineType" element={<PipelineView />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+        <Box key={reloadKey} component="main" sx={{ flexGrow: 1, overflowY: 'hidden', pb: isMobile ? '80px' : '24px', display: 'flex', flexDirection: 'column' }}>
+          <PullToRefresh>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/module/attendance" element={<Attendance />} />
+              <Route path="/module/:moduleName" element={<ModuleManager />} />
+              <Route path="/module/:moduleName/:id" element={<EntityDetail />} />
+              <Route path="/pipeline/:pipelineType" element={<PipelineView />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </PullToRefresh>
         </Box>
       </Box>
 

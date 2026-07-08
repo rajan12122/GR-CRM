@@ -244,13 +244,21 @@ const QuickAdd = () => {
                             placeholder={f.label}
                             onChange={(e) => handleInputChange(f.name, e.target.value)}
                             sx={{ 
-                              input: { color: '#FFFFFF' },
-                              backgroundColor: '#0F172A',
-                              borderRadius: '8px',
-                              '.MuiInputLabel-root': { color: '#94A3B8' },
-                              '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' },
-                              '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#475569' },
-                              '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
+                              '& .MuiOutlinedInput-root': {
+                                backgroundColor: '#0F172A',
+                                color: '#FFFFFF',
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' },
+                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#475569' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
+                              },
+                              input: { 
+                                color: '#FFFFFF',
+                                '&:-webkit-autofill': {
+                                  WebkitBoxShadow: '0 0 0 1000px #0f172a inset !important',
+                                  WebkitTextFillColor: '#ffffff !important'
+                                }
+                              },
+                              '.MuiInputLabel-root': { color: '#94A3B8' }
                             }}
                           />
                         )}

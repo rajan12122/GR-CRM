@@ -83,16 +83,7 @@ const Dashboard = () => {
     loadAllData();
   }, []);
 
-  if (loading) {
-    return (
-      <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', gap: 2 }}>
-        <Typography variant="h5" sx={{ fontWeight: 600, color: '#475569' }}>Loading Enterprise Dashboard...</Typography>
-        <Typography variant="body2" sx={{ color: '#94A3B8' }}>Populating metrics, pipelines, and activities.</Typography>
-      </Box>
-    );
-  }
-
-  // Calculate Metrics
+  // Calculate Metrics (Declared at top level so Hooks execute unconditionally)
   const employees = moduleData.employees || [];
   const customers = moduleData.customers || [];
   const leads = moduleData.leads || [];
@@ -102,10 +93,8 @@ const Dashboard = () => {
   const siteVisits = moduleData.site_visits || [];
   const attendance = moduleData.attendance || [];
 
-  // 1. Total revenue
   const totalSalesVal = sales.reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
   
-  // Dynamic time-based sales revenue calculations (relative to current system mock date 2026-07-08)
   const revenueToday = sales.filter(s => s.date === '2026-07-08').reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
   const revenue7Days = sales.filter(s => {
     const sDate = new Date(s.date);
@@ -121,27 +110,20 @@ const Dashboard = () => {
   }).reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
   const revenueQuarter = sales.reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
   
-  // 2. Attendance today (e.g. 2026-07-03 standard mock date)
   const todayStr = new Date().toISOString().split('T')[0];
   const presentToday = attendance.filter(a => a.date === '2026-07-03' && (a.status === 'Present' || a.status === 'Late')).length;
-  
-  // 3. Properties available vs sold
   const availableProperties = properties.filter(p => !p.status || p.status === 'Available').length;
-  
-  // 4. Pending followups today
   const pendingFollowupsToday = followUps.filter(f => f.status === 'Pending').length;
 
-  // Chart Data: Sales Bookings over time (mocked from database)
   const salesChartData = [
     { name: 'Jan', Sales: 12 },
     { name: 'Feb', Sales: 18 },
     { name: 'Mar', Sales: 25 },
     { name: 'Apr', Sales: 22 },
     { name: 'May', Sales: 34 },
-    { name: 'Jun', Sales: sales.length * 15 } // dynamically scales based on database count
+    { name: 'Jun', Sales: sales.length * 15 }
   ];
 
-  // Chart Data: Lead pipeline status counts
   const leadsByStageMap = leads.reduce((acc, lead) => {
     acc[lead.status] = (acc[lead.status] || 0) + 1;
     return acc;
@@ -152,7 +134,6 @@ const Dashboard = () => {
     Leads: leadsByStageMap[key]
   }));
 
-  // Chart Data: Property pipeline status proportions
   const propertyStatusMap = properties.reduce((acc, prop) => {
     acc[prop.status] = (acc[prop.status] || 0) + 1;
     return acc;
@@ -163,18 +144,14 @@ const Dashboard = () => {
     value: propertyStatusMap[key]
   }));
 
-  // Filter Today's Tasks & Followups
-  const todaysFollowups = followUps.filter(f => f.date === '2026-07-04'); // targeting immediate schedules
+  const todaysFollowups = followUps.filter(f => f.date === '2026-07-04');
 
   const swiperLeads = React.useMemo(() => {
     return leads.filter(l => l.status === 'New' || l.status === 'In Progress' || l.status === 'Assigned');
   }, [leads]);
 
-  // Combine follow ups and site visits for today's agenda (targeting 2026-07-04 standard mock date)
   const todaysAgenda = React.useMemo(() => {
     const list = [];
-    
-    // Add today's followups
     todaysFollowups.forEach(f => {
       list.push({
         id: f.id,
@@ -189,7 +166,6 @@ const Dashboard = () => {
       });
     });
 
-    // Add site visits matching today's date
     const todaysVisits = siteVisits.filter(sv => sv.date === '2026-07-04');
     todaysVisits.forEach(sv => {
       list.push({
@@ -205,9 +181,17 @@ const Dashboard = () => {
       });
     });
 
-    // Sort by time
     return list.sort((a, b) => a.time.localeCompare(b.time));
   }, [todaysFollowups, siteVisits, customers]);
+
+  if (loading) {
+    return (
+      <Box sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '80vh', gap: 2 }}>
+        <Typography variant="h5" sx={{ fontWeight: 600, color: '#475569' }}>Loading Enterprise Dashboard...</Typography>
+        <Typography variant="body2" sx={{ color: '#94A3B8' }}>Populating metrics, pipelines, and activities.</Typography>
+      </Box>
+    );
+  }
 
   return (
     <Box sx={{ p: 3 }}>

@@ -22,7 +22,7 @@ import {
   Tooltip
 } from '@mui/material';
 import * as Icons from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp, API_BASE_URL } from '../context/AppContext';
 import EntityTooltip from '../components/EntityTooltip';
 
 const EntityDetail = () => {

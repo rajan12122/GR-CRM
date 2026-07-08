@@ -1034,6 +1034,20 @@ const rotateLeadsTask = () => {
   }
 };
 
+// Public Metadata endpoint for Quick-Add portal
+app.get('/api/public/metadata', (req, res) => {
+  try {
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    const publicMetadata = {
+      modules: metadata.modules,
+      chips: metadata.chips
+    };
+    res.json(publicMetadata);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load metadata" });
+  }
+});
+
 // Public Customer Intake Form Submission
 app.post('/api/public/lead-intake', (req, res) => {
   const { name, phone, locality, sector, propertyType, optionType, size, plc, budget } = req.body;

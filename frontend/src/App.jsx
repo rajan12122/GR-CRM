@@ -20,6 +20,23 @@ import PublicIntake from './pages/PublicIntake';
 import QuickAdd from './pages/QuickAdd';
 import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
+import { useParams } from 'react-router-dom';
+
+const ModuleManagerWrapper = () => {
+  const { moduleName } = useParams();
+  return <ModuleManager key={moduleName} />;
+};
+
+const EntityDetailWrapper = () => {
+  const { moduleName, id } = useParams();
+  return <EntityDetail key={`${moduleName}-${id}`} />;
+};
+
+const PipelineViewWrapper = () => {
+  const { pipelineType } = useParams();
+  return <PipelineView key={pipelineType} />;
+};
+
 const MainLayout = () => {
   const { token, loadingMetadata, reloadKey, triggerAppReload } = useApp();
   const [searchOpen, setSearchOpen] = useState(false);
@@ -84,9 +101,9 @@ const MainLayout = () => {
               <Route path="/" element={<Dashboard />} />
               <Route path="/module/attendance" element={<Attendance />} />
               <Route path="/module/location_tracker" element={<LocationTracker />} />
-              <Route path="/module/:moduleName" element={<ModuleManager />} />
-              <Route path="/module/:moduleName/:id" element={<EntityDetail />} />
-              <Route path="/pipeline/:pipelineType" element={<PipelineView />} />
+              <Route path="/module/:moduleName" element={<ModuleManagerWrapper />} />
+              <Route path="/module/:moduleName/:id" element={<EntityDetailWrapper />} />
+              <Route path="/pipeline/:pipelineType" element={<PipelineViewWrapper />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>

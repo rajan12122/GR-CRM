@@ -32,51 +32,104 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
   const hasMoreFields = filledFields.length > 4;
 
   return (
-    <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', '&:hover': { boxShadow: '0 8px 16px rgba(15,23,42,0.04)', transform: 'translateY(-2px)' }, transition: 'all 0.2s' }}>
-      <CardContent sx={{ p: 2.5 }}>
-        {/* Card Header */}
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', fontSize: '14px', borderBottom: '2px solid #2563EB', pb: 0.5 }}>
-            {rec.id}
-          </Typography>
-          {rec.status && (
-            <Chip 
-              label={rec.status} 
-              size="small" 
-              sx={{ fontWeight: 700, fontSize: '10px', borderRadius: '6px' }}
-            />
-          )}
+    <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', mb: 2.5, '&:hover': { boxShadow: '0 6px 15px rgba(15,23,42,0.03)', borderColor: '#CBD5E1' }, transition: 'all 0.2s' }}>
+      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, alignItems: { xs: 'flex-start', md: 'center' }, justifyContent: 'space-between', gap: 2.5 }}>
+          
+          {/* Left section: Folder tab and ID */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, minWidth: '140px' }}>
+            <Box sx={{ p: 1, borderRadius: '8px', backgroundColor: 'rgba(37,99,235,0.06)', color: '#2563EB', display: 'flex', alignItems: 'center' }}>
+              <Icons.Folder size={20} />
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', fontSize: '13px' }}>
+                {rec.id}
+              </Typography>
+              {rec.status && (
+                <Chip 
+                  label={rec.status} 
+                  size="small" 
+                  sx={{ fontWeight: 700, fontSize: '9px', borderRadius: '4px', height: 16, mt: 0.5 }}
+                />
+              )}
+            </Box>
+          </Box>
+
+          {/* Middle section: Horizontal view of fields */}
+          <Box sx={{ flexGrow: 1, display: 'flex', flexWrap: 'wrap', gap: { xs: 2, md: 4 } }}>
+            {visibleFields.map(f => {
+              const val = rec[f.name];
+              let displayVal = String(val);
+              if (f.name === 'price' || f.name === 'budget' || f.name === 'salary') {
+                displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
+              }
+
+              return (
+                <Box key={f.name} sx={{ minWidth: '130px' }}>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600, fontSize: '11px', mb: 0.2 }}>
+                    {f.label}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 700, fontSize: '13px' }}>
+                    {f.type === 'ref' || f.type === 'multiref' ? (
+                      <span style={{ color: '#2563EB', cursor: 'pointer', fontWeight: 700 }} onClick={() => handleInspectClick(f.refModule, val)}>
+                        {val}
+                      </span>
+                    ) : (
+                      displayVal
+                    )}
+                  </Typography>
+                </Box>
+              );
+            })}
+          </Box>
+
+          {/* Right section: Action tray */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, borderLeft: { xs: 'none', md: '1px solid #E2E8F0' }, pl: { xs: 0, md: 1.5 }, pt: { xs: 1.5, md: 0 }, width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+            {(moduleName === 'leads' || moduleName === 'customers') && (
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                {rec.phone && (
+                  <IconButton 
+                    size="small" 
+                    href={`https://wa.me/91${rec.phone}?text=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
+                    target="_blank"
+                    sx={{ color: '#22C55E', '&:hover': { backgroundColor: 'rgba(34,197,94,0.05)' } }}
+                  >
+                    <Icons.MessageCircle size={16} />
+                  </IconButton>
+                )}
+                {rec.email && (
+                  <IconButton 
+                    size="small" 
+                    href={`mailto:${rec.email}?subject=${encodeURIComponent("Gagan Realtech Follow-up")}&body=${encodeURIComponent(`Hi ${rec.name || ''},\n\nThis is Gagan Realtech following up on your requirements.\n\nBest regards,\nGagan Realtech Team`)}`}
+                    sx={{ color: '#3B82F6', '&:hover': { backgroundColor: 'rgba(59,130,246,0.05)' } }}
+                  >
+                    <Icons.Mail size={16} />
+                  </IconButton>
+                )}
+                {rec.phone && (
+                  <IconButton 
+                    size="small" 
+                    href={`sms:91${rec.phone}?body=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
+                    sx={{ color: '#F59E0B', '&:hover': { backgroundColor: 'rgba(245,158,11,0.05)' } }}
+                  >
+                    <Icons.Smartphone size={16} />
+                  </IconButton>
+                )}
+              </Box>
+            )}
+            <IconButton size="small" onClick={() => handleInspectClick(moduleName, rec.id)} sx={{ color: '#2563EB', '&:hover': { backgroundColor: 'rgba(37,99,235,0.05)' } }}>
+              <Icons.SearchCode size={16} />
+            </IconButton>
+            <IconButton size="small" onClick={() => handleEditClick(rec)} sx={{ color: '#F59E0B', '&:hover': { backgroundColor: 'rgba(245,158,11,0.05)' } }}>
+              <Icons.Edit2 size={16} />
+            </IconButton>
+            <IconButton size="small" onClick={() => handleDeleteClick(rec.id)} sx={{ color: '#EF4444', '&:hover': { backgroundColor: 'rgba(239,68,68,0.05)' } }}>
+              <Icons.Trash2 size={16} />
+            </IconButton>
+          </Box>
+
         </Box>
-        
-        {/* Display Fields */}
-        <Grid container spacing={1.5}>
-          {visibleFields.map(f => {
-            const val = rec[f.name];
-            let displayVal = String(val);
-            if (f.name === 'price' || f.name === 'budget' || f.name === 'salary') {
-              displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
-            }
 
-            return (
-              <Grid item xs={12} key={f.name}>
-                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>
-                  {f.label}
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 700 }}>
-                  {f.type === 'ref' || f.type === 'multiref' ? (
-                    <span style={{ color: '#2563EB', cursor: 'pointer', fontWeight: 700 }} onClick={() => handleInspectClick(f.refModule, val)}>
-                      {val}
-                    </span>
-                  ) : (
-                    displayVal
-                  )}
-                </Typography>
-              </Grid>
-            );
-          })}
-        </Grid>
-
-        {/* Expand Trigger Button */}
         {hasMoreFields && (
           <Button 
             size="small" 
@@ -87,51 +140,6 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
           </Button>
         )}
       </CardContent>
-
-      {/* Card Actions Footer */}
-      <Box sx={{ p: 1.5, borderTop: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', display: 'flex', justifyContent: 'flex-end', gap: 1, borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
-        {(moduleName === 'leads' || moduleName === 'customers') && (
-          <Box sx={{ display: 'flex', gap: 0.5 }}>
-            {rec.phone && (
-              <IconButton 
-                size="small" 
-                href={`https://wa.me/91${rec.phone}?text=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
-                target="_blank"
-                sx={{ color: '#22C55E', '&:hover': { backgroundColor: 'rgba(34,197,94,0.05)' } }}
-              >
-                <Icons.MessageCircle size={16} />
-              </IconButton>
-            )}
-            {rec.email && (
-              <IconButton 
-                size="small" 
-                href={`mailto:${rec.email}?subject=${encodeURIComponent("Gagan Realtech Follow-up")}&body=${encodeURIComponent(`Hi ${rec.name || ''},\n\nThis is Gagan Realtech following up on your requirements.\n\nBest regards,\nGagan Realtech Team`)}`}
-                sx={{ color: '#3B82F6', '&:hover': { backgroundColor: 'rgba(59,130,246,0.05)' } }}
-              >
-                <Icons.Mail size={16} />
-              </IconButton>
-            )}
-            {rec.phone && (
-              <IconButton 
-                size="small" 
-                href={`sms:91${rec.phone}?body=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
-                sx={{ color: '#F59E0B', '&:hover': { backgroundColor: 'rgba(245,158,11,0.05)' } }}
-              >
-                <Icons.Smartphone size={16} />
-              </IconButton>
-            )}
-          </Box>
-        )}
-        <IconButton size="small" onClick={() => handleInspectClick(moduleName, rec.id)} sx={{ color: '#2563EB', '&:hover': { backgroundColor: 'rgba(37,99,235,0.05)' } }}>
-          <Icons.SearchCode size={16} />
-        </IconButton>
-        <IconButton size="small" onClick={() => handleEditClick(rec)} sx={{ color: '#F59E0B', '&:hover': { backgroundColor: 'rgba(245,158,11,0.05)' } }}>
-          <Icons.Edit2 size={16} />
-        </IconButton>
-        <IconButton size="small" onClick={() => handleDeleteClick(rec.id)} sx={{ color: '#EF4444', '&:hover': { backgroundColor: 'rgba(239,68,68,0.05)' } }}>
-          <Icons.Trash2 size={16} />
-        </IconButton>
-      </Box>
     </Card>
   );
 };
@@ -252,8 +260,8 @@ const ModuleManager = () => {
               <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'none' }}>Table</Typography>
             </ToggleButton>
             <ToggleButton value="card" sx={{ px: 1.5, py: 1 }}>
-              <Icons.Grid size={16} style={{ marginRight: 6 }} />
-              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'none' }}>Cards</Typography>
+              <Icons.Folder size={16} style={{ marginRight: 6 }} />
+              <Typography variant="caption" sx={{ fontWeight: 700, textTransform: 'none' }}>Folders</Typography>
             </ToggleButton>
           </ToggleButtonGroup>
 
@@ -305,20 +313,19 @@ const ModuleManager = () => {
               <Typography variant="body2">No records found for this module.</Typography>
             </Box>
           ) : (
-            <Grid container spacing={3}>
+            <Box>
               {records.map(rec => (
-                <Grid item xs={12} sm={6} md={4} key={rec.id}>
-                  <RecordCard 
-                    rec={rec}
-                    fields={fields}
-                    handleInspectClick={handleInspectClick}
-                    handleEditClick={handleEditClick}
-                    handleDeleteClick={handleDeleteClick}
-                    moduleName={moduleName}
-                  />
-                </Grid>
+                <RecordCard 
+                  key={rec.id}
+                  rec={rec}
+                  fields={fields}
+                  handleInspectClick={handleInspectClick}
+                  handleEditClick={handleEditClick}
+                  handleDeleteClick={handleDeleteClick}
+                  moduleName={moduleName}
+                />
               ))}
-            </Grid>
+            </Box>
           )}
         </Box>
       )}

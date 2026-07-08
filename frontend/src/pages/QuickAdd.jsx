@@ -29,7 +29,7 @@ const QuickAdd = () => {
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
   useEffect(() => {
-    axios.get(`${API_BASE_URL}/metadata`)
+    axios.get(`${API_BASE_URL}/public/metadata`)
       .then(res => {
         setMetadata(res.data);
         setLoading(false);

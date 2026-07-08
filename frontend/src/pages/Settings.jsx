@@ -29,6 +29,7 @@ import {
   Chip
 } from '@mui/material';
 import * as Icons from 'lucide-react';
+import axios from 'axios';
 import { useApp } from '../context/AppContext';
 
 const Settings = () => {

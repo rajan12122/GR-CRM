@@ -13,7 +13,10 @@ import {
   Button, 
   Alert, 
   CircularProgress,
-  Grid
+  Grid,
+  FormControlLabel,
+  Switch,
+  Chip
 } from '@mui/material';
 import axios from 'axios';
 import { API_BASE_URL } from '../context/AppContext';
@@ -24,6 +27,7 @@ const QuickAdd = () => {
   const [loading, setLoading] = useState(true);
   const [selectedModule, setSelectedModule] = useState('');
   const [formData, setFormData] = useState({});
+  const [customValues, setCustomValues] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -89,6 +93,13 @@ const QuickAdd = () => {
     }));
   };
 
+  const handleCustomInputChange = (fieldName, value) => {
+    setCustomValues(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitError('');
@@ -96,15 +107,24 @@ const QuickAdd = () => {
     setSubmitting(true);
 
     try {
+      // Map custom "Other" fields into the submitted payload
+      const payload = { ...formData };
+      fields.forEach(f => {
+        if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
+          payload[f.name] = customValues[f.name] || '';
+        }
+      });
+
       const response = await axios.post(`${API_BASE_URL}/public/quick-add`, {
         module: selectedModule,
-        payload: formData,
+        payload: payload,
         key: 'gagan_employee_intake_2026'
       });
 
       if (response.data.success) {
         setSubmitSuccess(true);
         setFormData({});
+        setCustomValues({});
       } else {
         setSubmitError(response.data.error || 'Failed to submit data.');
       }
@@ -181,6 +201,8 @@ const QuickAdd = () => {
                     const value = formData[f.name] || '';
                     const isSelect = f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup];
                     const isRef = f.type === 'ref' && f.refModule && lookups[f.refModule];
+                    const isMultiRef = f.type === 'multiref' && f.refModule && lookups[f.refModule];
+                    const isBoolean = f.type === 'boolean';
                     const isDate = f.type === 'date';
 
                     return (
@@ -197,6 +219,10 @@ const QuickAdd = () => {
                               sx={{ 
                                 color: '#FFFFFF',
                                 backgroundColor: '#0F172A',
+                                '& .MuiOutlinedInput-root': {
+                                  backgroundColor: '#0F172A',
+                                  color: '#FFFFFF'
+                                },
                                 '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' },
                                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#475569' },
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
@@ -209,6 +235,9 @@ const QuickAdd = () => {
                                   <MenuItem key={choiceVal} value={choiceVal}>{choiceLabel}</MenuItem>
                                 );
                               })}
+                              <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
+                                Other (Specify...)
+                              </MenuItem>
                             </Select>
                           </FormControl>
                         ) : isRef ? (
@@ -223,6 +252,65 @@ const QuickAdd = () => {
                               sx={{ 
                                 color: '#FFFFFF',
                                 backgroundColor: '#0F172A',
+                                '& .MuiOutlinedInput-root': {
+                                  backgroundColor: '#0F172A',
+                                  color: '#FFFFFF'
+                                },
+                                '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' },
+                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#475569' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
+                              }}
+                            >
+                              {lookups[f.refModule].map(opt => (
+                                <MenuItem key={opt.id} value={opt.id}>{opt.name} ({opt.id})</MenuItem>
+                              ))}
+                              <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
+                                Other (Specify...)
+                              </MenuItem>
+                            </Select>
+                          </FormControl>
+                        ) : isMultiRef ? (
+                          <FormControl fullWidth>
+                            <InputLabel id={`label-${f.name}`} sx={{ color: '#94A3B8' }}>{f.label} {f.required && '*'}</InputLabel>
+                            <Select
+                              labelId={`label-${f.name}`}
+                              multiple
+                              value={Array.isArray(value) ? value : value ? String(value).split(',').filter(Boolean) : []}
+                              label={`${f.label} ${f.required ? '*' : ''}`}
+                              required={f.required}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                handleInputChange(f.name, Array.isArray(val) ? val.join(',') : val);
+                              }}
+                              renderValue={(selected) => (
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                  {selected.map((itemVal) => {
+                                    const opt = lookups[f.refModule].find(o => String(o.id) === String(itemVal));
+                                    return (
+                                      <Chip 
+                                        key={itemVal} 
+                                        label={opt ? opt.name : itemVal} 
+                                        size="small" 
+                                        sx={{ 
+                                          borderRadius: '4px',
+                                          backgroundColor: '#2563EB',
+                                          color: '#FFFFFF',
+                                          height: 20,
+                                          fontSize: '11px',
+                                          fontWeight: 600
+                                        }}
+                                      />
+                                    );
+                                  })}
+                                </Box>
+                              )}
+                              sx={{ 
+                                color: '#FFFFFF',
+                                backgroundColor: '#0F172A',
+                                '& .MuiOutlinedInput-root': {
+                                  backgroundColor: '#0F172A',
+                                  color: '#FFFFFF'
+                                },
                                 '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' },
                                 '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#475569' },
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
@@ -233,6 +321,22 @@ const QuickAdd = () => {
                               ))}
                             </Select>
                           </FormControl>
+                        ) : isBoolean ? (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                checked={!!value}
+                                onChange={(e) => handleInputChange(f.name, e.target.checked)}
+                                color="primary"
+                              />
+                            }
+                            label={
+                              <Typography variant="body2" sx={{ color: '#F8FAFC', fontWeight: 600 }}>
+                                {f.label}
+                              </Typography>
+                            }
+                            sx={{ color: '#F8FAFC', ml: 0.5 }}
+                          />
                         ) : (
                           <TextField
                             fullWidth
@@ -260,6 +364,32 @@ const QuickAdd = () => {
                               },
                               '.MuiInputLabel-root': { color: '#94A3B8' }
                             }}
+                          />
+                        )}
+
+                        {/* Custom 'Other' specification text field overlay */}
+                        {(isSelect || isRef) && value === 'Other' && (
+                          <TextField
+                            fullWidth
+                            multiline
+                            rows={2}
+                            label={`Specify Custom ${f.label}`}
+                            value={customValues[f.name] || ''}
+                            onChange={(e) => handleCustomInputChange(f.name, e.target.value)}
+                            placeholder="Type custom details here..."
+                            sx={{ 
+                              mt: 1.5,
+                              '& .MuiOutlinedInput-root': {
+                                backgroundColor: '#0F172A',
+                                color: '#FFFFFF',
+                                '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' },
+                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#475569' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
+                              },
+                              input: { color: '#FFFFFF' },
+                              '.MuiInputLabel-root': { color: '#94A3B8' }
+                            }}
+                            required
                           />
                         )}
                       </Grid>

@@ -319,11 +319,11 @@ const EntityDetail = () => {
                 }
 
                 // Check text description / requirements matching
-                if (record.requirements && p.name) {
+                if (record.requirements) {
                   const reqWords = record.requirements.toLowerCase().split(/\s+/).filter(w => w.length > 2);
-                  const nameWords = p.name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                  const searchString = `${p.propertyType || ''} ${p.locality || ''} ${p.sector_block || ''} ${p.facing || ''} ${p.location_type || ''}`.toLowerCase();
                   reqWords.forEach(w => {
-                    if (nameWords.includes(w)) {
+                    if (searchString.includes(w)) {
                       matchCount++;
                       matches.push(w);
                     }
@@ -377,39 +377,43 @@ const EntityDetail = () => {
                     </Typography>
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                      {matchedProps.map(p => (
-                        <Paper key={p.id} sx={{ p: 1.5, border: '1px solid #E2E8F0', borderRadius: '10px', boxShadow: 'none', '&:hover': { borderColor: '#16A34A' } }}>
-                          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={0.5}>
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', cursor: 'pointer' }} onClick={() => navigate(`/module/properties/${p.id}`)}>
-                              {p.name}
-                            </Typography>
-                            <Chip label={`${p.matchCount} Matches`} size="small" color="success" sx={{ fontSize: '9px', height: 18, fontWeight: 700 }} />
-                          </Box>
-                          <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
-                            Price: ₹{Number(p.price).toLocaleString('en-IN')} • {p.city || 'Local'}
-                          </Typography>
-                          
-                          {p.matches && p.matches.length > 0 && (
-                            <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                              {p.matches.map((m, mIdx) => (
-                                <Chip key={mIdx} label={m} size="small" variant="outlined" sx={{ fontSize: '8px', height: 14 }} />
-                              ))}
+                      {matchedProps.map(p => {
+                        const propName = p.name || `${p.propertyType || 'Property'} - ${p.locality || ''} ${p.sector_block || ''} (${p.size || ''})`;
+                        const propPrice = p.demand || 'Price on Ask';
+                        return (
+                          <Paper key={p.id} sx={{ p: 1.5, border: '1px solid #E2E8F0', borderRadius: '10px', boxShadow: 'none', '&:hover': { borderColor: '#16A34A' } }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={0.5}>
+                              <Typography variant="body2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }} onClick={() => navigate(`/module/properties/${p.id}`)}>
+                                {propName}
+                              </Typography>
+                              <Chip label={`${p.matchCount} Matches`} size="small" color="success" sx={{ fontSize: '9px', height: 18, fontWeight: 700 }} />
                             </Box>
-                          )}
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                              Price: {propPrice} • {p.city || 'Local'}
+                            </Typography>
+                            
+                            {p.matches && p.matches.length > 0 && (
+                              <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                {p.matches.map((m, mIdx) => (
+                                  <Chip key={mIdx} label={m} size="small" variant="outlined" sx={{ fontSize: '8px', height: 14 }} />
+                                ))}
+                              </Box>
+                            )}
 
-                          <Button 
-                            size="small" 
-                            variant="outlined" 
-                            color="success" 
-                            startIcon={<Icons.Share2 size={12} />}
-                            href={`https://wa.me/91${record.phone || ''}?text=${encodeURIComponent(compileTemplate(templates.whatsapp, record.name, p.name, p.price, p.locality, p.sector_block))}`}
-                            target="_blank"
-                            sx={{ textTransform: 'none', py: 0.2, fontSize: '10px', fontWeight: 700, borderRadius: '6px' }}
-                          >
-                            Share on WhatsApp
-                          </Button>
-                        </Paper>
-                      ))}
+                            <Button 
+                              size="small" 
+                              variant="outlined" 
+                              color="success" 
+                              startIcon={<Icons.Share2 size={12} />}
+                              href={`https://wa.me/91${record.phone || ''}?text=${encodeURIComponent(compileTemplate(templates.whatsapp, record.name, propName, propPrice, p.locality, p.sector_block))}`}
+                              target="_blank"
+                              sx={{ textTransform: 'none', py: 0.2, fontSize: '10px', fontWeight: 700, borderRadius: '6px' }}
+                            >
+                              Share on WhatsApp
+                            </Button>
+                          </Paper>
+                        );
+                      })}
                     </Box>
                   )}
                 </CardContent>

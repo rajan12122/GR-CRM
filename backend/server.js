@@ -925,8 +925,21 @@ app.post('/api/public/lead-intake', (req, res) => {
     return res.status(400).json({ error: "A lead or customer with this phone number already exists." });
   }
 
+  // Find max number among existing IDs starting with LEAD prefix
+  const existingIds = (db.leads || []).map(r => r.id).filter(id => id && String(id).startsWith('LEAD'));
+  let maxNum = 0;
+  existingIds.forEach(id => {
+    const parts = id.split('-');
+    const num = parseInt(parts[1]);
+    if (!isNaN(num) && num > maxNum) {
+      maxNum = num;
+    }
+  });
+  const nextNum = maxNum > 0 ? maxNum + 1 : (db.leads || []).length + 1;
+  const leadId = `LEAD-${String(nextNum).padStart(3, '0')}`;
+
   const newLead = {
-    id: `LD-${Date.now()}`,
+    id: leadId,
     name,
     phone,
     email: "",
@@ -940,7 +953,7 @@ app.post('/api/public/lead-intake', (req, res) => {
     locality,
     sector_block: sector,
     requirements: `Intake Demand - Property Option: ${optionType}, Size: ${size}, Preferred PLC: ${plc}`,
-    dateAdded: new Date().toLocaleDateString('en-IN')
+    dateAdded: new Date().toISOString().split('T')[0]
   };
 
   db.leads.push(newLead);

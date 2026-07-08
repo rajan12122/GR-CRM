@@ -458,17 +458,43 @@ const DynamicTable = ({
 
                   <TableCell align="right">
                     <Box display="flex" justifyContent="flex-end" gap={0.5}>
-                      {(moduleKey === 'leads' || moduleKey === 'customers') && rec.phone && (
-                        <Tooltip title="One-Click WhatsApp Outreach">
-                          <IconButton 
-                            size="small" 
-                            href={`https://wa.me/91${rec.phone}?text=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
-                            target="_blank"
-                            sx={{ color: '#22C55E' }}
-                          >
-                            <Icons.MessageCircle size={16} />
-                          </IconButton>
-                        </Tooltip>
+                      {(moduleKey === 'leads' || moduleKey === 'customers') && (
+                        <Box sx={{ display: 'flex', gap: 0.5 }}>
+                          {rec.phone && (
+                            <Tooltip title="One-Click WhatsApp Outreach">
+                              <IconButton 
+                                size="small" 
+                                href={`https://wa.me/91${rec.phone}?text=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
+                                target="_blank"
+                                sx={{ color: '#22C55E' }}
+                              >
+                                <Icons.MessageCircle size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {rec.email && (
+                            <Tooltip title="One-Click Email Outreach">
+                              <IconButton 
+                                size="small" 
+                                href={`mailto:${rec.email}?subject=${encodeURIComponent("Gagan Realtech Follow-up")}&body=${encodeURIComponent(`Hi ${rec.name || ''},\n\nThis is Gagan Realtech following up on your requirements.\n\nBest regards,\nGagan Realtech Team`)}`}
+                                sx={{ color: '#3B82F6' }}
+                              >
+                                <Icons.Mail size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                          {rec.phone && (
+                            <Tooltip title="One-Click SMS Outreach">
+                              <IconButton 
+                                size="small" 
+                                href={`sms:91${rec.phone}?body=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
+                                sx={{ color: '#F59E0B' }}
+                              >
+                                <Icons.Smartphone size={16} />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Box>
                       )}
                       {onInspectClick && (
                         <Tooltip title="Inspect 360 View">

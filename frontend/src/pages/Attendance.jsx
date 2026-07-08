@@ -234,35 +234,24 @@ const Attendance = () => {
     return attendanceList.filter(a => a.employeeId === user?.id);
   }, [attendanceList, user]);
 
-  // Compute Metrics
   const stats = useMemo(() => {
     const totalDays = myAttendance.length;
     const presentDays = myAttendance.filter(a => a.status === 'Present').length;
     const lateDays = myAttendance.filter(a => a.status === 'Late').length;
     const absentDays = myAttendance.filter(a => a.status === 'Absent').length;
 
-    // Prorated Salary Calculation:
-    // Base salary from user profile
-    const baseSalary = user?.salary || 45000;
-    // Assuming 26 standard working days in a month
-    const workDays = 26;
     const activeDays = presentDays + lateDays;
-    
-    // Penalize late arrivals slightly (e.g. 3 late arrivals = 1 absent day penalty)
     const latePenaltyDays = Math.floor(lateDays / 3);
     const payableDays = Math.max(0, activeDays - latePenaltyDays);
-    
-    const estimatedSalary = Math.round((payableDays / workDays) * baseSalary);
 
     return {
       totalDays,
       presentDays,
       lateDays,
       absentDays,
-      estimatedSalary,
       payableDays
     };
-  }, [myAttendance, user]);
+  }, [myAttendance]);
 
   const handleLogSubmit = async (e) => {
     e.preventDefault();
@@ -405,7 +394,7 @@ const Attendance = () => {
 
       {/* Stats Cards Row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={4} md={4}>
           <Card>
             <CardContent>
               <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Days Present</Typography>
@@ -416,7 +405,7 @@ const Attendance = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={4} md={4}>
           <Card>
             <CardContent>
               <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Late arrivals</Typography>
@@ -427,7 +416,7 @@ const Attendance = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={4} md={4}>
           <Card>
             <CardContent>
               <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Payable Days</Typography>
@@ -435,17 +424,6 @@ const Attendance = () => {
                 {stats.payableDays} Days
               </Typography>
               <Typography variant="caption" sx={{ color: '#94A3B8' }}>Out of 26 working days</Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ backgroundColor: 'rgba(34, 197, 94, 0.05)', border: '1px solid rgba(34, 197, 94, 0.2)' }}>
-            <CardContent>
-              <Typography variant="caption" sx={{ color: '#16A34A', fontWeight: 600 }}>Estimated Salary (Prorated)</Typography>
-              <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, color: '#16A34A', fontFamily: 'Poppins' }}>
-                ₹{stats.estimatedSalary.toLocaleString('en-IN')}
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#64748B' }}>Base: ₹{user?.salary?.toLocaleString()}/mo</Typography>
             </CardContent>
           </Card>
         </Grid>

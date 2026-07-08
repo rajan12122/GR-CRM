@@ -27,7 +27,7 @@ const DynamicForm = ({
   initialData, 
   onSubmit 
 }) => {
-  const { moduleData, fetchModuleData, metadata } = useApp();
+  const { moduleData, fetchModuleData, metadata, createRecord } = useApp();
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [customValues, setCustomValues] = useState({});
@@ -140,6 +140,33 @@ const DynamicForm = ({
     }
   };
 
+  const handleSaveAndAddAnother = async (e) => {
+    e.preventDefault();
+    if (validate()) {
+      const payload = { ...formData };
+      fields.forEach(f => {
+        if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
+          payload[f.name] = customValues[f.name] || '';
+        }
+      });
+      
+      const res = await createRecord(moduleKey, payload);
+      if (res.success) {
+        // Clear all fields to let user enter next property
+        const defaultForm = {};
+        fields.forEach(f => {
+          defaultForm[f.name] = '';
+        });
+        setFormData(defaultForm);
+        setCustomValues({});
+        setErrors({});
+        fetchModuleData(moduleKey);
+      } else {
+        setErrors({ submit: res.message || 'Failed to save record.' });
+      }
+    }
+  };
+
   // Helper to extract reference items
   const getReferenceOptions = (refModule) => {
     return moduleData[refModule] || [];
@@ -164,6 +191,11 @@ const DynamicForm = ({
       
       <form onSubmit={handleSubmit}>
         <DialogContent sx={{ py: 2 }}>
+          {errors.submit && (
+            <Alert severity="error" sx={{ mb: 2, borderRadius: '8px' }}>
+              {errors.submit}
+            </Alert>
+          )}
           <Grid container spacing={2}>
             {fields.map(f => {
               if (f.name === 'id' && !initialData) return null; // Hide auto-generated ID field on create
@@ -377,11 +409,16 @@ const DynamicForm = ({
           </Grid>
         </DialogContent>
         
-        <DialogActions sx={{ px: 3, pb: 2.5 }}>
-          <Button onClick={onClose} variant="outlined" sx={{ borderColor: '#E2E8F0', color: '#64748B' }}>
+        <DialogActions sx={{ px: 3, pb: 2.5, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+          <Button onClick={onClose} variant="outlined" sx={{ borderColor: '#E2E8F0', color: '#64748B', textTransform: 'none', fontWeight: 700 }}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained" sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}>
+          {!initialData && moduleKey === 'properties' && (
+            <Button onClick={handleSaveAndAddAnother} variant="outlined" color="primary" sx={{ textTransform: 'none', fontWeight: 700 }}>
+              Save & Add Another Property
+            </Button>
+          )}
+          <Button type="submit" variant="contained" sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' }, textTransform: 'none', fontWeight: 700 }}>
             Save Record
           </Button>
         </DialogActions>

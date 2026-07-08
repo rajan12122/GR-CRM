@@ -56,14 +56,6 @@
           "chipGroup": "employeeStatus"
         },
         {
-          "name": "salary",
-          "label": "Base Salary (Monthly)",
-          "type": "number",
-          "required": true,
-          "showInTable": false,
-          "editable": true
-        },
-        {
           "name": "joinDate",
           "label": "Joining Date",
           "type": "date",

@@ -267,6 +267,15 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     }
   });
 
+  // Enforce unique phone number
+  if (payload.phone) {
+    const cleanPhone = String(payload.phone).trim();
+    const isDuplicate = (db[module] || []).some(r => r.phone && String(r.phone).trim() === cleanPhone);
+    if (isDuplicate) {
+      return res.status(400).json({ message: `Phone number '${payload.phone}' is already registered in this module.` });
+    }
+  }
+
   if (!db[module]) db[module] = [];
   db[module].push(payload);
   
@@ -299,6 +308,15 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   
   const index = db[module].findIndex(rec => String(rec.id) === String(id));
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
+
+  // Enforce unique phone number on update
+  if (payload.phone) {
+    const cleanPhone = String(payload.phone).trim();
+    const isDuplicate = db[module].some(r => r.phone && String(r.phone).trim() === cleanPhone && String(r.id) !== String(id));
+    if (isDuplicate) {
+      return res.status(400).json({ message: `Phone number '${payload.phone}' is already registered in this module.` });
+    }
+  }
 
   // Auto-update last_updated date on edits
   const metadata = readMetadata();

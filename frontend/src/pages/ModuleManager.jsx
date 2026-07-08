@@ -172,8 +172,23 @@ const ModuleManager = () => {
     }
   };
 
-  const handleFormSubmit = () => {
-    fetchModuleData(moduleName);
+  const handleFormSubmit = async (formData) => {
+    let res;
+    if (selectedRecord) {
+      // Edit mode
+      res = await updateRecord(moduleName, selectedRecord.id, formData);
+    } else {
+      // Create mode
+      res = await createRecord(moduleName, formData);
+    }
+
+    if (res.success) {
+      setFormOpen(false);
+      setSelectedRecord(null);
+      fetchModuleData(moduleName);
+    } else {
+      setErrorMsg(res.message || 'Failed to save record.');
+    }
   };
 
   const handleInspectClick = (type, id) => {

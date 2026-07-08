@@ -24,10 +24,97 @@ if (!fs.existsSync(dbPath)) {
   console.error("Critical Error: config/db.json missing!");
 }
 
+function updateGlobalReferences(db, oldId, newId) {
+  Object.keys(db).forEach(mod => {
+    if (!Array.isArray(db[mod])) return;
+    db[mod].forEach(rec => {
+      Object.keys(rec).forEach(key => {
+        if (rec[key] === oldId) {
+          rec[key] = newId;
+        } else if (Array.isArray(rec[key])) {
+          rec[key] = rec[key].map(item => item === oldId ? newId : item);
+        } else if (typeof rec[key] === 'string') {
+          if (rec[key].includes(oldId)) {
+            rec[key] = rec[key].split(',').map(s => s.trim() === oldId ? newId : s.trim()).join(', ');
+          }
+        }
+      });
+    });
+  });
+}
+
+function resequenceAllModules() {
+  const db = readDb();
+  let modified = false;
+
+  const prefixMap = {
+    employees: 'EMP',
+    customers: 'CUST',
+    leads: 'LEAD',
+    properties: 'PROP',
+    projects: 'PROJ',
+    site_visits: 'VISIT',
+    follow_ups: 'FOLLOW',
+    remarks: 'REM',
+    tasks: 'TASK',
+    sales: 'SALE',
+    documents: 'DOC',
+    attendance: 'ATT',
+    daily_prices: 'PRICE'
+  };
+
+  Object.keys(prefixMap).forEach(module => {
+    if (!db[module] || !Array.isArray(db[module])) return;
+
+    const prefix = prefixMap[module];
+    const idUpdates = [];
+
+    db[module].forEach((rec, idx) => {
+      const newId = `${prefix}-${String(idx + 1).padStart(3, '0')}`;
+      if (String(rec.id) !== newId) {
+        idUpdates.push({ oldId: rec.id, newId });
+      }
+    });
+
+    if (idUpdates.length > 0) {
+      modified = true;
+      idUpdates.forEach(({ oldId, newId }) => {
+        const rec = db[module].find(r => r.id === oldId);
+        if (rec) {
+          rec.id = newId;
+        }
+        updateGlobalReferences(db, oldId, newId);
+      });
+    }
+  });
+
+  if (modified) {
+    writeDb(db);
+    console.log('Database IDs re-sequenced and reference mappings updated on boot.');
+    // Trigger sync back to Google Sheets for modified modules
+    Object.keys(prefixMap).forEach(module => {
+      if (db[module] && Array.isArray(db[module])) {
+        try {
+          syncToSheets(module);
+        } catch (e) {
+          console.error(`Error syncing resequenced ${module} on boot:`, e);
+        }
+      }
+    });
+  }
+}
+
 // Sync from Google Sheets on start if credentials exist
 syncFromSheets().then(res => {
   if (res) console.log('Initial Google Sheets sync completed on boot.');
   else console.log('Running on local JSON database cache.');
+
+  // Run automatic sequential ID healing migration
+  try {
+    resequenceAllModules();
+  } catch (err) {
+    console.error('ID Resequencing Boot Error:', err);
+  }
 });
 
 // Helper functions to read/write DB and Metadata
@@ -346,26 +433,7 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   syncToSheets(module);
   res.json(db[module][index]);
 });
-
-function updateGlobalReferences(db, oldId, newId) {
-  Object.keys(db).forEach(mod => {
-    if (!Array.isArray(db[mod])) return;
-    db[mod].forEach(rec => {
-      Object.keys(rec).forEach(key => {
-        if (rec[key] === oldId) {
-          rec[key] = newId;
-        } else if (Array.isArray(rec[key])) {
-          rec[key] = rec[key].map(item => item === oldId ? newId : item);
-        } else if (typeof rec[key] === 'string') {
-          if (rec[key].includes(oldId)) {
-            rec[key] = rec[key].split(',').map(s => s.trim() === oldId ? newId : s.trim()).join(', ');
-          }
-        }
-      });
-    });
-  });
-}
-
+// DELETE data record handler
 app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   const { module } = req.params;
   checkPermission(module, 'delete')(req, res, next);

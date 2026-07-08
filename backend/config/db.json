@@ -1,7 +1,7 @@
 {
   "employees": [
     {
-      "id": "EMP-002",
+      "id": "EMP-001",
       "name": "Gagan Chopra",
       "email": "Gagan@gmail.com",
       "phone": 1234567890,
@@ -46,35 +46,36 @@
       "source": "Facebook",
       "status": "In-Progress",
       "assignedEmployeeId": "EMP-003",
+      "preferredEmployees": "",
+      "enableRotation": "",
       "budget": 4500000,
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
       "dateAdded": "2026-07-01"
     },
     {
       "id": "LEAD-002",
-      "name": "Neha Sharma",
-      "email": "neha12@gmail.com",
-      "phone": 9815098150,
-      "source": "Google",
-      "status": "Open",
-      "assignedEmployeeId": "EMP-003",
-      "budget": 9500000,
-      "dateAdded": "2026-07-02"
-    },
-    {
-      "id": "LEAD-003",
       "name": "Gaurav Malhotra",
       "email": "gaurav@malhotra.com",
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
       "assignedEmployeeId": "EMP-004",
+      "preferredEmployees": "",
+      "enableRotation": "",
       "budget": 15000000,
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
       "dateAdded": "2026-07-03"
     }
   ],
   "properties": [
     {
-      "id": 2,
+      "id": "PROJ-002",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Alam",
@@ -98,7 +99,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": 3,
+      "id": "PROJ-003",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Alam",
@@ -122,7 +123,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": 4,
+      "id": "PROJ-004",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "",
@@ -146,7 +147,7 @@
       "initial_notes": "Ground Floor"
     },
     {
-      "id": 5,
+      "id": "PROJ-005",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "",
@@ -170,7 +171,7 @@
       "initial_notes": "Book Deal "
     },
     {
-      "id": 6,
+      "id": "PROJ-006",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Mansi",
@@ -194,7 +195,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": 7,
+      "id": "PROJ-007",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Mansi",
@@ -218,7 +219,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": 8,
+      "id": "PROJ-008",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Puneet ",
@@ -236,13 +237,13 @@
       "location_type": "",
       "facing": "North Facing ",
       "white": "",
-      "time": "60 days ",
+      "time": "60 days",
       "demand": "5.15 Cr",
       "lead_source": "Whatsapp",
       "initial_notes": ""
     },
     {
-      "id": 9,
+      "id": "PROJ-009",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Indu",
@@ -266,7 +267,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": 10,
+      "id": "PROJ-010",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Varun Sahni ",
@@ -290,7 +291,7 @@
       "initial_notes": ""
     },
     {
-      "id": 11,
+      "id": "PROJ-011",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Pushap Bhatia",
@@ -314,7 +315,7 @@
       "initial_notes": "Party Deal "
     },
     {
-      "id": 12,
+      "id": "PROJ-012",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Pushap Bhatia",
@@ -338,7 +339,7 @@
       "initial_notes": "Oustee Case 25% Paid"
     },
     {
-      "id": 13,
+      "id": "PROJ-013",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "        Amit Gupta",
@@ -359,10 +360,10 @@
       "time": "",
       "demand": "",
       "lead_source": "Whatsapp",
-      "initial_notes": "       25% built up"
+      "initial_notes": "25% built up"
     },
     {
-      "id": 14,
+      "id": "PROJ-014",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Parmvir Singh",
@@ -383,7 +384,7 @@
       "time": "",
       "demand": "8.40 Cr",
       "lead_source": "Whatsapp",
-      "initial_notes": "       25% built up, Booked Deal"
+      "initial_notes": "25% built up, Booked Deal"
     },
     {
       "id": "PROP-014",
@@ -436,7 +437,7 @@
   ],
   "projects": [
     {
-      "id": 1,
+      "id": "PROJ-001",
       "name": "Falcon Homes",
       "builder": "SARB Group",
       "locality": "Sunny Urban Sec 123",
@@ -457,7 +458,7 @@
       "other_charges": ""
     },
     {
-      "id": 2,
+      "id": "PROJ-002",
       "name": "Mohali Crown",
       "builder": "KKJ Developer",
       "locality": "Airport Road, sect-126",
@@ -466,8 +467,8 @@
       "property_category": "Apartments",
       "total_land_area": "14 Acres",
       "configurations_sizes": "3+1 BHK (2500 sq.ft), 4+1 BHK (3200 sq.ft), Commercial (18x75)",
-      "pricing_details": "Residential: 9,500 per sq.ft., Commercial: 8 Crore",
-      "slab": "3% Fixed ",
+      "pricing_details": "Residential: 9, 500 per sq.ft., Commercial: 8 Crore",
+      "slab": "3% Fixed",
       "status": 2030,
       "rera_approved": "YES",
       "project_visited_by": "RAJAN",
@@ -478,7 +479,7 @@
       "other_charges": ""
     },
     {
-      "id": 3,
+      "id": "PROJ-003",
       "name": "Amayra Vista",
       "builder": "Amayra Group",
       "locality": "Kurali Bypass Road",
@@ -499,7 +500,7 @@
       "other_charges": ""
     },
     {
-      "id": 4,
+      "id": "PROJ-004",
       "name": "Lok Awas",
       "builder": "VERA",
       "locality": "Airport Road, sect-126",
@@ -520,16 +521,16 @@
       "other_charges": ""
     },
     {
-      "id": 5,
+      "id": "PROJ-005",
       "name": "Mayfield Highland",
       "builder": "Highland",
-      "locality": "Sector 118,Airport Rd ",
+      "locality": "Sector 118, Airport Rd",
       "sector_block": "Sec 118",
       "type": "Residential",
       "property_category": "Apartments",
       "total_land_area": "15 Acres",
       "configurations_sizes": "3 BHK, 3+1 BHK, 4 BHK, 4+1 BHK",
-      "pricing_details": "10,350 per sq.ft.",
+      "pricing_details": "10, 350 per sq.ft.",
       "slab": "7%",
       "status": 2028,
       "rera_approved": "YES",
@@ -541,7 +542,7 @@
       "other_charges": ""
     },
     {
-      "id": 6,
+      "id": "PROJ-006",
       "name": "9th Avenue",
       "builder": "Motia builders",
       "locality": "sector 115, kharar landran rd",
@@ -562,7 +563,7 @@
       "other_charges": ""
     },
     {
-      "id": 7,
+      "id": "PROJ-007",
       "name": "Regal Empirius",
       "builder": "GDPL",
       "locality": "Sector 92, Mohali",
@@ -583,7 +584,7 @@
       "other_charges": ""
     },
     {
-      "id": 8,
+      "id": "PROJ-008",
       "name": "Regal Residencia",
       "builder": "GDPL",
       "locality": "Sector 114, Kharar Landran Road",
@@ -604,7 +605,7 @@
       "other_charges": ""
     },
     {
-      "id": 9,
+      "id": "PROJ-009",
       "name": "Regal Luxuria",
       "builder": "GDPL",
       "locality": "Sector 114, Kharar - Landran Road",
@@ -625,7 +626,7 @@
       "other_charges": ""
     },
     {
-      "id": 10,
+      "id": "PROJ-010",
       "name": "Town Square",
       "builder": "Hardip Singh Sandhu",
       "locality": "Sector 127, Mohali (Kharar - Landran Road)",
@@ -646,7 +647,7 @@
       "other_charges": ""
     },
     {
-      "id": 11,
+      "id": "PROJ-011",
       "name": "Nirwana The Moksha",
       "builder": "Nirwana",
       "locality": "Kharar - Kurali Highway",
@@ -667,7 +668,7 @@
       "other_charges": ""
     },
     {
-      "id": 12,
+      "id": "PROJ-012",
       "name": "Amayra Sky city",
       "builder": "Amayra Group",
       "locality": "Daun Majra",
@@ -685,10 +686,10 @@
       "plc_percent": "",
       "club_house_membership": "1 Lakh",
       "parking_charges": "1 Lakh",
-      "other_charges": "50,000"
+      "other_charges": "50, 000"
     },
     {
-      "id": 13,
+      "id": "PROJ-013",
       "name": "Acme Emporia",
       "builder": "Acme",
       "locality": "NH-21, Kharar Kurali Highway",
@@ -709,7 +710,7 @@
       "other_charges": ""
     },
     {
-      "id": 14,
+      "id": "PROJ-014",
       "name": "Amayra Trillium",
       "builder": "Amayra Group",
       "locality": "chandigarh - Kurali Highway",
@@ -724,13 +725,13 @@
       "rera_approved": "YES",
       "project_visited_by": "RAJAN",
       "sales_team_phone": "79869-62485",
-      "plc_percent": "1 Lakh ",
-      "club_house_membership": "75,000/-",
+      "plc_percent": "1 Lakh",
+      "club_house_membership": "75, 000/-",
       "parking_charges": "1 Lakh",
-      "other_charges": "35,000 and 1,50,000 for 3 k.v.a"
+      "other_charges": "35, 000 and 1, 50, 000 for 3 k.v.a"
     },
     {
-      "id": 15,
+      "id": "PROJ-015",
       "name": "Kings Gate",
       "builder": "VERA",
       "locality": "74A",
@@ -739,8 +740,8 @@
       "property_category": "Showroom",
       "total_land_area": "1.5 Acres",
       "configurations_sizes": "Showrooms + Stores (500-6204 sq.ft), Retail Showrooms (365-2600 sq.ft), Food court & Co-working (210 sq.ft)",
-      "pricing_details": "Showrooms: 32,000-48,000 per sq.ft, Retail: 22,500 per sq.ft, food court and co working spaces: 25.90 lac ",
-      "slab": "offices and showroom 5%,, Food court and co working spaces: 1 Lakh Fix",
+      "pricing_details": "Showrooms: 32, 000-48, 000 per sq.ft, Retail: 22, 500 per sq.ft, food court and co working spaces: 25.90 lac",
+      "slab": "offices and showroom 5%, , Food court and co working spaces: 1 Lakh Fix",
       "status": "December 2028",
       "rera_approved": "YES",
       "project_visited_by": "RAJAN",
@@ -751,7 +752,7 @@
       "other_charges": ""
     },
     {
-      "id": 16,
+      "id": "PROJ-016",
       "name": "BJBF Heights",
       "builder": "BJBF Group",
       "locality": "127, Greater Mohali",
@@ -772,7 +773,7 @@
       "other_charges": ""
     },
     {
-      "id": 17,
+      "id": "PROJ-017",
       "name": "Prestige Tower",
       "builder": "VERA",
       "locality": "Sector 117",
@@ -793,7 +794,7 @@
       "other_charges": ""
     },
     {
-      "id": 18,
+      "id": "PROJ-018",
       "name": "Horizon Belmond",
       "builder": "Horizon Group",
       "locality": "Sector-88",
@@ -802,19 +803,19 @@
       "property_category": "Apartments",
       "total_land_area": "6.5 Acres",
       "configurations_sizes": "3+1 BHK (2606 & 2808 sq ft), 4+1 BHK (3326 & 3538 sq ft), 5+1(5500 sq.ft), Penthouse (7500 sq.ft)",
-      "pricing_details": "3+1 BHK,4+1 BHK:11000 per sq ft,,5+1 BHK,Penthouse:13000 per sq ft",
+      "pricing_details": "3+1 BHK, 4+1 BHK:11000 per sq ft, , 5+1 BHK, Penthouse:13000 per sq ft",
       "slab": "3%",
       "status": 2028,
       "rera_approved": "YES",
       "project_visited_by": "RAJAN",
       "sales_team_phone": "98779-38850",
-      "plc_percent": "Green Facing = Rs 300 per sq.ft , corner = Rs 200 sq.ft. , floor = Rs 100 per sq.ft.",
-      "club_house_membership": "7,50,000/- and 10,000,00/- For villas and penthouse",
-      "parking_charges": "5,00,000/-",
+      "plc_percent": "Green Facing = Rs 300 per sq.ft, corner = Rs 200 sq.ft., floor = Rs 100 per sq.ft.",
+      "club_house_membership": "7, 50, 000/- and 10, 000, 00/- For villas and penthouse",
+      "parking_charges": "5, 00, 000/-",
       "other_charges": "Rs 50 per sq.ft and Rs 75 per sq.ft"
     },
     {
-      "id": 19,
+      "id": "PROJ-019",
       "name": "Joy Grand ",
       "builder": "Joy Group",
       "locality": "Sector-88",
@@ -829,13 +830,13 @@
       "rera_approved": "YES",
       "project_visited_by": "RAJAN",
       "sales_team_phone": "76960-16655",
-      "plc_percent": "Park Facing = Rs 300 per sq.ft , corner = Rs 300 sq.ft. , floor = Rs 100 to 200per sq.ft.",
-      "club_house_membership": "5,00,000/-",
+      "plc_percent": "Park Facing = Rs 300 per sq.ft, corner = Rs 300 sq.ft., floor = Rs 100 to 200per sq.ft.",
+      "club_house_membership": "5, 00, 000/-",
       "parking_charges": "",
-      "other_charges": "Rs 50 per sq.ft and Rs 1,50,000/-"
+      "other_charges": "Rs 50 per sq.ft and Rs 1, 50, 000/-"
     },
     {
-      "id": 20,
+      "id": "PROJ-020",
       "name": "Hero Hermes ",
       "builder": "Hero Reality",
       "locality": "Sector-88",
@@ -856,7 +857,7 @@
       "other_charges": ""
     },
     {
-      "id": 21,
+      "id": "PROJ-021",
       "name": "Plaza 21",
       "builder": "KBD ",
       "locality": "kharar - Kurali Highway",
@@ -877,7 +878,7 @@
       "other_charges": ""
     },
     {
-      "id": 22,
+      "id": "PROJ-022",
       "name": "JMR Walk ",
       "builder": "JMR group",
       "locality": "Chandigarh Ambala Highway Near MC Road",
@@ -898,7 +899,7 @@
       "other_charges": ""
     },
     {
-      "id": 23,
+      "id": "PROJ-023",
       "name": "Skyline Elevate ",
       "builder": "Skyline Developer",
       "locality": "PR-7, 200 ft. wide Airport Road, Near Dmart, Zirakpur",
@@ -913,13 +914,13 @@
       "rera_approved": "YES",
       "project_visited_by": "MANDEEP",
       "sales_team_phone": "95925-22100",
-      "plc_percent": "park facing = 2,00,000/-",
+      "plc_percent": "park facing = 2, 00, 000/-",
       "club_house_membership": "Free",
-      "parking_charges": "2,00,000/-",
-      "other_charges": "50,000 to 60,000 and 1,00,000"
+      "parking_charges": "2, 00, 000/-",
+      "other_charges": "50, 000 to 60, 000 and 1, 00, 000"
     },
     {
-      "id": 24,
+      "id": "PROJ-024",
       "name": "Belliston Avenue",
       "builder": "GVT Group",
       "locality": "Old Kalka Road, Opp Delhi Public World School, Ghazipur",
@@ -935,12 +936,12 @@
       "project_visited_by": "MANDEEP",
       "sales_team_phone": "92160-60184",
       "plc_percent": "1st floor to 4th floor = 1 Lakh to 3 Lakh",
-      "club_house_membership": "1,25,000/-",
-      "parking_charges": "2,00,000/-",
-      "other_charges": "50,000 and 80,000"
+      "club_house_membership": "1, 25, 000/-",
+      "parking_charges": "2, 00, 000/-",
+      "other_charges": "50, 000 and 80, 000"
     },
     {
-      "id": 25,
+      "id": "PROJ-025",
       "name": "Acme Heights 92",
       "builder": "Acme",
       "locality": "sector 92, Mohali",
@@ -955,13 +956,13 @@
       "rera_approved": "YES",
       "project_visited_by": "MANDEEP",
       "sales_team_phone": "91151-15711",
-      "plc_percent": "1st Floor and Fourth Floor = Rs 1,00,000/- ,  Park facing 5%, Corner + Park Facing 7%",
+      "plc_percent": "1st Floor and Fourth Floor = Rs 1, 00, 000/-, Park facing 5%, Corner + Park Facing 7%",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": "2K.V. @1,00,000/- ,  3k.v.@ 1,50,000/-"
+      "other_charges": "2K.V. @1, 00, 000/-, 3k.v.@ 1, 50, 000/-"
     },
     {
-      "id": 26,
+      "id": "PROJ-026",
       "name": "AtullyamThe Bliss",
       "builder": "Mr Atul Singh Tyagi",
       "locality": "Sector 88",
@@ -982,7 +983,7 @@
       "other_charges": "rs 75 per sq.ft. and 3 Lakh"
     },
     {
-      "id": 27,
+      "id": "PROJ-027",
       "name": "Atlantis Grand",
       "builder": "Krishna builders",
       "locality": "high ground road, Zirakpur",
@@ -1003,7 +1004,7 @@
       "other_charges": ""
     },
     {
-      "id": 28,
+      "id": "PROJ-028",
       "name": "Gulnaar Meadows",
       "builder": "SAV infrafsystem LLP",
       "locality": "Zirakpur Ambala Road",
@@ -1024,7 +1025,7 @@
       "other_charges": ""
     },
     {
-      "id": 29,
+      "id": "PROJ-029",
       "name": "The Zirk",
       "builder": "urban nest",
       "locality": "High Ground Rd, Zirakpur",
@@ -1045,7 +1046,7 @@
       "other_charges": ""
     },
     {
-      "id": 30,
+      "id": "PROJ-030",
       "name": "Ananda Crown",
       "builder": "Ananda Group",
       "locality": "Sector 78, Mohali",
@@ -1054,7 +1055,7 @@
       "property_category": "Apartments",
       "total_land_area": "",
       "configurations_sizes": "3 BHK (2425 sq.ft), 3+1 BHK (2750, 2875 sq.ft), 4 BHK (3250 sq.ft), 5 BHK (4100 sq.ft)",
-      "pricing_details": "11,000 per sq.ft.",
+      "pricing_details": "11, 000 per sq.ft.",
       "slab": "",
       "status": "",
       "rera_approved": "",
@@ -1066,7 +1067,7 @@
       "other_charges": ""
     },
     {
-      "id": 31,
+      "id": "PROJ-031",
       "name": "Gulnaar Zenium",
       "builder": "Gulnaar Reality",
       "locality": "Singhpura Road, Zirakpur",
@@ -1087,7 +1088,7 @@
       "other_charges": ""
     },
     {
-      "id": 32,
+      "id": "PROJ-032",
       "name": "Atlantis Grand",
       "builder": "Krishna builders",
       "locality": "high ground road, Zirakpur",
@@ -1096,19 +1097,19 @@
       "property_category": "Apartments",
       "total_land_area": "4.5 Acres",
       "configurations_sizes": "3 BHK (1995 sq.ft.)",
-      "pricing_details": "1,35,26,000",
+      "pricing_details": "1, 35, 26, 000",
       "slab": "",
       "status": "3 YEARS",
       "rera_approved": "YES",
       "project_visited_by": "MANDEEP",
       "sales_team_phone": "",
       "plc_percent": "5% for Corner facing, 7% for park facing, 10% for park facing + corner facing",
-      "club_house_membership": "3,50,000",
+      "club_house_membership": "3, 50, 000",
       "parking_charges": "",
-      "other_charges": "75,000+1,20,000"
+      "other_charges": "75, 000+1, 20, 000"
     },
     {
-      "id": 33,
+      "id": "PROJ-033",
       "name": "F Towers",
       "builder": "Fashion TV",
       "locality": "Sector 121",
@@ -1129,7 +1130,7 @@
       "other_charges": ""
     },
     {
-      "id": 34,
+      "id": "PROJ-034",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1150,7 +1151,7 @@
       "other_charges": ""
     },
     {
-      "id": 35,
+      "id": "PROJ-035",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1171,7 +1172,7 @@
       "other_charges": ""
     },
     {
-      "id": 36,
+      "id": "PROJ-036",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1192,7 +1193,7 @@
       "other_charges": ""
     },
     {
-      "id": 37,
+      "id": "PROJ-037",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1213,7 +1214,7 @@
       "other_charges": ""
     },
     {
-      "id": 38,
+      "id": "PROJ-038",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1234,7 +1235,7 @@
       "other_charges": ""
     },
     {
-      "id": 39,
+      "id": "PROJ-039",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1255,7 +1256,7 @@
       "other_charges": ""
     },
     {
-      "id": 40,
+      "id": "PROJ-040",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1276,7 +1277,7 @@
       "other_charges": ""
     },
     {
-      "id": 41,
+      "id": "PROJ-041",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1297,7 +1298,7 @@
       "other_charges": ""
     },
     {
-      "id": 42,
+      "id": "PROJ-042",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1318,7 +1319,7 @@
       "other_charges": ""
     },
     {
-      "id": 43,
+      "id": "PROJ-043",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1339,7 +1340,7 @@
       "other_charges": ""
     },
     {
-      "id": 44,
+      "id": "PROJ-044",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1360,7 +1361,7 @@
       "other_charges": ""
     },
     {
-      "id": 45,
+      "id": "PROJ-045",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1381,7 +1382,7 @@
       "other_charges": ""
     },
     {
-      "id": 46,
+      "id": "PROJ-046",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1402,7 +1403,7 @@
       "other_charges": ""
     },
     {
-      "id": 47,
+      "id": "PROJ-047",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1423,7 +1424,7 @@
       "other_charges": ""
     },
     {
-      "id": 48,
+      "id": "PROJ-048",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1444,7 +1445,7 @@
       "other_charges": ""
     },
     {
-      "id": 49,
+      "id": "PROJ-049",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1465,7 +1466,7 @@
       "other_charges": ""
     },
     {
-      "id": 50,
+      "id": "PROJ-050",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1486,7 +1487,7 @@
       "other_charges": ""
     },
     {
-      "id": 51,
+      "id": "PROJ-051",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1507,7 +1508,7 @@
       "other_charges": ""
     },
     {
-      "id": 52,
+      "id": "PROJ-052",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1528,7 +1529,7 @@
       "other_charges": ""
     },
     {
-      "id": 53,
+      "id": "PROJ-053",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1549,7 +1550,7 @@
       "other_charges": ""
     },
     {
-      "id": 54,
+      "id": "PROJ-054",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1570,7 +1571,7 @@
       "other_charges": ""
     },
     {
-      "id": 55,
+      "id": "PROJ-055",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1591,7 +1592,7 @@
       "other_charges": ""
     },
     {
-      "id": 56,
+      "id": "PROJ-056",
       "name": "",
       "builder": "",
       "locality": "",
@@ -1616,7 +1617,7 @@
     {
       "id": "VISIT-001",
       "customerId": "CUST-001",
-      "propertyId": "PROP-001",
+      "propertyId": "PROJ-002",
       "employeeId": "EMP-003",
       "date": "2026-06-18",
       "time": "11:30 AM",
@@ -1625,7 +1626,7 @@
     {
       "id": "VISIT-002",
       "customerId": "CUST-002",
-      "propertyId": "PROP-003",
+      "propertyId": "PROJ-004",
       "employeeId": "EMP-003",
       "date": "2026-06-25",
       "time": "04:00 PM",
@@ -1634,7 +1635,7 @@
     {
       "id": "VISIT-003",
       "customerId": "CUST-003",
-      "propertyId": "PROP-002",
+      "propertyId": "PROJ-003",
       "employeeId": "EMP-004",
       "date": "2026-06-05",
       "time": "02:30 PM",
@@ -1669,15 +1670,15 @@
   ],
   "attendance": [
     {
-      "id": "ATT-002",
-      "employeeId": "EMP-002",
+      "id": "ATT-001",
+      "employeeId": "EMP-001",
       "date": "2026-07-03",
       "inTime": "09:30 AM",
       "outTime": "06:15 PM",
       "status": "Present"
     },
     {
-      "id": "ATT-003",
+      "id": "ATT-002",
       "employeeId": "EMP-003",
       "date": "2026-07-03",
       "inTime": "09:05 AM",
@@ -1685,7 +1686,7 @@
       "status": "Present"
     },
     {
-      "id": "ATT-004",
+      "id": "ATT-003",
       "employeeId": "EMP-004",
       "date": "2026-07-03",
       "inTime": "10:15 AM",
@@ -1693,23 +1694,23 @@
       "status": "Late"
     },
     {
-      "id": "ATTE-105",
-      "employeeId": 2,
+      "id": "ATT-004",
+      "employeeId": "PROJ-002",
       "date": "2026-07-07",
       "inTime": "05:01 PM",
       "outTime": "05:01 PM",
       "status": "Late"
     },
     {
-      "id": "ATTE-105",
-      "employeeId": 2,
+      "id": "ATT-004",
+      "employeeId": "PROJ-002",
       "date": "2026-07-07",
       "inTime": "05:01 PM",
       "outTime": "--",
       "status": "Late"
     },
     {
-      "id": "ATT-106",
+      "id": "ATT-006",
       "employeeId": "EMP-001",
       "date": "2026-07-07",
       "inTime": "06:10 PM",
@@ -1717,8 +1718,8 @@
       "status": "Late"
     },
     {
-      "id": "ATT-107",
-      "employeeId": "EMP-002",
+      "id": "ATT-007",
+      "employeeId": "EMP-001",
       "date": "2026-07-08",
       "inTime": "02:22 PM",
       "outTime": "02:52 PM",
@@ -1738,15 +1739,15 @@
   "sales": [],
   "tasks": [
     {
-      "id": "TSK-001",
+      "id": "TASK-001",
       "title": "Obtain registry documents for Flat 502",
-      "assignedTo": "EMP-002",
+      "assignedTo": "EMP-001",
       "dueDate": "2026-07-05",
       "priority": "High",
       "status": "In Progress"
     },
     {
-      "id": "TSK-002",
+      "id": "TASK-002",
       "title": "Call Suresh Gupta regarding Villa A4 pricing details",
       "assignedTo": "EMP-003",
       "dueDate": "2026-07-04",
@@ -1754,7 +1755,7 @@
       "status": "Pending"
     },
     {
-      "id": "TSK-003",
+      "id": "TASK-003",
       "title": "Submit monthly GST file",
       "assignedTo": "EMP-001",
       "dueDate": "2026-07-10",
@@ -1773,13 +1774,13 @@
       "id": "REM-003"
     },
     {
-      "id": "REM-1783423938267"
+      "id": "REM-004"
     },
     {
-      "id": "REM-1783423940780"
+      "id": "REM-005"
     },
     {
-      "id": "REM-1783423942630"
+      "id": "REM-006"
     }
   ],
   "documents": [
@@ -1969,7 +1970,7 @@
   "location_logs": [
     {
       "id": "LOC-1783419387726",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
       "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
@@ -1978,7 +1979,7 @@
     },
     {
       "id": "LOC-1783419387757",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
       "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
@@ -1987,7 +1988,7 @@
     },
     {
       "id": "LOC-1783419408119",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
       "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
@@ -1996,7 +1997,7 @@
     },
     {
       "id": "LOC-1783419408124",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
       "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
@@ -2005,7 +2006,7 @@
     },
     {
       "id": "LOC-1783419408135",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
       "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
@@ -2014,7 +2015,7 @@
     },
     {
       "id": "LOC-1783419965636",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
       "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
@@ -2023,7 +2024,7 @@
     },
     {
       "id": "LOC-1783419965641",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
       "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
@@ -2032,7 +2033,7 @@
     },
     {
       "id": "LOC-1783419965645",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
       "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
@@ -2041,7 +2042,7 @@
     },
     {
       "id": "LOC-1783419976292",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
       "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
@@ -2050,7 +2051,7 @@
     },
     {
       "id": "LOC-1783419976296",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
       "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
@@ -2059,7 +2060,7 @@
     },
     {
       "id": "LOC-1783419976299",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd1f219c3xuYXF1",
       "longitude": "cHdpdn1nanZ2e2Fxc35van0=",
@@ -2068,7 +2069,7 @@
     },
     {
       "id": "LOC-1783420183192",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ4eWdydXlrY3V1",
       "longitude": "cHdpdn1nandzeWN1dHluYnQ=",
@@ -2077,7 +2078,7 @@
     },
     {
       "id": "LOC-1783420245420",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnV0eGFwdHtrZXE=",
       "longitude": "cHdpdn1nanJwf2JwdXBqa3I=",
@@ -2086,7 +2087,7 @@
     },
     {
       "id": "LOC-1783420307775",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnR0e2E=",
       "longitude": "cHdpdn1nanN1dW18enFmanw=",
@@ -2095,7 +2096,7 @@
     },
     {
       "id": "LOC-1783420370045",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd3dGZ3e3hqY3c=",
       "longitude": "cHdpdn1nanFydGVwen9vZ3Y=",
@@ -2104,7 +2105,7 @@
     },
     {
       "id": "LOC-1783420432342",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnB5f2NxcXFuYnR1",
       "longitude": "cHdpdn1nanV5dWF9d3tsYg==",
@@ -2113,7 +2114,7 @@
     },
     {
       "id": "LOC-1783420494469",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
       "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
@@ -2122,7 +2123,7 @@
     },
     {
       "id": "LOC-1783421330625",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd3fGx1dHxoZXB3",
       "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",
@@ -2131,7 +2132,7 @@
     },
     {
       "id": "LOC-1783422149398",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
       "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
@@ -2140,7 +2141,7 @@
     },
     {
       "id": "LOC-1783422149406",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
       "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
@@ -2149,7 +2150,7 @@
     },
     {
       "id": "LOC-1783422149412",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnZ5fmJ9dnhra3A=",
       "longitude": "cHdpdn1nand3eGd0cHlnZH0=",
@@ -2158,7 +2159,7 @@
     },
     {
       "id": "LOC-1783423884443",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd2eGR0d31oYXJ2",
       "longitude": "cHdpdn1nanZ2eWB8d35oYHM=",
@@ -2167,7 +2168,7 @@
     },
     {
       "id": "LOC-1783423884455",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd2eGR0d31oYXJ2",
       "longitude": "cHdpdn1nanZ2eWB8d35oYHM=",
@@ -2176,7 +2177,7 @@
     },
     {
       "id": "LOC-1783423884462",
-      "employeeId": 2,
+      "employeeId": "PROJ-002",
       "employeeName": "Rajan Gupta",
       "latitude": "dHFpd3tpZnd2eGR0d31oYXJ2",
       "longitude": "cHdpdn1nanZ2eWB8d35oYHM=",
@@ -2320,7 +2321,7 @@
     },
     {
       "id": "LOC-1783500746240",
-      "employeeId": "EMP-002",
+      "employeeId": "EMP-001",
       "employeeName": "Gagan Chopra",
       "latitude": "dHFpd3tpZnd3fGx1dHxoZXB3",
       "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",

@@ -58,6 +58,9 @@ const EntityDetail = () => {
     if (item) {
       const rels = await fetchEntity360(moduleName, id);
       setConnections(rels);
+      if (moduleName === 'leads') {
+        await fetchModuleData('properties');
+      }
     }
     setLoading(false);
   };
@@ -203,6 +206,89 @@ const EntityDetail = () => {
               </List>
             </CardContent>
           </Card>
+
+          {/* Leadrat Intelligent Property Matcher Engine */}
+          {moduleName === 'leads' && (() => {
+            const propertiesList = moduleData.properties || [];
+            const budget = Number(record.budget) || 0;
+            
+            // Match properties:
+            // Score properties based on how close their price is to the lead's budget
+            const matchedProps = propertiesList
+              .map(p => {
+                const price = Number(p.price) || 0;
+                let score = 0;
+                
+                // Price matching
+                if (price > 0 && budget > 0) {
+                  const pctDiff = Math.abs(price - budget) / budget;
+                  if (pctDiff <= 0.1) score += 50;
+                  else if (pctDiff <= 0.25) score += 30;
+                  else if (pctDiff <= 0.4) score += 10;
+                  if (price <= budget) score += 10; // premium for being under budget
+                }
+
+                // BHK & Requirements matching
+                if (record.requirements && p.name) {
+                  const reqLower = record.requirements.toLowerCase();
+                  const nameLower = p.name.toLowerCase();
+                  if (reqLower.includes('3bhk') && nameLower.includes('3bhk')) score += 35;
+                  else if (reqLower.includes('2bhk') && nameLower.includes('2bhk')) score += 35;
+                  else if (reqLower.includes('4bhk') && nameLower.includes('4bhk')) score += 35;
+                  else if (reqLower.includes('1bhk') && nameLower.includes('1bhk')) score += 35;
+                }
+
+                return { ...p, score };
+              })
+              .filter(p => p.score > 0)
+              .sort((a, b) => b.score - a.score)
+              .slice(0, 3); // Get top 3 matches
+
+            return (
+              <Card sx={{ mt: 3, border: '1px solid #E2E8F0', borderRadius: '16px', backgroundColor: 'rgba(34, 197, 94, 0.01)' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
+                    <Icons.Target size={16} />
+                    Leadrat Property Matcher
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  
+                  {matchedProps.length === 0 ? (
+                    <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', textAlign: 'center', py: 2 }}>
+                      No matching properties found in database for this budget.
+                    </Typography>
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                      {matchedProps.map(p => (
+                        <Paper key={p.id} sx={{ p: 1.5, border: '1px solid #E2E8F0', borderRadius: '10px', boxShadow: 'none', '&:hover': { borderColor: '#16A34A' } }}>
+                          <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={0.5}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', cursor: 'pointer' }} onClick={() => navigate(`/module/properties/${p.id}`)}>
+                              {p.name}
+                            </Typography>
+                            <Chip label={`${p.score}% Match`} size="small" color="success" sx={{ fontSize: '9px', height: 18, fontWeight: 700 }} />
+                          </Box>
+                          <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                            Price: ₹{Number(p.price).toLocaleString('en-IN')} • {p.city || 'Local'}
+                          </Typography>
+                          <Button 
+                            size="small" 
+                            variant="outlined" 
+                            color="success" 
+                            startIcon={<Icons.Share2 size={12} />}
+                            href={`https://wa.me/91${record.phone || ''}?text=${encodeURIComponent(`Hi ${record.name || ''}, based on your requirements, here is a matching listing: ${p.name} (Price: ₹${Number(p.price).toLocaleString('en-IN')}). Let me know when you'd like to visit!`)}`}
+                            target="_blank"
+                            sx={{ mt: 1, textTransform: 'none', py: 0.2, fontSize: '10px', fontWeight: 700, borderRadius: '6px' }}
+                          >
+                            Share on WhatsApp
+                          </Button>
+                        </Paper>
+                      ))}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })()}
         </Grid>
 
         {/* Right Side: Tabbed Salesforce 360 Linked Lists */}

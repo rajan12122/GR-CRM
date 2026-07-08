@@ -1,15 +1,14 @@
 {
   "employees": [
     {
-      "id": "EMP-001",
-      "name": "Pankaj Sharma",
-      "email": "pankaj@gaganrealtech.com",
-      "phone": 9876543210,
+      "id": "EMP-002",
+      "name": "Gagan Chopra",
+      "email": "Gagan@gmail.com",
+      "phone": "1234567890",
       "role": "Admin",
       "status": "Active",
-      "salary": 150000,
-      "joinDate": "2024-01-15",
-      "password": ""
+      "joinDate": "2026-07-08",
+      "password": "gagan123"
     }
   ],
   "customers": [
@@ -385,6 +384,54 @@
       "demand": "8.40 Cr",
       "lead_source": "Whatsapp",
       "initial_notes": "       25% built up, Booked Deal"
+    },
+    {
+      "id": "PROP-014",
+      "status": "",
+      "date": "8/7/2026",
+      "contact_person_name": "",
+      "contact_number": "",
+      "dealer_owner_booked": "",
+      "dealer_firm_name": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "address_number": "",
+      "size": "",
+      "bhk_and_washrooms": "",
+      "dimensions": "",
+      "location_type": "",
+      "facing": "",
+      "white": "",
+      "time": "",
+      "demand": "",
+      "lead_source": "",
+      "initial_notes": ""
+    },
+    {
+      "id": "PROP-015",
+      "status": "",
+      "date": "8/7/2026",
+      "contact_person_name": "",
+      "contact_number": "",
+      "dealer_owner_booked": "",
+      "dealer_firm_name": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "address_number": "",
+      "size": "",
+      "bhk_and_washrooms": "",
+      "dimensions": "",
+      "location_type": "",
+      "facing": "",
+      "white": "",
+      "time": "",
+      "demand": "",
+      "lead_source": "",
+      "initial_notes": ""
     }
   ],
   "projects": [
@@ -1680,7 +1727,36 @@
       "status": "Pending"
     }
   ],
-  "sales": [],
+  "sales": [
+    {
+      "id": "SALE-001",
+      "leadId": "LEAD-001",
+      "propertyId": "PROP-001",
+      "salePrice": 1200000,
+      "date": "2026-07-08"
+    },
+    {
+      "id": "SALE-002",
+      "leadId": "LEAD-002",
+      "propertyId": "PROP-002",
+      "salePrice": 3700000,
+      "date": "2026-07-07"
+    },
+    {
+      "id": "SALE-003",
+      "leadId": "LEAD-003",
+      "propertyId": "PROP-003",
+      "salePrice": 9500000,
+      "date": "2026-06-28"
+    },
+    {
+      "id": "SALE-004",
+      "leadId": "LEAD-001",
+      "propertyId": "PROP-004",
+      "salePrice": 6900000,
+      "date": "2026-05-15"
+    }
+  ],
   "tasks": [
     {
       "id": "TSK-001",
@@ -1741,6 +1817,30 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783492668559",
+      "employeeName": "Pankaj Sharma",
+      "action": "Deleted record EMP-001 in employees",
+      "dateTime": "8/7/2026, 12:07:48 pm"
+    },
+    {
+      "id": "LOG-1783492662869",
+      "employeeName": "Pankaj Sharma",
+      "action": "Created record EMP-002 in employees",
+      "dateTime": "8/7/2026, 12:07:42 pm"
+    },
+    {
+      "id": "LOG-1783492570629",
+      "employeeName": "Pankaj Sharma",
+      "action": "Created record PROP-015 in properties",
+      "dateTime": "8/7/2026, 12:06:10 pm"
+    },
+    {
+      "id": "LOG-1783492570024",
+      "employeeName": "Pankaj Sharma",
+      "action": "Created record PROP-014 in properties",
+      "dateTime": "8/7/2026, 12:06:10 pm"
+    },
     {
       "id": "LOG-1783430152566",
       "employeeName": "Pankaj Sharma",

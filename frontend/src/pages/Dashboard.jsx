@@ -45,6 +45,7 @@ const Dashboard = () => {
   } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [swiperIndex, setSwiperIndex] = useState(0);
 
   // Dashboard quick-add dropdown menu controls
   const [addMenuAnchor, setAddMenuAnchor] = useState(null);
@@ -104,6 +105,22 @@ const Dashboard = () => {
   // 1. Total revenue
   const totalSalesVal = sales.reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
   
+  // Dynamic time-based sales revenue calculations (relative to current system mock date 2026-07-08)
+  const revenueToday = sales.filter(s => s.date === '2026-07-08').reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
+  const revenue7Days = sales.filter(s => {
+    const sDate = new Date(s.date);
+    const limitDate = new Date('2026-07-08');
+    limitDate.setDate(limitDate.getDate() - 7);
+    return sDate >= limitDate;
+  }).reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
+  const revenue30Days = sales.filter(s => {
+    const sDate = new Date(s.date);
+    const limitDate = new Date('2026-07-08');
+    limitDate.setDate(limitDate.getDate() - 30);
+    return sDate >= limitDate;
+  }).reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
+  const revenueQuarter = sales.reduce((sum, s) => sum + (Number(s.salePrice) || 0), 0);
+  
   // 2. Attendance today (e.g. 2026-07-03 standard mock date)
   const todayStr = new Date().toISOString().split('T')[0];
   const presentToday = attendance.filter(a => a.date === '2026-07-03' && (a.status === 'Present' || a.status === 'Late')).length;
@@ -148,6 +165,49 @@ const Dashboard = () => {
 
   // Filter Today's Tasks & Followups
   const todaysFollowups = followUps.filter(f => f.date === '2026-07-04'); // targeting immediate schedules
+
+  const swiperLeads = React.useMemo(() => {
+    return leads.filter(l => l.status === 'New' || l.status === 'In Progress' || l.status === 'Assigned');
+  }, [leads]);
+
+  // Combine follow ups and site visits for today's agenda (targeting 2026-07-04 standard mock date)
+  const todaysAgenda = React.useMemo(() => {
+    const list = [];
+    
+    // Add today's followups
+    todaysFollowups.forEach(f => {
+      list.push({
+        id: f.id,
+        type: 'followup',
+        label: 'Follow Up Callback',
+        time: f.time || '11:00 AM',
+        title: `Follow-up: ${customers.find(c => c.id === f.customerId)?.name || f.customerId}`,
+        status: f.status,
+        color: '#F59E0B',
+        icon: <Icons.Phone size={14} />,
+        link: `/module/follow_ups/${f.id}`
+      });
+    });
+
+    // Add site visits matching today's date
+    const todaysVisits = siteVisits.filter(sv => sv.date === '2026-07-04');
+    todaysVisits.forEach(sv => {
+      list.push({
+        id: sv.id,
+        type: 'visit',
+        label: 'Site Visit Scheduled',
+        time: sv.time || '02:00 PM',
+        title: `Site Visit: ${customers.find(c => c.id === sv.customerId)?.name || sv.customerId}`,
+        status: sv.result || 'Scheduled',
+        color: '#2563EB',
+        icon: <Icons.MapPin size={14} />,
+        link: `/module/site_visits/${sv.id}`
+      });
+    });
+
+    // Sort by time
+    return list.sort((a, b) => a.time.localeCompare(b.time));
+  }, [todaysFollowups, siteVisits, customers]);
 
   return (
     <Box sx={{ p: 3 }}>
@@ -224,103 +284,227 @@ const Dashboard = () => {
         </Box>
       </Box>
 
-      {/* KPI Cards Row */}
+      {/* KPI Cards Row (Upgraded with Revenue Intelligence & Mobile Smart Lead Swiper) */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card 
-            onClick={() => navigate('/module/sales')}
-            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
-          >
-            <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Total Realised Bookings
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, fontFamily: 'Poppins', color: '#0F172A' }}>
-                  ₹{(totalSalesVal / 100000).toFixed(1)}L
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#22C55E', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                  <Icons.TrendingUp size={12} /> +12.5% this month
-                </Typography>
+        
+        {/* Column 1: Revenue Intelligence */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="flex-start">
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase', tracking: '0.05em' }}>
+                    Revenue Intelligence
+                  </Typography>
+                  <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, fontFamily: 'Poppins', color: '#10B981' }}>
+                    ₹{(totalSalesVal / 100000).toFixed(1)}L
+                  </Typography>
+                </Box>
+                <Chip label="Target: ₹3.0Cr" size="small" variant="outlined" sx={{ fontWeight: 700, color: '#64748B' }} />
               </Box>
-              <Box sx={{ p: 1.5, borderRadius: '12px', backgroundColor: 'rgba(34, 197, 94, 0.1)', color: '#22C55E' }}>
-                <Icons.IndianRupee size={24} />
+
+              <Box sx={{ mt: 2, mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Goal Realised</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#10B981' }}>
+                    {((totalSalesVal / 30000000) * 100).toFixed(1)}% Completed
+                  </Typography>
+                </Box>
+                <Box sx={{ height: 8, borderRadius: 4, backgroundColor: '#F1F5F9', overflow: 'hidden' }}>
+                  <Box sx={{ width: `${Math.min(100, (totalSalesVal / 30000000) * 100)}%`, height: '100%', backgroundColor: '#10B981', borderRadius: 4 }} />
+                </Box>
+              </Box>
+
+              <Divider sx={{ mb: 2, borderStyle: 'dashed' }} />
+
+              <Grid container spacing={2}>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Today</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenueToday / 100000).toFixed(1)}L</Typography>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Last 7 Days</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenue7Days / 100000).toFixed(1)}L</Typography>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Last 30 Days</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenue30Days / 100000).toFixed(1)}L</Typography>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Last Quarter</Typography>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenueQuarter / 100000).toFixed(1)}L</Typography>
+                </Grid>
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Column 2: Active Listings & Reps Stats */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase', tracking: '0.05em', display: 'block', mb: 2 }}>
+                Active Properties & Listings
+              </Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={6} sm={3}>
+                  <Paper 
+                    onClick={() => navigate('/module/customers')}
+                    sx={{ p: 1.5, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', cursor: 'pointer', textAlign: 'center', boxShadow: 'none', '&:hover': { borderColor: '#2563EB', backgroundColor: 'rgba(37,99,235,0.01)' } }}
+                  >
+                    <Icons.Users size={16} style={{ color: '#2563EB', marginBottom: 2 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{customers.length}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '10px' }}>Active Customers</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Paper 
+                    onClick={() => navigate('/module/properties')}
+                    sx={{ p: 1.5, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', cursor: 'pointer', textAlign: 'center', boxShadow: 'none', '&:hover': { borderColor: '#8B5CF6', backgroundColor: 'rgba(139,92,246,0.01)' } }}
+                  >
+                    <Icons.Home size={16} style={{ color: '#8B5CF6', marginBottom: 2 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{availableProperties}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '10px' }}>Available Units</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Paper 
+                    onClick={() => navigate('/module/attendance')}
+                    sx={{ p: 1.5, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', cursor: 'pointer', textAlign: 'center', boxShadow: 'none', '&:hover': { borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.01)' } }}
+                  >
+                    <Icons.Clock size={16} style={{ color: '#10B981', marginBottom: 2 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{presentToday}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '10px' }}>Staff Clocked-In</Typography>
+                  </Paper>
+                </Grid>
+                <Grid item xs={6} sm={3}>
+                  <Paper 
+                    onClick={() => navigate('/module/leads')}
+                    sx={{ p: 1.5, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', cursor: 'pointer', textAlign: 'center', boxShadow: 'none', '&:hover': { borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.01)' } }}
+                  >
+                    <Icons.PhoneCall size={16} style={{ color: '#F59E0B', marginBottom: 2 }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>{leads.length}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', fontSize: '10px' }}>Total Lead Pool</Typography>
+                  </Paper>
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
+
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Icons.MapPin size={16} style={{ color: '#EF4444' }} />
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B' }}>
+                    Punch-in Live Geo Tracking
+                  </Typography>
+                </Box>
+                <Chip label="Live Monitoring" size="small" color="success" sx={{ fontSize: '9px', fontWeight: 700 }} />
               </Box>
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card 
-            onClick={() => navigate('/module/customers')}
-            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
-          >
-            <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Active Customers
+        {/* Mobile-Only Smart Lead Swiper (Tinder-style) */}
+        <Grid item xs={12} sx={{ display: { xs: 'block', md: 'none' } }}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', backgroundColor: 'rgba(37,99,235,0.01)' }}>
+            <CardContent sx={{ p: 3 }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Icons.Zap size={16} style={{ color: '#F59E0B' }} />
+                  Smart Lead Swiper (Mobile Desk)
                 </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, fontFamily: 'Poppins', color: '#0F172A' }}>
-                  {customers.length} Accounts
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#22C55E', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                  <Icons.UserCheck size={12} /> {leads.length} capturing in leads
-                </Typography>
+                <Chip label={`Untracked: ${swiperLeads.length}`} size="small" color="primary" sx={{ fontWeight: 700, fontSize: '10px' }} />
               </Box>
-              <Box sx={{ p: 1.5, borderRadius: '12px', backgroundColor: 'rgba(37, 99, 235, 0.1)', color: '#2563EB' }}>
-                <Icons.Users size={24} />
-              </Box>
+              
+              {swiperLeads.length === 0 || !swiperLeads[swiperIndex % swiperLeads.length] ? (
+                <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" sx={{ py: 4, textAlign: 'center', color: '#94A3B8' }}>
+                  <Icons.Sparkles size={36} style={{ marginBottom: 8, color: '#F59E0B' }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Lead Pool Fully Swept! 🎉</Typography>
+                  <Typography variant="caption">All new properties leads are actioned.</Typography>
+                </Box>
+              ) : (() => {
+                const currentLead = swiperLeads[swiperIndex % swiperLeads.length];
+                return (
+                  <Box>
+                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', mb: 2, backgroundColor: '#FFFFFF' }}>
+                      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1E293B' }}>
+                          {currentLead.name || 'Anonymous Client'}
+                        </Typography>
+                        <Chip label={currentLead.id} size="small" variant="outlined" sx={{ fontSize: '9px', height: 18 }} />
+                      </Box>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 0.5 }}>
+                        Source: <strong>{currentLead.source || 'Direct Enquiry'}</strong>
+                      </Typography>
+                      {currentLead.budget && (
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 0.5 }}>
+                          Budget range: <strong>₹{Number(currentLead.budget).toLocaleString('en-IN')}</strong>
+                        </Typography>
+                      )}
+                      {currentLead.requirements && (
+                        <Typography variant="body2" sx={{ color: '#334155', mt: 1, p: 1, backgroundColor: '#F8FAFC', borderRadius: '6px', fontStyle: 'italic', fontSize: '12px' }}>
+                          "{currentLead.requirements}"
+                        </Typography>
+                      )}
+
+                      {/* Contact Channels */}
+                      <Box display="flex" gap={2} sx={{ mt: 2 }}>
+                        {currentLead.phone && (
+                          <Button 
+                            size="small" 
+                            variant="text" 
+                            startIcon={<Icons.Phone size={14} />} 
+                            href={`tel:${currentLead.phone}`}
+                            sx={{ textTransform: 'none', fontWeight: 700, fontSize: '11px', p: 0 }}
+                          >
+                            Call Rep
+                          </Button>
+                        )}
+                        {currentLead.phone && (
+                          <Button 
+                            size="small" 
+                            variant="text" 
+                            color="success"
+                            startIcon={<Icons.MessageCircle size={14} />} 
+                            href={`https://wa.me/91${currentLead.phone}?text=Hi%20${encodeURIComponent(currentLead.name || '')},%20this%20is%20Gagan%20Realtech%20following%20up.`}
+                            target="_blank"
+                            sx={{ textTransform: 'none', fontWeight: 700, fontSize: '11px', p: 0 }}
+                          >
+                            WhatsApp Client
+                          </Button>
+                        )}
+                      </Box>
+                    </Paper>
+
+                    <Box display="flex" gap={2} justifyContent="center">
+                      <Button 
+                        variant="outlined" 
+                        color="error" 
+                        size="small" 
+                        startIcon={<Icons.X size={14} />}
+                        onClick={() => setSwiperIndex(prev => prev + 1)}
+                        sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 700, px: 2 }}
+                      >
+                        Pass / Skip
+                      </Button>
+                      <Button 
+                        variant="contained" 
+                        color="primary" 
+                        size="small" 
+                        startIcon={<Icons.ArrowRight size={14} />}
+                        onClick={() => navigate(`/module/leads/${currentLead.id}`)}
+                        sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 700, px: 2, backgroundColor: '#2563EB' }}
+                      >
+                        Action Lead
+                      </Button>
+                    </Box>
+                  </Box>
+                );
+              })()}
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
-          <Card 
-            onClick={() => navigate('/module/properties')}
-            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
-          >
-            <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Available Properties
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, fontFamily: 'Poppins', color: '#0F172A' }}>
-                  {availableProperties} Units
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                  Total Listings: {properties.length}
-                </Typography>
-              </Box>
-              <Box sx={{ p: 1.5, borderRadius: '12px', backgroundColor: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6' }}>
-                <Icons.Home size={24} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} sm={6} md={3}>
-          <Card 
-            onClick={() => navigate('/module/attendance')}
-            sx={{ cursor: 'pointer', '&:hover': { boxShadow: '0 8px 24px rgba(15,23,42,0.06)', transform: 'translateY(-2px)' }, transition: 'all 0.2s ease-in-out' }}
-          >
-            <CardContent sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Box>
-                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, textTransform: 'uppercase' }}>
-                  Attendance Today
-                </Typography>
-                <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, fontFamily: 'Poppins', color: '#0F172A' }}>
-                  {presentToday} / {employees.length} Staff
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5, mt: 0.5 }}>
-                  {employees.length - presentToday} employees away
-                </Typography>
-              </Box>
-              <Box sx={{ p: 1.5, borderRadius: '12px', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B' }}>
-                <Icons.Clock size={24} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
 
       {/* Graphs/Analytics Row */}
@@ -398,48 +582,44 @@ const Dashboard = () => {
       {/* Operational Lists Grid */}
       <Grid container spacing={3}>
         
-        {/* Today's Follow Ups */}
+        {/* Today's Agenda Checklist */}
         <Grid item xs={12} md={4}>
           <Card sx={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
             <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', fontFamily: 'Poppins' }}>
-                  Today's Follow Ups
+                  🔔 Daily Agenda Reminders
                 </Typography>
-                <Chip label={`${todaysFollowups.length} Due`} color="warning" size="small" sx={{ fontWeight: 700 }} />
+                <Chip label={`${todaysAgenda.length} Scheduled`} color="warning" size="small" sx={{ fontWeight: 700 }} />
               </Box>
               <Divider />
               <Box sx={{ flex: 1, overflowY: 'auto', mt: 1, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#F1F5F9' } }}>
-                {todaysFollowups.length === 0 ? (
+                {todaysAgenda.length === 0 ? (
                   <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" color="#94A3B8">
-                    <Icons.PhoneCall size={32} style={{ marginBottom: 8 }} />
-                    <Typography variant="body2">No follow ups scheduled today</Typography>
+                    <Icons.Bell size={32} style={{ marginBottom: 8 }} />
+                    <Typography variant="body2">No site visits or callbacks today</Typography>
                   </Box>
                 ) : (
                   <List disablePadding>
-                    {todaysFollowups.map(f => {
-                      const client = customers.find(c => c.id === f.customerId) || { name: f.customerId };
-                      return (
-                        <ListItem key={f.id} disablePadding sx={{ py: 1.5, borderBottom: '1px solid #F1F5F9' }}>
-                          <ListItemText 
-                            primary={client.name}
-                            secondary={
-                              <span>
-                                Scheduled: {f.time || '10:00 AM'} • Assigned RM ID:{' '}
-                                <EntityTooltip moduleName="employees" id={f.employeeId}>
-                                  <strong style={{ borderBottom: '1px dotted #94A3B8', cursor: 'help' }}>
-                                    {f.employeeId}
-                                  </strong>
-                                </EntityTooltip>
-                              </span>
-                            }
-                            primaryTypographyProps={{ fontWeight: 600, fontSize: '14px' }}
-                            secondaryTypographyProps={{ fontSize: '12px', component: 'div' }}
-                          />
-                          <Chip label={f.status} size="small" color={f.status === 'Pending' ? 'warning' : 'success'} sx={{ borderRadius: '4px', fontSize: '10px', height: 20 }} />
-                        </ListItem>
-                      );
-                    })}
+                    {todaysAgenda.map((item, idx) => (
+                      <ListItem 
+                        key={idx} 
+                        disablePadding 
+                        sx={{ py: 1.5, borderBottom: '1px solid #F1F5F9', cursor: 'pointer', '&:hover': { backgroundColor: 'rgba(0,0,0,0.01)' } }}
+                        onClick={() => navigate(item.link)}
+                      >
+                        <Box sx={{ p: 1, mr: 2, borderRadius: '8px', backgroundColor: 'rgba(15,23,42,0.03)', color: item.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {item.icon}
+                        </Box>
+                        <ListItemText 
+                          primary={item.title}
+                          secondary={`${item.time} • ${item.label}`}
+                          primaryTypographyProps={{ fontWeight: 600, fontSize: '13px' }}
+                          secondaryTypographyProps={{ fontSize: '11px' }}
+                        />
+                        <Chip label={item.status} size="small" sx={{ fontSize: '8px', height: 18, fontWeight: 700 }} />
+                      </ListItem>
+                    ))}
                   </List>
                 )}
               </Box>

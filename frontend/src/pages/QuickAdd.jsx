@@ -202,9 +202,13 @@ const QuickAdd = () => {
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
                               }}
                             >
-                              {metadata.chips[f.chipGroup].map(choice => (
-                                <MenuItem key={choice} value={choice}>{choice}</MenuItem>
-                              ))}
+                              {metadata.chips[f.chipGroup].map(choice => {
+                                const choiceVal = typeof choice === 'object' ? choice.value : choice;
+                                const choiceLabel = typeof choice === 'object' ? choice.label : choice;
+                                return (
+                                  <MenuItem key={choiceVal} value={choiceVal}>{choiceLabel}</MenuItem>
+                                );
+                              })}
                             </Select>
                           </FormControl>
                         ) : isRef ? (

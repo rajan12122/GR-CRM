@@ -17,6 +17,7 @@ import Settings from './pages/Settings';
 import LocationTracker from './pages/LocationTracker';
 import PullToRefresh from './components/PullToRefresh';
 import PublicIntake from './pages/PublicIntake';
+import QuickAdd from './pages/QuickAdd';
 import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 const MainLayout = () => {
@@ -145,10 +146,11 @@ function App() {
     <ThemeProvider theme={theme}>
       <AppProvider>
         <Router>
-          <DomRoutes>
-            <DomRoute path="/intake" element={<PublicIntake />} />
-            <DomRoute path="/*" element={<MainLayout />} />
-          </DomRoutes>
+            <DomRoutes>
+              <DomRoute path="/intake" element={<PublicIntake />} />
+              <DomRoute path="/quick-add" element={<QuickAdd />} />
+              <DomRoute path="/*" element={<MainLayout />} />
+            </DomRoutes>
         </Router>
       </AppProvider>
     </ThemeProvider>

@@ -1084,6 +1084,59 @@ app.post('/api/public/lead-intake', (req, res) => {
   res.json({ success: true, lead: newLead });
 });
 
+// Public Employee Quick-Add Intake Portal Form Submission
+app.post('/api/public/quick-add', (req, res) => {
+  const { module, payload, key } = req.body;
+  if (key !== 'gagan_employee_intake_2026') {
+    return res.status(403).json({ error: "Invalid access token." });
+  }
+
+  const db = readDb();
+  if (!db[module]) db[module] = [];
+
+  // ID generation
+  const prefixMap = {
+    employees: 'EMP',
+    customers: 'CUST',
+    leads: 'LEAD',
+    properties: 'PROP',
+    projects: 'PROJ',
+    site_visits: 'VISIT',
+    follow_ups: 'FOLLOW',
+    remarks: 'REM',
+    tasks: 'TASK',
+    sales: 'SALE',
+    documents: 'DOC',
+    attendance: 'ATT',
+    daily_prices: 'PRICE'
+  };
+  const prefix = prefixMap[module] || module.substring(0, 4).toUpperCase();
+  
+  const existingIds = (db[module] || []).map(r => r.id).filter(id => id && String(id).startsWith(prefix));
+  let maxNum = 0;
+  existingIds.forEach(id => {
+    const parts = id.split('-');
+    const num = parseInt(parts[1]);
+    if (!isNaN(num) && num > maxNum) {
+      maxNum = num;
+    }
+  });
+  
+  const nextNum = maxNum > 0 ? maxNum + 1 : (db[module] || []).length + 1;
+  payload.id = `${prefix}-${String(nextNum).padStart(3, '0')}`;
+  
+  // Normalize default date added keys if not present
+  if (module === 'leads' && !payload.dateAdded) {
+    payload.dateAdded = new Date().toISOString().split('T')[0];
+  }
+
+  db[module].push(payload);
+  writeDb(db);
+  syncToSheets(module);
+  
+  res.json({ success: true, record: payload });
+});
+
 // Start background task: Check immediately after 10 seconds, and run every 5 minutes
 setTimeout(rotateLeadsTask, 10000);
 setInterval(rotateLeadsTask, 5 * 60 * 1000);

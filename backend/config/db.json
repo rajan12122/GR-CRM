@@ -49,10 +49,10 @@
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 4500000,
-      "r_c_i": "",
-      "propertyType": "",
-      "locality": "",
-      "sector_block": "",
+      "r_c_i": "Residential",
+      "propertyType": "LOI",
+      "locality": "Aerotropolis",
+      "sector_block": "A",
       "dateAdded": "2026-07-01"
     },
     {

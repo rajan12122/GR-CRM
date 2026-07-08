@@ -553,6 +553,69 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
+        {/* Employee Quick-Add QR & Link */}
+        <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', height: '100%', minHeight: '320px', background: 'linear-gradient(135deg, rgba(245,158,11,0.02) 0%, rgba(16,185,129,0.02) 100%)' }}>
+            <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, fontFamily: 'Poppins' }}>
+                <Icons.PlusCircle size={18} style={{ color: '#F59E0B' }} />
+                Employee Quick-Add QR (Universal Intake)
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 2 }}>
+                Scan this QR to quickly register leads, customers, properties, projects, site visits, or tasks on the fly from any mobile device without active log-in.
+              </Typography>
+
+              <Box display="flex" alignItems="center" gap={3} sx={{ mt: 1 }}>
+                <Paper variant="outlined" sx={{ p: 1, borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(window.location.origin + '/quick-add')}`} 
+                    alt="Quick-Add QR"
+                    style={{ width: 120, height: 120, borderRadius: '6px' }}
+                  />
+                </Paper>
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 0.5 }}>
+                    Copy Link URL:
+                  </Typography>
+                  <TextField
+                    value={window.location.origin + '/quick-add'}
+                    size="small"
+                    readOnly
+                    fullWidth
+                    sx={{ backgroundColor: '#FFFFFF', mb: 1 }}
+                    InputProps={{
+                      endAdornment: (
+                        <Button 
+                          size="small" 
+                          variant="text" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(window.location.origin + '/quick-add');
+                            alert('Link copied to clipboard!');
+                          }}
+                          sx={{ textTransform: 'none', fontWeight: 700 }}
+                        >
+                          Copy
+                        </Button>
+                      )
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="secondary"
+                    startIcon={<Icons.Share2 size={14} />}
+                    href={`https://wa.me/?text=${encodeURIComponent(`Quick-add portal for Gagan Realtech staff: ${window.location.origin}/quick-add`)}`}
+                    target="_blank"
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', backgroundColor: '#F59E0B', '&:hover': { backgroundColor: '#D97706' } }}
+                  >
+                    Share Portal Link
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
       </Grid>
 
       {/* Graphs/Analytics Row */}

@@ -118,23 +118,6 @@ const Auth = () => {
             </Typography>
           </Box>
 
-          <Box sx={{ borderTop: '1px solid #334155', pt: 3 }}>
-            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1.5, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-              Quick Demo Access
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              <Chip 
-                label="Admin Portal" 
-                onClick={() => fillCredentials('pankaj@gaganrealtech.com', 'admin123')}
-                sx={{ backgroundColor: '#2D3748', color: '#E2E8F0', border: '1px solid #4A5568', '&:hover': { backgroundColor: '#4A5568' } }} 
-              />
-              <Chip 
-                label="Sales Agent" 
-                onClick={() => fillCredentials('raj@gaganrealtech.com', 'pass123')}
-                sx={{ backgroundColor: '#2D3748', color: '#E2E8F0', border: '1px solid #4A5568', '&:hover': { backgroundColor: '#4A5568' } }} 
-              />
-            </Box>
-          </Box>
         </Grid>
 
         {/* Right Side: Form Sheet */}

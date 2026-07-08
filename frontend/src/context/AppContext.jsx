@@ -4,7 +4,9 @@ import { encryptData } from '../utils/crypto';
 
 const AppContext = createContext();
 
-export const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:5000/api'
+  : 'https://gr-crm-backend.onrender.com/api';
 
 // Set default auth token header if cached
 const cachedToken = localStorage.getItem('gr_crm_token');

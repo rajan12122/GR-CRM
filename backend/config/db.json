@@ -1715,6 +1715,14 @@
       "inTime": "06:10 PM",
       "outTime": "06:12 PM",
       "status": "Late"
+    },
+    {
+      "employeeId": "EMP-002",
+      "date": "2026-07-08",
+      "inTime": "02:22 PM",
+      "outTime": "--",
+      "status": "Late",
+      "id": "ATT-107"
     }
   ],
   "leaves": [
@@ -1817,6 +1825,12 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783500741642",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record ATT-107 in attendance",
+      "dateTime": "8/7/2026, 2:22:21 pm"
+    },
     {
       "id": "LOG-1783492668559",
       "employeeName": "Pankaj Sharma",
@@ -2332,6 +2346,15 @@
       "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",
       "status": "sharing",
       "timestamp": "2026-07-07T12:43:00.082Z"
+    },
+    {
+      "id": "LOC-1783500746240",
+      "employeeId": "EMP-002",
+      "employeeName": "Gagan Chopra",
+      "latitude": "dHFpd3tpZnd3fGx1dHxoZXB3",
+      "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",
+      "status": "sharing",
+      "timestamp": "2026-07-08T08:52:26.240Z"
     }
   ]
 }

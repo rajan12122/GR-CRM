@@ -80,7 +80,10 @@ const QuickAdd = () => {
     );
   }
 
-  const modulesList = metadata ? Object.values(metadata.modules).filter(m => m.id !== 'activity_logs' && m.id !== 'remarks' && m.id !== 'documents') : [];
+  const allowedModuleIds = ['customers', 'leads', 'properties', 'projects', 'daily_prices', 'dealers'];
+  const modulesList = metadata 
+    ? Object.values(metadata.modules).filter(m => allowedModuleIds.includes(m.id)) 
+    : [];
 
   const fields = selectedModule && metadata?.modules[selectedModule]
     ? metadata.modules[selectedModule].fields.filter(f => f.name !== 'id' && f.editable !== false)

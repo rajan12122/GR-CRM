@@ -4,7 +4,7 @@
       "id": "EMP-002",
       "name": "Gagan Chopra",
       "email": "Gagan@gmail.com",
-      "phone": "1234567890",
+      "phone": 1234567890,
       "role": "Admin",
       "status": "Active",
       "joinDate": "2026-07-08",
@@ -1717,12 +1717,12 @@
       "status": "Late"
     },
     {
+      "id": "ATT-107",
       "employeeId": "EMP-002",
       "date": "2026-07-08",
       "inTime": "02:22 PM",
-      "outTime": "--",
-      "status": "Late",
-      "id": "ATT-107"
+      "outTime": "02:52 PM",
+      "status": "Late"
     }
   ],
   "leaves": [
@@ -1735,36 +1735,7 @@
       "status": "Pending"
     }
   ],
-  "sales": [
-    {
-      "id": "SALE-001",
-      "leadId": "LEAD-001",
-      "propertyId": "PROP-001",
-      "salePrice": 1200000,
-      "date": "2026-07-08"
-    },
-    {
-      "id": "SALE-002",
-      "leadId": "LEAD-002",
-      "propertyId": "PROP-002",
-      "salePrice": 3700000,
-      "date": "2026-07-07"
-    },
-    {
-      "id": "SALE-003",
-      "leadId": "LEAD-003",
-      "propertyId": "PROP-003",
-      "salePrice": 9500000,
-      "date": "2026-06-28"
-    },
-    {
-      "id": "SALE-004",
-      "leadId": "LEAD-001",
-      "propertyId": "PROP-004",
-      "salePrice": 6900000,
-      "date": "2026-05-15"
-    }
-  ],
+  "sales": [],
   "tasks": [
     {
       "id": "TSK-001",

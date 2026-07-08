@@ -489,6 +489,69 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
+        {/* Computer-Only Self-Service Intake QR & Link (Differentiating Mobile vs computer features) */}
+        <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', height: '100%', minHeight: '320px', background: 'linear-gradient(135deg, rgba(37,99,235,0.02) 0%, rgba(13,148,136,0.02) 100%)' }}>
+            <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 0.5, mb: 1, fontFamily: 'Poppins' }}>
+                <Icons.QrCode size={18} style={{ color: '#2563EB' }} />
+                Customer Intake QR (Self-Service)
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 2 }}>
+                Share this QR code or link with prospective buyers. When opened, it displays a premium requirements registration form that automatically injects a brand new lead into the CRM.
+              </Typography>
+
+              <Box display="flex" alignItems="center" gap={3} sx={{ mt: 1 }}>
+                <Paper variant="outlined" sx={{ p: 1, borderRadius: '12px', border: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(window.location.origin + '/intake')}`} 
+                    alt="Intake QR"
+                    style={{ width: 120, height: 120, borderRadius: '6px' }}
+                  />
+                </Paper>
+                <Box sx={{ flexGrow: 1 }}>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 0.5 }}>
+                    Copy Link URL:
+                  </Typography>
+                  <TextField
+                    value={window.location.origin + '/intake'}
+                    size="small"
+                    readOnly
+                    fullWidth
+                    sx={{ backgroundColor: '#FFFFFF', mb: 1 }}
+                    InputProps={{
+                      endAdornment: (
+                        <Button 
+                          size="small" 
+                          variant="text" 
+                          onClick={() => {
+                            navigator.clipboard.writeText(window.location.origin + '/intake');
+                            alert('Link copied to clipboard!');
+                          }}
+                          sx={{ textTransform: 'none', fontWeight: 700 }}
+                        >
+                          Copy
+                        </Button>
+                      )
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    size="small"
+                    color="primary"
+                    startIcon={<Icons.Share2 size={14} />}
+                    href={`https://wa.me/?text=${encodeURIComponent(`Dear client, please fill in your property requirements here: ${window.location.origin}/intake`)}`}
+                    target="_blank"
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
+                  >
+                    Share Form Link
+                  </Button>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
       </Grid>
 
       {/* Graphs/Analytics Row */}

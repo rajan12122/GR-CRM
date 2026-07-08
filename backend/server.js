@@ -378,7 +378,37 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   res.json({ success: true, message: `Record ${id} deleted successfully.` });
 });
 
-// --- EMPLOYEE LOCATION TRACKING SYSTEM ---
+const SECRET_KEY = "GAGAN_REALTECH_SECURE_LOCATION_KEY_2026";
+function decryptData(hash) {
+  if (!hash) return "";
+  try {
+    let str = hash;
+    try {
+      str = Buffer.from(hash, 'base64').toString('binary');
+    } catch (e) {}
+    let result = "";
+    for (let i = 0; i < str.length; i++) {
+      const charCode = str.charCodeAt(i);
+      const keyChar = SECRET_KEY.charCodeAt(i % SECRET_KEY.length);
+      result += String.fromCharCode(charCode ^ keyChar);
+    }
+    return result;
+  } catch (e) {
+    return "";
+  }
+}
+
+function calculateDistanceKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
 
 // Log location entry
 app.post('/api/location/log', authenticateToken, (req, res) => {
@@ -386,20 +416,67 @@ app.post('/api/location/log', authenticateToken, (req, res) => {
   const db = readDb();
   
   if (!db.location_logs) db.location_logs = [];
-  
+  if (!db.active_paths) db.active_paths = {};
+
+  const decLat = parseFloat(decryptData(latitude)) || 0;
+  const decLng = parseFloat(decryptData(longitude)) || 0;
+
   const logEntry = {
     id: `LOC-${Date.now()}`,
     employeeId,
     employeeName,
-    latitude,  // Encrypted from frontend
-    longitude, // Encrypted from frontend
-    status,    // 'sharing' or 'ended'
+    latitude,
+    longitude,
+    status,
     timestamp: new Date().toISOString()
   };
   
   db.location_logs.push(logEntry);
+
+  if (status === 'sharing' && decLat !== 0 && decLng !== 0) {
+    db.active_paths[employeeId] = db.active_paths[employeeId] || [];
+    db.active_paths[employeeId].push({
+      lat: decLat,
+      lng: decLng,
+      timestamp: logEntry.timestamp
+    });
+  } else if (status === 'ended') {
+    const path = db.active_paths[employeeId] || [];
+    let distance = 0;
+    for (let i = 0; i < path.length - 1; i++) {
+      distance += calculateDistanceKm(path[i].lat, path[i].lng, path[i+1].lat, path[i+1].lng);
+    }
+    
+    // Save to employees collection
+    if (db.employees) {
+      const emp = db.employees.find(e => String(e.id) === String(employeeId));
+      if (emp) {
+        emp.locationHistory = emp.locationHistory || [];
+        emp.locationHistory.push({
+          date: new Date().toLocaleDateString('en-IN'),
+          totalKilometers: parseFloat(distance.toFixed(2)),
+          path
+        });
+      }
+    }
+    delete db.active_paths[employeeId];
+  }
+  
   writeDb(db);
   res.json({ success: true, log: logEntry });
+});
+
+// Fetch active coordinates path
+app.get('/api/location/path/:employeeId', authenticateToken, (req, res) => {
+  const { employeeId } = req.params;
+  const db = readDb();
+  const path = db.active_paths?.[employeeId] || [];
+  
+  let distance = 0;
+  for (let i = 0; i < path.length - 1; i++) {
+    distance += calculateDistanceKm(path[i].lat, path[i].lng, path[i+1].lat, path[i+1].lng);
+  }
+  res.json({ path, distance: parseFloat(distance.toFixed(2)) });
 });
 
 // Fetch active location logs
@@ -419,6 +496,26 @@ app.get('/api/location/active', authenticateToken, (req, res) => {
   // Only return those who are actively 'sharing'
   const result = Object.values(activeLocs).filter(loc => loc.status === 'sharing');
   res.json(result);
+});
+
+// Fetch set message templates config
+app.get('/api/templates', authenticateToken, (req, res) => {
+  const db = readDb();
+  const defaultTemplates = {
+    whatsapp: "Hi [Client Name], based on your requirements, here is a matching listing: [Property Name] (Price: ₹[Price]). Let me know when you'd like to visit!",
+    email_subject: "Matching Property Listing - Gagan Realtech",
+    email_body: "Hi [Client Name],\n\nBased on your requirements, here is a property listing you might like:\n\nProperty Name: [Property Name]\nPrice: ₹[Price]\nLocality: [Locality]\nSector: [Sector]\n\nBest regards,\nGagan Realtech Team",
+    sms: "Hi [Client Name], matching listing found: [Property Name] (Price: ₹[Price]) in [Locality]. Contact us!"
+  };
+  res.json(db.templates || defaultTemplates);
+});
+
+// Update message templates config
+app.post('/api/templates', authenticateToken, (req, res) => {
+  const db = readDb();
+  db.templates = req.body;
+  writeDb(db);
+  res.json({ success: true, templates: db.templates });
 });
 
 // --- GLOBAL 360° SEARCH ENGINE ---
@@ -813,6 +910,43 @@ const rotateLeadsTask = () => {
     console.error('Lead Rotation Scheduler Error:', err);
   }
 };
+
+// Public Customer Intake Form Submission
+app.post('/api/public/lead-intake', (req, res) => {
+  const { name, phone, locality, sector, propertyType, optionType, size, plc, budget } = req.body;
+  const db = readDb();
+  
+  if (!db.leads) db.leads = [];
+
+  // Enforce Phone uniqueness across leads and customers
+  const phoneExists = db.leads.some(l => String(l.phone).trim() === String(phone).trim()) || 
+                      (db.customers && db.customers.some(c => String(c.phone).trim() === String(phone).trim()));
+  if (phoneExists) {
+    return res.status(400).json({ error: "A lead or customer with this phone number already exists." });
+  }
+
+  const newLead = {
+    id: `LD-${Date.now()}`,
+    name,
+    phone,
+    email: "",
+    source: "Self-Service QR",
+    status: "New",
+    assignedEmployeeId: "",
+    enableRotation: true,
+    budget: budget,
+    r_c_i: propertyType,
+    propertyType: optionType,
+    locality,
+    sector_block: sector,
+    requirements: `Intake Demand - Property Option: ${optionType}, Size: ${size}, Preferred PLC: ${plc}`,
+    dateAdded: new Date().toLocaleDateString('en-IN')
+  };
+
+  db.leads.push(newLead);
+  writeDb(db);
+  res.json({ success: true, lead: newLead });
+});
 
 // Start background task: Check immediately after 10 seconds, and run every 5 minutes
 setTimeout(rotateLeadsTask, 10000);

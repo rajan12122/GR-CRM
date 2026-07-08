@@ -61,6 +61,42 @@ const Settings = () => {
   const [rotationHours, setRotationHours] = useState('24');
   const [rotatedSources, setRotatedSources] = useState([]);
 
+  // Message templates form states
+  const [whatsappTemplate, setWhatsappTemplate] = useState('');
+  const [emailSubjectTemplate, setEmailSubjectTemplate] = useState('');
+  const [emailBodyTemplate, setEmailBodyTemplate] = useState('');
+  const [smsTemplate, setSmsTemplate] = useState('');
+
+  useEffect(() => {
+    const token = localStorage.getItem('gr_crm_token');
+    axios.get(`${API_BASE_URL}/templates`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      setWhatsappTemplate(res.data.whatsapp || '');
+      setEmailSubjectTemplate(res.data.email_subject || '');
+      setEmailBodyTemplate(res.data.email_body || '');
+      setSmsTemplate(res.data.sms || '');
+    }).catch(err => console.error('Failed to load templates:', err));
+  }, []);
+
+  const handleSaveTemplates = async () => {
+    const token = localStorage.getItem('gr_crm_token');
+    try {
+      await axios.post(`${API_BASE_URL}/templates`, {
+        whatsapp: whatsappTemplate,
+        email_subject: emailSubjectTemplate,
+        email_body: emailBodyTemplate,
+        sms: smsTemplate
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      showStatus('success', 'Message templates saved successfully!');
+    } catch (e) {
+      console.error(e);
+      showStatus('error', 'Failed to save message templates.');
+    }
+  };
+
   // Google Sheets local form state
   const [sheetsId, setSheetsId] = useState('');
   const [sheetsEmail, setSheetsEmail] = useState('');
@@ -598,11 +634,15 @@ const Settings = () => {
                   <Icons.FileSpreadsheet size={18} style={{ marginRight: 10 }} />
                   <Typography variant="body2" sx={{ fontWeight: 600 }}>Google Sheets Config</Typography>
                 </ListItem>
-                <ListItem button onClick={() => setActiveTab('rotation')} selected={activeTab === 'rotation'} sx={{ borderRadius: '8px', mb: 0.5, py: 1.5, backgroundColor: activeTab === 'rotation' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'rotation' ? '#2563EB' : '#4B5563' }}>
-                  <Icons.RefreshCw size={18} style={{ marginRight: 10 }} />
-                  <Typography variant="body2" sx={{ fontWeight: 600 }}>Lead Rotation Engine</Typography>
-                </ListItem>
-              </List>
+                 <ListItem button onClick={() => setActiveTab('rotation')} selected={activeTab === 'rotation'} sx={{ borderRadius: '8px', mb: 0.5, py: 1.5, backgroundColor: activeTab === 'rotation' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'rotation' ? '#2563EB' : '#4B5563' }}>
+                   <Icons.RefreshCw size={18} style={{ marginRight: 10 }} />
+                   <Typography variant="body2" sx={{ fontWeight: 600 }}>Lead Rotation Engine</Typography>
+                 </ListItem>
+                 <ListItem button onClick={() => setActiveTab('templates')} selected={activeTab === 'templates'} sx={{ borderRadius: '8px', mb: 0.5, py: 1.5, backgroundColor: activeTab === 'templates' ? 'rgba(37,99,235,0.08) !important' : 'transparent', color: activeTab === 'templates' ? '#2563EB' : '#4B5563' }}>
+                   <Icons.MessageSquare size={18} style={{ marginRight: 10 }} />
+                   <Typography variant="body2" sx={{ fontWeight: 600 }}>Notification Templates</Typography>
+                 </ListItem>
+               </List>
             </CardContent>
           </Card>
         </Grid>
@@ -1367,6 +1407,77 @@ const Settings = () => {
                     sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' }, borderRadius: '8px', px: 4, py: 1, textTransform: 'none', fontWeight: 700 }}
                   >
                     Save Rotation Settings
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* TAB 7: MESSAGE TEMPLATES CONFIG */}
+          {activeTab === 'templates' && (
+            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: '20px', fontFamily: 'Poppins', mb: 1 }}>
+                  Configure Message Templates
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                  Set up default message templates for client follow-ups. You can use placeholder tags like: <strong>[Client Name]</strong>, <strong>[Property Name]</strong>, <strong>[Price]</strong>, <strong>[Locality]</strong>, <strong>[Sector]</strong>.
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12}>
+                    <TextField
+                      label="WhatsApp Notification Template"
+                      multiline
+                      rows={3}
+                      value={whatsappTemplate}
+                      onChange={(e) => setWhatsappTemplate(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Email Subject Template"
+                      value={emailSubjectTemplate}
+                      onChange={(e) => setEmailSubjectTemplate(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="Email Body Template"
+                      multiline
+                      rows={5}
+                      value={emailBodyTemplate}
+                      onChange={(e) => setEmailBodyTemplate(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+
+                  <Grid item xs={12}>
+                    <TextField
+                      label="SMS Notification Template"
+                      multiline
+                      rows={2}
+                      value={smsTemplate}
+                      onChange={(e) => setSmsTemplate(e.target.value)}
+                      fullWidth
+                    />
+                  </Grid>
+                </Grid>
+
+                <Divider sx={{ my: 3 }} />
+
+                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={handleSaveTemplates}
+                    sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' }, borderRadius: '8px', px: 4, py: 1, textTransform: 'none', fontWeight: 700 }}
+                  >
+                    Save Templates
                   </Button>
                 </Box>
               </CardContent>

@@ -253,6 +253,40 @@
           "editable": true
         },
         {
+          "name": "r_c_i",
+          "label": "R/C/I",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "rci"
+        },
+        {
+          "name": "propertyType",
+          "label": "Property Type",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "propertyTypes"
+        },
+        {
+          "name": "locality",
+          "label": "Locality",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sector_block",
+          "label": "Sector/ Block",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "dateAdded",
           "label": "Date Captured",
           "type": "date",

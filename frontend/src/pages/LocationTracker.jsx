@@ -46,11 +46,13 @@ const LocationTracker = () => {
   const [activeEmployees, setActiveEmployees] = useState([]);
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [mapEngineLoaded, setMapEngineLoaded] = useState(false);
+  const [selectedPathData, setSelectedPathData] = useState(null);
   
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef({});
   const pollingRef = useRef(null);
+  const polylineRef = useRef(null);
 
   // 1. Initial Load Leaflet Map Assets
   useEffect(() => {
@@ -119,9 +121,36 @@ const LocationTracker = () => {
     pollingRef.current = setInterval(async () => {
       const data = await fetchActiveLocations();
       updateMarkersOnMap(data);
+      
+      if (selectedEmp) {
+        const activeItem = data.find(e => e.employeeId === selectedEmp.employeeId);
+        if (activeItem) {
+          const token = localStorage.getItem('gr_crm_token');
+          try {
+            const pathRes = await axios.get(`${API_BASE_URL}/location/path/${selectedEmp.employeeId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            setSelectedPathData(pathRes.data);
+            if (mapInstanceRef.current && window.L && pathRes.data.path.length > 0) {
+              if (polylineRef.current) polylineRef.current.remove();
+              const pathCoords = pathRes.data.path.map(p => [p.lat, p.lng]);
+              pathCoords.push([activeItem.lat, activeItem.lng]);
+              polylineRef.current = window.L.polyline(pathCoords, { color: '#2563EB', weight: 4, opacity: 0.8 }).addTo(mapInstanceRef.current);
+            }
+          } catch (e) {}
+        } else {
+          // Stopped sharing
+          setSelectedEmp(null);
+          setSelectedPathData(null);
+          if (polylineRef.current) {
+            polylineRef.current.remove();
+            polylineRef.current = null;
+          }
+        }
+      }
     }, 5000);
 
-  }, [mapEngineLoaded]);
+  }, [mapEngineLoaded, selectedEmp]);
 
   // 4. Update Markers Dynamically on Map
   const updateMarkersOnMap = (employees) => {
@@ -169,17 +198,42 @@ const LocationTracker = () => {
     });
   };
 
-  const handleSelectEmployee = (emp) => {
+  const handleSelectEmployee = async (emp) => {
     setSelectedEmp(emp);
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView([emp.lat, emp.lng], 15, {
-        animate: true,
-        duration: 1.2
+    if (polylineRef.current) {
+      polylineRef.current.remove();
+      polylineRef.current = null;
+    }
+
+    try {
+      const token = localStorage.getItem('gr_crm_token');
+      const res = await axios.get(`${API_BASE_URL}/location/path/${emp.employeeId}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-      // Open popup
-      if (markersRef.current[emp.employeeId]) {
-        markersRef.current[emp.employeeId].openPopup();
+      setSelectedPathData(res.data);
+      
+      if (mapInstanceRef.current && window.L) {
+        const pathCoords = res.data.path.map(p => [p.lat, p.lng]);
+        if (pathCoords.length === 0 || pathCoords[pathCoords.length - 1][0] !== emp.lat || pathCoords[pathCoords.length - 1][1] !== emp.lng) {
+          pathCoords.push([emp.lat, emp.lng]);
+        }
+        
+        if (pathCoords.length > 1) {
+          polylineRef.current = window.L.polyline(pathCoords, { color: '#2563EB', weight: 4, opacity: 0.8 }).addTo(mapInstanceRef.current);
+          mapInstanceRef.current.fitBounds(polylineRef.current.getBounds(), { padding: [30, 30] });
+        } else {
+          mapInstanceRef.current.setView([emp.lat, emp.lng], 15, { animate: true });
+        }
       }
+    } catch (e) {
+      console.error(e);
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.setView([emp.lat, emp.lng], 15, { animate: true });
+      }
+    }
+
+    if (markersRef.current[emp.employeeId]) {
+      markersRef.current[emp.employeeId].openPopup();
     }
   };
 
@@ -265,6 +319,13 @@ const LocationTracker = () => {
                                 <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '9px', wordBreak: 'break-all', display: 'block' }}>
                                   Lat: {emp.lat.toFixed(5)}, Lng: {emp.lng.toFixed(5)}
                                 </Typography>
+                                {isSelected && selectedPathData && (
+                                  <Box sx={{ mt: 1, p: 1, backgroundColor: 'rgba(37,99,235,0.05)', borderRadius: '6px' }}>
+                                    <Typography variant="caption" sx={{ fontWeight: 700, color: '#2563EB', display: 'block' }}>
+                                      ⚡ Dist. Traveled: {selectedPathData.distance || 0} km
+                                    </Typography>
+                                  </Box>
+                                )}
                               </Box>
                             }
                           />

@@ -48,6 +48,33 @@ const EntityDetail = () => {
   const [docName, setDocName] = useState('');
   const [docUrl, setDocUrl] = useState('');
 
+  // Message templates state
+  const [templates, setTemplates] = useState({
+    whatsapp: "Hi [Client Name], based on your requirements, here is a matching listing: [Property Name] (Price: ₹[Price]). Let me know when you'd like to visit!",
+    email_subject: "Matching Property Listing - Gagan Realtech",
+    email_body: "Hi [Client Name],\n\nBased on your requirements, here is a property listing you might like:\n\nProperty Name: [Property Name]\nPrice: ₹[Price]\nLocality: [Locality]\nSector: [Sector]\n\nBest regards,\nGagan Realtech Team",
+    sms: "Hi [Client Name], matching listing found: [Property Name] (Price: ₹[Price]) in [Locality]. Contact us!"
+  });
+
+  useEffect(() => {
+    const token = localStorage.getItem('gr_crm_token');
+    axios.get(`${API_BASE_URL}/templates`, {
+      headers: { Authorization: `Bearer ${token}` }
+    }).then(res => {
+      if (res.data) setTemplates(res.data);
+    }).catch(err => console.error(err));
+  }, []);
+
+  const compileTemplate = (text, clientName, propName, price, locality, sector) => {
+    if (!text) return "";
+    return text
+      .replaceAll('[Client Name]', clientName || '')
+      .replaceAll('[Property Name]', propName || '')
+      .replaceAll('[Price]', price ? Number(price).toLocaleString('en-IN') : '')
+      .replaceAll('[Locality]', locality || '')
+      .replaceAll('[Sector]', sector || '');
+  };
+
   const loadData = async () => {
     setLoading(true);
     // Fetch master modules list to match details
@@ -204,58 +231,148 @@ const EntityDetail = () => {
                   );
                 })}
               </List>
-            </CardContent>
+             </CardContent>
           </Card>
 
-          {/* Leadrat Intelligent Property Matcher Engine */}
+          {/* Quick Outreach Card */}
+          {(moduleName === 'leads' || moduleName === 'customers') && (
+            <Card sx={{ mt: 3, border: '1px solid #E2E8F0', borderRadius: '16px', backgroundColor: 'rgba(37, 99, 235, 0.01)' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Icons.MessageSquare size={18} style={{ color: '#2563EB' }} />
+                  One-Click Outreach
+                </Typography>
+                <Divider sx={{ mb: 2 }} />
+                
+                <Box display="flex" flexDirection="column" gap={1.5}>
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    startIcon={<Icons.MessageCircle size={16} />}
+                    href={`https://wa.me/91${record.phone || ''}?text=${encodeURIComponent(compileTemplate(templates.whatsapp, record.name, 'our portfolio properties', '', '', ''))}`}
+                    target="_blank"
+                    fullWidth
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', justifyContent: 'flex-start', py: 1 }}
+                  >
+                    WhatsApp Chat
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    color="primary"
+                    startIcon={<Icons.Mail size={16} />}
+                    href={`mailto:${record.email || ''}?subject=${encodeURIComponent(compileTemplate(templates.email_subject, record.name, 'our portfolio properties', '', '', ''))}&body=${encodeURIComponent(compileTemplate(templates.email_body, record.name, 'our portfolio properties', '', '', ''))}`}
+                    fullWidth
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', justifyContent: 'flex-start', py: 1 }}
+                  >
+                    Send Email Message
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    color="warning"
+                    startIcon={<Icons.Smartphone size={16} />}
+                    href={`sms:91${record.phone || ''}?body=${encodeURIComponent(compileTemplate(templates.sms, record.name, 'our portfolio properties', '', '', ''))}`}
+                    fullWidth
+                    sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '8px', justifyContent: 'flex-start', py: 1 }}
+                  >
+                    Send Mobile SMS
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Intelligent Property Matcher Engine */}
           {moduleName === 'leads' && (() => {
             const propertiesList = moduleData.properties || [];
-            const budget = Number(record.budget) || 0;
             
-            // Match properties:
-            // Score properties based on how close their price is to the lead's budget
+            // Get lead demands
+            const leadRCI = record.r_c_i;
+            const leadType = record.propertyType;
+            const leadLocality = record.locality;
+            const leadSector = record.sector_block;
+
+            // Score properties based on keyword matching
             const matchedProps = propertiesList
               .map(p => {
-                const price = Number(p.price) || 0;
-                let score = 0;
-                
-                // Price matching
-                if (price > 0 && budget > 0) {
-                  const pctDiff = Math.abs(price - budget) / budget;
-                  if (pctDiff <= 0.1) score += 50;
-                  else if (pctDiff <= 0.25) score += 30;
-                  else if (pctDiff <= 0.4) score += 10;
-                  if (price <= budget) score += 10; // premium for being under budget
+                let matchCount = 0;
+                const matches = [];
+
+                // Compare fields
+                if (leadRCI && p.r_c_i && String(leadRCI).toLowerCase() === String(p.r_c_i).toLowerCase()) {
+                  matchCount++;
+                  matches.push(p.r_c_i);
+                }
+                if (leadType && p.propertyType && String(leadType).toLowerCase() === String(p.propertyType).toLowerCase()) {
+                  matchCount++;
+                  matches.push(p.propertyType);
+                }
+                if (leadLocality && p.locality && String(p.locality).toLowerCase().includes(String(leadLocality).toLowerCase())) {
+                  matchCount++;
+                  matches.push(p.locality);
+                }
+                if (leadSector && p.sector_block && String(p.sector_block).toLowerCase().includes(String(leadSector).toLowerCase())) {
+                  matchCount++;
+                  matches.push(p.sector_block);
                 }
 
-                // BHK & Requirements matching
+                // Check text description / requirements matching
                 if (record.requirements && p.name) {
-                  const reqLower = record.requirements.toLowerCase();
-                  const nameLower = p.name.toLowerCase();
-                  if (reqLower.includes('3bhk') && nameLower.includes('3bhk')) score += 35;
-                  else if (reqLower.includes('2bhk') && nameLower.includes('2bhk')) score += 35;
-                  else if (reqLower.includes('4bhk') && nameLower.includes('4bhk')) score += 35;
-                  else if (reqLower.includes('1bhk') && nameLower.includes('1bhk')) score += 35;
+                  const reqWords = record.requirements.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                  const nameWords = p.name.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                  reqWords.forEach(w => {
+                    if (nameWords.includes(w)) {
+                      matchCount++;
+                      matches.push(w);
+                    }
+                  });
                 }
 
-                return { ...p, score };
+                const score = Math.min(100, matchCount * 25);
+                return { ...p, score, matchCount, matches: [...new Set(matches)] };
               })
-              .filter(p => p.score > 0)
-              .sort((a, b) => b.score - a.score)
-              .slice(0, 3); // Get top 3 matches
+              .filter(p => p.matchCount > 1) // Only show if more than one keyword matches!
+              .sort((a, b) => b.matchCount - a.matchCount)
+              .slice(0, 5); // Show top 5 matches
 
             return (
               <Card sx={{ mt: 3, border: '1px solid #E2E8F0', borderRadius: '16px', backgroundColor: 'rgba(34, 197, 94, 0.01)' }}>
                 <CardContent sx={{ p: 3 }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#16A34A', display: 'flex', alignItems: 'center', gap: 0.5, mb: 2 }}>
                     <Icons.Target size={16} />
-                    Leadrat Property Matcher
+                    Property Matcher
                   </Typography>
                   <Divider sx={{ mb: 2 }} />
+
+                  {/* Lead Demand Summary Rows */}
+                  <Box sx={{ mb: 2, p: 1.5, backgroundColor: '#FFFFFF', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, color: '#475569', display: 'block', mb: 1, textTransform: 'uppercase', fontSize: '9px' }}>
+                      Client Demand Profile:
+                    </Typography>
+                    <Grid container spacing={1}>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '10px' }}>R/C/I:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '12px' }}>{leadRCI || 'Any'}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '10px' }}>Property Type:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '12px' }}>{leadType || 'Any'}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '10px' }}>Locality:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '12px' }}>{leadLocality || 'Any'}</Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '10px' }}>Sector/ Block:</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '12px' }}>{leadSector || 'Any'}</Typography>
+                      </Grid>
+                    </Grid>
+                  </Box>
                   
                   {matchedProps.length === 0 ? (
                     <Typography variant="caption" sx={{ color: '#94A3B8', display: 'block', textAlign: 'center', py: 2 }}>
-                      No matching properties found in database for this budget.
+                      No matching properties found in database with more than 1 matching keyword.
                     </Typography>
                   ) : (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -265,19 +382,28 @@ const EntityDetail = () => {
                             <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', cursor: 'pointer' }} onClick={() => navigate(`/module/properties/${p.id}`)}>
                               {p.name}
                             </Typography>
-                            <Chip label={`${p.score}% Match`} size="small" color="success" sx={{ fontSize: '9px', height: 18, fontWeight: 700 }} />
+                            <Chip label={`${p.matchCount} Matches`} size="small" color="success" sx={{ fontSize: '9px', height: 18, fontWeight: 700 }} />
                           </Box>
-                          <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
                             Price: ₹{Number(p.price).toLocaleString('en-IN')} • {p.city || 'Local'}
                           </Typography>
+                          
+                          {p.matches && p.matches.length > 0 && (
+                            <Box sx={{ mb: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                              {p.matches.map((m, mIdx) => (
+                                <Chip key={mIdx} label={m} size="small" variant="outlined" sx={{ fontSize: '8px', height: 14 }} />
+                              ))}
+                            </Box>
+                          )}
+
                           <Button 
                             size="small" 
                             variant="outlined" 
                             color="success" 
                             startIcon={<Icons.Share2 size={12} />}
-                            href={`https://wa.me/91${record.phone || ''}?text=${encodeURIComponent(`Hi ${record.name || ''}, based on your requirements, here is a matching listing: ${p.name} (Price: ₹${Number(p.price).toLocaleString('en-IN')}). Let me know when you'd like to visit!`)}`}
+                            href={`https://wa.me/91${record.phone || ''}?text=${encodeURIComponent(compileTemplate(templates.whatsapp, record.name, p.name, p.price, p.locality, p.sector_block))}`}
                             target="_blank"
-                            sx={{ mt: 1, textTransform: 'none', py: 0.2, fontSize: '10px', fontWeight: 700, borderRadius: '6px' }}
+                            sx={{ textTransform: 'none', py: 0.2, fontSize: '10px', fontWeight: 700, borderRadius: '6px' }}
                           >
                             Share on WhatsApp
                           </Button>
@@ -412,6 +538,52 @@ const EntityDetail = () => {
                                   <Typography variant="caption" sx={{ color: '#64748B' }}>Due: {t.dueDate} • Priority: {t.priority} • Status: {t.status}</Typography>
                                 </Paper>
                               ))
+                            )}
+                          </Grid>
+                          
+                          <Grid item xs={12}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Icons.MapPin size={18} style={{ color: '#EF4444' }} />
+                              Location Tracking Shift History
+                            </Typography>
+                            {!record.locationHistory || record.locationHistory.length === 0 ? (
+                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No completed location tracking shifts found.</Typography>
+                            ) : (
+                              <Grid container spacing={2}>
+                                {record.locationHistory.map((hist, idx) => (
+                                  <Grid item xs={12} sm={6} key={idx}>
+                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                                      <Box display="flex" justifyContent="space-between" mb={1}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                          Shift Date: {hist.date}
+                                        </Typography>
+                                        <Chip label={`${hist.totalKilometers || 0} km`} color="primary" size="small" sx={{ fontWeight: 700, fontSize: '10px' }} />
+                                      </Box>
+                                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                                        Registered coordinates: {hist.path?.length || 0} points
+                                      </Typography>
+                                      {hist.path && hist.path.length > 0 && (
+                                        <Box>
+                                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#0F172A', display: 'block', mb: 0.5 }}>
+                                            Route Points (Chronological):
+                                          </Typography>
+                                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 80, overflowY: 'auto' }}>
+                                            {hist.path.map((p, pIdx) => (
+                                              <Chip 
+                                                key={pIdx} 
+                                                label={`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`} 
+                                                size="small" 
+                                                variant="outlined"
+                                                sx={{ fontSize: '8px', height: 16 }} 
+                                              />
+                                            ))}
+                                          </Box>
+                                        </Box>
+                                      )}
+                                    </Paper>
+                                  </Grid>
+                                ))}
+                              </Grid>
                             )}
                           </Grid>
                         </Grid>

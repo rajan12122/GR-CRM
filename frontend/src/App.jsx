@@ -16,6 +16,8 @@ import Attendance from './pages/Attendance';
 import Settings from './pages/Settings';
 import LocationTracker from './pages/LocationTracker';
 import PullToRefresh from './components/PullToRefresh';
+import PublicIntake from './pages/PublicIntake';
+import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 const MainLayout = () => {
   const { token, loadingMetadata, reloadKey, triggerAppReload } = useApp();
@@ -143,7 +145,10 @@ function App() {
     <ThemeProvider theme={theme}>
       <AppProvider>
         <Router>
-          <MainLayout />
+          <DomRoutes>
+            <DomRoute path="/intake" element={<PublicIntake />} />
+            <DomRoute path="/*" element={<MainLayout />} />
+          </DomRoutes>
         </Router>
       </AppProvider>
     </ThemeProvider>

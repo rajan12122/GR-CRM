@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import axios from 'axios';
-import { useApp } from '../context/AppContext';
+import { useApp, API_BASE_URL } from '../context/AppContext';
 
 const Settings = () => {
   const { 

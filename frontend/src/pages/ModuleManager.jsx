@@ -90,6 +90,16 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
 
       {/* Card Actions Footer */}
       <Box sx={{ p: 1.5, borderTop: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', display: 'flex', justifyContent: 'flex-end', gap: 1, borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px' }}>
+        {(moduleName === 'leads' || moduleName === 'customers') && rec.phone && (
+          <IconButton 
+            size="small" 
+            href={`https://wa.me/91${rec.phone}?text=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
+            target="_blank"
+            sx={{ color: '#22C55E', '&:hover': { backgroundColor: 'rgba(34,197,94,0.05)' } }}
+          >
+            <Icons.MessageCircle size={16} />
+          </IconButton>
+        )}
         <IconButton size="small" onClick={() => handleInspectClick(moduleName, rec.id)} sx={{ color: '#2563EB', '&:hover': { backgroundColor: 'rgba(37,99,235,0.05)' } }}>
           <Icons.SearchCode size={16} />
         </IconButton>

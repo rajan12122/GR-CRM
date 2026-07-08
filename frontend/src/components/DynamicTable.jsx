@@ -458,6 +458,18 @@ const DynamicTable = ({
 
                   <TableCell align="right">
                     <Box display="flex" justifyContent="flex-end" gap={0.5}>
+                      {(moduleKey === 'leads' || moduleKey === 'customers') && rec.phone && (
+                        <Tooltip title="One-Click WhatsApp Outreach">
+                          <IconButton 
+                            size="small" 
+                            href={`https://wa.me/91${rec.phone}?text=${encodeURIComponent(`Hi ${rec.name || ''}, this is Gagan Realtech following up.`)}`}
+                            target="_blank"
+                            sx={{ color: '#22C55E' }}
+                          >
+                            <Icons.MessageCircle size={16} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                       {onInspectClick && (
                         <Tooltip title="Inspect 360 View">
                           <IconButton size="small" onClick={() => onInspectClick(moduleKey, rec.id)} sx={{ color: '#2563EB' }}>

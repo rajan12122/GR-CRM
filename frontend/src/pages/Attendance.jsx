@@ -32,7 +32,32 @@ import {
   DialogActions
 } from '@mui/material';
 import * as Icons from 'lucide-react';
+import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 import { useApp } from '../context/AppContext';
+
+const parseTimeStr = (timeStr) => {
+  if (!timeStr || timeStr === '--' || timeStr === '') return null;
+  const match = timeStr.match(/(\d+):(\d+)\s*(AM|PM)?/i);
+  if (!match) return null;
+  let hours = parseInt(match[1]);
+  const minutes = parseInt(match[2]);
+  const amp_pm = match[3];
+
+  if (amp_pm) {
+    if (amp_pm.toUpperCase() === 'PM' && hours < 12) hours += 12;
+    if (amp_pm.toUpperCase() === 'AM' && hours === 12) hours = 0;
+  }
+  return hours + minutes / 60;
+};
+
+const getShiftHours = (inTime, outTime) => {
+  const inVal = parseTimeStr(inTime);
+  const outVal = parseTimeStr(outTime);
+  if (inVal === null || outVal === null) return 0;
+  const diff = outVal - inVal;
+  return diff > 0 ? diff : 0;
+};
 
 const Attendance = () => {
   const { 
@@ -51,6 +76,23 @@ const Attendance = () => {
   const [sharingError, setSharingError] = useState('');
   const watchIdRef = useRef(null);
   const intervalIdRef = useRef(null);
+
+  // Payroll / Salary Settlement states
+  const [selectedEmpId, setSelectedEmpId] = useState('');
+  const [payMonth, setPayMonth] = useState(new Date().getMonth() + 1); // 1-12
+  const [payYear, setPayYear] = useState(new Date().getFullYear());
+  const [extraDaysOverride, setExtraDaysOverride] = useState('');
+
+  // Default selectedEmpId once employees load
+  useEffect(() => {
+    if (moduleData.employees && moduleData.employees.length > 0) {
+      if (user?.role === 'Admin') {
+        setSelectedEmpId(moduleData.employees[0].id);
+      } else {
+        setSelectedEmpId(user?.id || '');
+      }
+    }
+  }, [moduleData.employees, user]);
 
   // Self-service Punch Card states
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -131,42 +173,100 @@ const Attendance = () => {
     }
   };
 
-  const startLocationSharing = () => {
-    if (!navigator.geolocation) {
-      setSharingError("Geolocation is not supported by your browser/device.");
-      return;
-    }
-
+  const startLocationSharing = async () => {
     setSharingError("");
     setSharingLocation(true);
     localStorage.setItem('gr_sharing_location', 'true');
 
     // Run initial capture
-    const captureLocation = () => {
-      navigator.geolocation.getCurrentPosition(
+    const captureLocation = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+          await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
+        } catch (err) {
+          console.error("Error logging position", err);
+        }
+      } else {
+        if (!navigator.geolocation) {
+          setSharingError("Geolocation is not supported by your browser/device.");
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
+          },
+          (err) => {
+            console.error("Error logging position", err);
+          },
+          { enableHighAccuracy: true }
+        );
+      }
+    };
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        let status = await Geolocation.checkPermissions();
+        if (status.location !== 'granted') {
+          status = await Geolocation.requestPermissions();
+        }
+        if (status.location !== 'granted') {
+          setSharingError("Failed to lock location. Please enable GPS permissions.");
+          setSharingLocation(false);
+          localStorage.removeItem('gr_sharing_location');
+          return;
+        }
+
+        await captureLocation();
+
+        // Watch position updates for instant movement updates
+        const watchId = await Geolocation.watchPosition(
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+          async (pos, err) => {
+            if (err) {
+              setSharingError("Failed to lock location. Please enable GPS permissions.");
+              console.error(err);
+              return;
+            }
+            if (pos) {
+              await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
+            }
+          }
+        );
+
+        if (localStorage.getItem('gr_sharing_location') !== 'true') {
+          await Geolocation.clearWatch({ id: watchId });
+        } else {
+          watchIdRef.current = watchId;
+        }
+      } catch (err) {
+        console.error("Error starting location sharing on native platform:", err);
+        setSharingError("Failed to lock location. Please enable GPS permissions.");
+        setSharingLocation(false);
+        localStorage.removeItem('gr_sharing_location');
+        return;
+      }
+    } else {
+      // Web fallback
+      if (!navigator.geolocation) {
+        setSharingError("Geolocation is not supported by your browser/device.");
+        return;
+      }
+
+      await captureLocation();
+
+      // Watch position updates for instant movement updates
+      watchIdRef.current = navigator.geolocation.watchPosition(
         async (pos) => {
           await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
         },
         (err) => {
-          console.error("Error logging position", err);
+          setSharingError("Failed to lock location. Please enable GPS permissions.");
+          console.error(err);
         },
-        { enableHighAccuracy: true }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
-    };
-
-    captureLocation();
-
-    // Watch position updates for instant movement updates
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      async (pos) => {
-        await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
-      },
-      (err) => {
-        setSharingError("Failed to lock location. Please enable GPS permissions.");
-        console.error(err);
-      },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+    }
 
     // Setup 10-second interval timer for stationary updates
     intervalIdRef.current = setInterval(captureLocation, 10000);
@@ -178,7 +278,15 @@ const Attendance = () => {
     setSharingError("");
 
     if (watchIdRef.current) {
-      navigator.geolocation.clearWatch(watchIdRef.current);
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await Geolocation.clearWatch({ id: watchIdRef.current });
+        } catch (e) {
+          console.error("Error clearing watch", e);
+        }
+      } else {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
       watchIdRef.current = null;
     }
 
@@ -196,7 +304,12 @@ const Attendance = () => {
     }
     return () => {
       if (watchIdRef.current) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
+        const id = watchIdRef.current;
+        if (Capacitor.isNativePlatform()) {
+          Geolocation.clearWatch({ id }).catch(e => console.error(e));
+        } else {
+          navigator.geolocation.clearWatch(id);
+        }
       }
       if (intervalIdRef.current) {
         clearInterval(intervalIdRef.current);
@@ -231,27 +344,130 @@ const Attendance = () => {
 
   // Filter attendance for the logged-in user to compute metrics
   const myAttendance = useMemo(() => {
-    return attendanceList.filter(a => a.employeeId === user?.id);
+    return attendanceList.filter(a => String(a.employeeId) === String(user?.id));
   }, [attendanceList, user]);
 
   const stats = useMemo(() => {
     const totalDays = myAttendance.length;
-    const presentDays = myAttendance.filter(a => a.status === 'Present').length;
+    let presentDays = 0;
+    let halfDays = 0;
     const lateDays = myAttendance.filter(a => a.status === 'Late').length;
     const absentDays = myAttendance.filter(a => a.status === 'Absent').length;
 
-    const activeDays = presentDays + lateDays;
+    const empObj = employees.find(e => String(e.id) === String(user?.id));
+    const dutyHours = Number(empObj?.dutyHours) || 8;
+
+    myAttendance.forEach(a => {
+      if (a.status === 'Absent') return;
+      const hrs = getShiftHours(a.inTime, a.outTime);
+      if (hrs > 0 && hrs < dutyHours) {
+        halfDays++;
+      } else if (hrs >= dutyHours) {
+        presentDays++;
+      }
+    });
+
+    const workedDays = presentDays + (0.5 * halfDays);
     const latePenaltyDays = Math.floor(lateDays / 3);
-    const payableDays = Math.max(0, activeDays - latePenaltyDays);
+    const payableDays = Math.max(0, workedDays - latePenaltyDays);
 
     return {
       totalDays,
       presentDays,
+      halfDays,
       lateDays,
       absentDays,
       payableDays
     };
-  }, [myAttendance]);
+  }, [myAttendance, employees, user]);
+
+  // Selected Employee object for payroll
+  const selectedEmployeeObj = useMemo(() => {
+    return employees.find(e => String(e.id) === String(selectedEmpId));
+  }, [employees, selectedEmpId]);
+
+  // Filter attendance for the selected employee in selected month & year
+  const monthlyAttendance = useMemo(() => {
+    if (!selectedEmployeeObj) return [];
+    return attendanceList.filter(a => {
+      if (String(a.employeeId) !== String(selectedEmployeeObj.id)) return false;
+      const parts = a.date.split('-');
+      if (parts.length < 2) return false;
+      const yr = Number(parts[0]);
+      const mo = Number(parts[1]);
+      return yr === payYear && mo === payMonth;
+    });
+  }, [attendanceList, selectedEmployeeObj, payMonth, payYear]);
+
+  const monthlyStats = useMemo(() => {
+    if (!selectedEmployeeObj) return null;
+
+    const dutyHours = Number(selectedEmployeeObj.dutyHours) || 8;
+    const baseSalary = Number(selectedEmployeeObj.salary) || 0;
+    const holidaysAllotted = Number(selectedEmployeeObj.holidaysAllotted) || 4;
+
+    let presentDays = 0;
+    let halfDays = 0;
+    let lateDays = 0;
+    let absentDays = 0;
+    let sundaysWorked = 0;
+
+    monthlyAttendance.forEach(a => {
+      if (a.status === 'Absent') {
+        absentDays++;
+        return;
+      }
+      if (a.status === 'Late') {
+        lateDays++;
+      }
+
+      // Calculate shift duration
+      const hrs = getShiftHours(a.inTime, a.outTime);
+      if (hrs > 0 && hrs < dutyHours) {
+        halfDays++;
+      } else if (hrs >= dutyHours) {
+        presentDays++;
+      }
+
+      // Sunday tracking
+      const d = new Date(a.date);
+      if (d.getDay() === 0) {
+        sundaysWorked += (hrs >= dutyHours ? 1.0 : (hrs > 0 ? 0.5 : 0));
+      }
+    });
+
+    const workedDays = presentDays + (0.5 * halfDays);
+    const latePenaltyDays = Math.floor(lateDays / 3);
+    const calendarDays = new Date(payYear, payMonth, 0).getDate();
+    
+    const calculatedExtraDays = sundaysWorked;
+    const extraDays = extraDaysOverride !== '' ? Number(extraDaysOverride) : calculatedExtraDays;
+
+    const standardWorkingDays = Math.max(1, calendarDays - holidaysAllotted);
+    const dailyRate = Math.round(baseSalary / standardWorkingDays);
+
+    const finalPayableDays = Math.max(0, workedDays - latePenaltyDays + extraDays);
+    const totalEarnings = Math.round(finalPayableDays * dailyRate);
+
+    return {
+      calendarDays,
+      standardWorkingDays,
+      presentDays,
+      halfDays,
+      lateDays,
+      absentDays,
+      workedDays,
+      latePenaltyDays,
+      calculatedExtraDays,
+      extraDays,
+      dailyRate,
+      finalPayableDays,
+      totalEarnings,
+      baseSalary,
+      dutyHours,
+      holidaysAllotted
+    };
+  }, [monthlyAttendance, selectedEmployeeObj, payMonth, payYear, extraDaysOverride]);
 
   const handleLogSubmit = async (e) => {
     e.preventDefault();
@@ -580,6 +796,265 @@ const Attendance = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Salary Settlement & Printable Receipt Section */}
+      {selectedEmployeeObj && monthlyStats && (
+        <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', mt: 4, mb: 4 }} className="no-print-card">
+          <CardContent sx={{ p: 4 }}>
+            <Typography variant="h3" sx={{ fontWeight: 800, fontSize: '20px', mb: 3, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Icons.Coins size={22} style={{ color: '#F59E0B' }} />
+              Employee Payroll Settlement & Receipt
+            </Typography>
+            <Divider sx={{ mb: 3 }} />
+
+            <Grid container spacing={4}>
+              {/* Inputs & Parameters Panel */}
+              <Grid item xs={12} md={4} className="no-print">
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2, color: '#475569' }}>
+                  Settlement Parameters
+                </Typography>
+                
+                {user?.role === 'Admin' && (
+                  <Box mb={2.5}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Select Employee</InputLabel>
+                      <Select
+                        label="Select Employee"
+                        value={selectedEmpId}
+                        onChange={(e) => {
+                          setSelectedEmpId(e.target.value);
+                          setExtraDaysOverride('');
+                        }}
+                      >
+                        {employees.map(emp => (
+                          <MenuItem key={emp.id} value={emp.id}>{emp.name} ({emp.id})</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Box>
+                )}
+
+                <Grid container spacing={2} mb={2.5}>
+                  <Grid item xs={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Month</InputLabel>
+                      <Select
+                        label="Month"
+                        value={payMonth}
+                        onChange={(e) => {
+                          setPayMonth(e.target.value);
+                          setExtraDaysOverride('');
+                        }}
+                      >
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                          <MenuItem key={m} value={m}>
+                            {new Date(0, m - 1).toLocaleString('default', { month: 'long' })}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Year</InputLabel>
+                      <Select
+                        label="Year"
+                        value={payYear}
+                        onChange={(e) => {
+                          setPayYear(e.target.value);
+                          setExtraDaysOverride('');
+                        }}
+                      >
+                        {[2025, 2026, 2027].map(y => (
+                          <MenuItem key={y} value={y}>{y}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+
+                <Box mb={3.5}>
+                  <TextField
+                    label="Extra Days Worked (Override)"
+                    size="small"
+                    type="number"
+                    fullWidth
+                    placeholder={`Calculated: ${monthlyStats.calculatedExtraDays} days`}
+                    value={extraDaysOverride}
+                    onChange={(e) => setExtraDaysOverride(e.target.value)}
+                    helperText="Sunday shifts are auto-calculated as extra days"
+                  />
+                </Box>
+                
+                <Button
+                  variant="contained"
+                  fullWidth
+                  startIcon={<Icons.Printer size={18} />}
+                  onClick={() => window.print()}
+                  sx={{ py: 1, backgroundColor: '#10B981', '&:hover': { backgroundColor: '#059669' }, fontWeight: 700 }}
+                >
+                  Print Salary Slip
+                </Button>
+              </Grid>
+
+              {/* Printable Receipt Slip Card */}
+              <Grid item xs={12} md={8}>
+                <Paper 
+                  id="printable-salary-slip"
+                  sx={{ 
+                    p: 4, 
+                    border: '1px dashed #CBD5E1', 
+                    borderRadius: '12px', 
+                    backgroundColor: '#FFFFFF',
+                    position: 'relative'
+                  }}
+                >
+                  {/* Watermark logo */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                    <Box>
+                      <Typography variant="h4" sx={{ fontWeight: 800, fontSize: '20px', color: '#1E3A8A', letterSpacing: '0.05em' }}>
+                        GAGAN REALTECH CRM
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                        Office No. 12, Level 3, Mohali Plaza, Punjab
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: 'right' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#10B981' }}>
+                        SALARY RECEIPT SLIP
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B' }}>
+                        Period: {new Date(payYear, payMonth - 1).toLocaleString('default', { month: 'long', year: 'numeric' })}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Divider sx={{ mb: 3 }} />
+
+                  {/* Employee Details block */}
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>EMPLOYEE NAME</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmployeeObj.name}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>EMPLOYEE ID / ROLE</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{selectedEmployeeObj.id} / {selectedEmployeeObj.role || 'Staff'}</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>DAILY DUTY HOURS REQUIRED</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{monthlyStats.dutyHours} Hours/Day</Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>ALLOTTED MONTHLY HOLIDAYS</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{monthlyStats.holidaysAllotted} Days</Typography>
+                    </Grid>
+                  </Grid>
+                  <Divider sx={{ mb: 3 }} />
+
+                  {/* Calculations breakdown list */}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#475569' }}>
+                    Earnings & Attendance breakdown
+                  </Typography>
+
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mb: 3.5 }}>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" sx={{ color: '#64748B' }}>Monthly Base Salary</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{monthlyStats.baseSalary.toLocaleString('en-IN')}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" sx={{ color: '#64748B' }}>Calculated Daily Pay Rate</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{monthlyStats.dailyRate.toLocaleString('en-IN')} / Day</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" sx={{ color: '#64748B' }}>Days Worked (Full Present / Half Days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {monthlyStats.presentDays} Full / {monthlyStats.halfDays} Half (Total: {monthlyStats.workedDays} Days)
+                      </Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" sx={{ color: '#64748B' }}>Late Arrivals Penalty Deductions (3 lates = 1 day deduct)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#EF4444' }}>
+                        -{monthlyStats.latePenaltyDays} Days ({monthlyStats.lateDays} Late Days)
+                      </Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" sx={{ color: '#64748B' }}>Extra Days Allowed (Sunday Shifts worked)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#10B981' }}>
+                        +{monthlyStats.extraDays} Days
+                      </Typography>
+                    </Box>
+                    <Divider />
+                    <Box display="flex" justifyContent="space-between" sx={{ mt: 1 }}>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>Net Payable Days</Typography>
+                      <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#2563EB' }}>
+                        {monthlyStats.finalPayableDays} Days
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Divider sx={{ mb: 3 }} />
+
+                  {/* Net earnings display */}
+                  <Box 
+                    sx={{ 
+                      p: 2.5, 
+                      backgroundColor: '#F8FAFC', 
+                      border: '1px solid #E2E8F0', 
+                      borderRadius: '8px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Box>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>TOTAL EARNINGS (NET SETTLEMENT)</Typography>
+                      <Typography variant="caption" sx={{ color: '#94A3B8' }}>Tax & TDS applicable as per laws</Typography>
+                    </Box>
+                    <Typography variant="h3" sx={{ fontWeight: 900, color: '#16A34A', fontSize: '28px', fontFamily: 'Poppins' }}>
+                      ₹{monthlyStats.totalEarnings.toLocaleString('en-IN')}
+                    </Typography>
+                  </Box>
+
+                  <Box sx={{ mt: 5, display: 'flex', justifyContent: 'space-between' }}>
+                    <Box sx={{ width: 150, textAlign: 'center' }}>
+                      <Divider />
+                      <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#64748B' }}>Employee Signature</Typography>
+                    </Box>
+                    <Box sx={{ width: 150, textAlign: 'center' }}>
+                      <Divider />
+                      <Typography variant="caption" sx={{ mt: 1, display: 'block', color: '#64748B' }}>Authorized Signatory</Typography>
+                    </Box>
+                  </Box>
+                </Paper>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Printing style overlay */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          #printable-salary-slip, #printable-salary-slip * {
+            visibility: visible;
+          }
+          #printable-salary-slip {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .no-print, .no-print-card, header, nav, aside {
+            display: none !important;
+          }
+        }
+      `}</style>
 
     {/* Raise Attendance Issue Correction Dialog */}
       <Dialog 

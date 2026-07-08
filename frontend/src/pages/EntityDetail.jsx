@@ -19,7 +19,12 @@ import {
   ListItemText,
   CircularProgress,
   Alert,
-  Tooltip
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp, API_BASE_URL } from '../context/AppContext';
@@ -42,6 +47,70 @@ const EntityDetail = () => {
   const [connections, setConnections] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+
+  // Map dialog state
+  const [mapOpen, setMapOpen] = useState(false);
+  const [activeMapShift, setActiveMapShift] = useState(null);
+
+  // Load Leaflet resources dynamically
+  useEffect(() => {
+    if (!document.getElementById('leaflet-css')) {
+      const link = document.createElement('link');
+      link.id = 'leaflet-css';
+      link.rel = 'stylesheet';
+      link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+      document.head.appendChild(link);
+    }
+    if (!document.getElementById('leaflet-js')) {
+      const script = document.createElement('script');
+      script.id = 'leaflet-js';
+      script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (mapOpen && activeMapShift && activeMapShift.path && activeMapShift.path.length > 0) {
+      const timer = setTimeout(() => {
+        const L = window.L;
+        if (!L) return;
+
+        const container = document.getElementById('route-map-container');
+        if (!container) return;
+
+        if (container._leaflet_map) {
+          container._leaflet_map.remove();
+        }
+
+        const pathPoints = activeMapShift.path.map(p => [p.lat, p.lng]);
+        const startPoint = pathPoints[0];
+        const endPoint = pathPoints[pathPoints.length - 1];
+
+        const map = L.map('route-map-container').setView(startPoint, 15);
+        container._leaflet_map = map;
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+
+        const polyline = L.polyline(pathPoints, {
+          color: '#3B82F6',
+          weight: 4,
+          opacity: 0.8
+        }).addTo(map);
+
+        L.marker(startPoint).addTo(map).bindPopup('<b>Starting Point</b>').openPopup();
+        if (pathPoints.length > 1) {
+          L.marker(endPoint).addTo(map).bindPopup('<b>Ending Point</b>');
+        }
+
+        map.fitBounds(polyline.getBounds(), { padding: [30, 30] });
+      }, 500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [mapOpen, activeMapShift]);
 
   // Remarks Form State
   const [remarkInput, setRemarkInput] = useState('');
@@ -558,11 +627,26 @@ const EntityDetail = () => {
                                 {record.locationHistory.map((hist, idx) => (
                                   <Grid item xs={12} sm={6} key={idx}>
                                     <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
-                                      <Box display="flex" justifyContent="space-between" mb={1}>
+                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                                         <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
                                           Shift Date: {hist.date}
                                         </Typography>
-                                        <Chip label={`${hist.totalKilometers || 0} km`} color="primary" size="small" sx={{ fontWeight: 700, fontSize: '10px' }} />
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                          <Chip label={`${hist.totalKilometers || 0} km`} color="primary" size="small" sx={{ fontWeight: 700, fontSize: '10px' }} />
+                                          {hist.path && hist.path.length > 0 && (
+                                            <Button 
+                                              variant="outlined" 
+                                              size="small"
+                                              sx={{ fontSize: '10px', py: 0.2, px: 1, height: 24, textTransform: 'none' }}
+                                              onClick={() => {
+                                                setActiveMapShift(hist);
+                                                setMapOpen(true);
+                                              }}
+                                            >
+                                              View Map
+                                            </Button>
+                                          )}
+                                        </Box>
                                       </Box>
                                       <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
                                         Registered coordinates: {hist.path?.length || 0} points
@@ -705,8 +789,38 @@ const EntityDetail = () => {
             </Box>
           </Card>
         </Grid>
-
       </Grid>
+
+      {/* Route Map Modal Dialog */}
+      <Dialog 
+        open={mapOpen} 
+        onClose={() => setMapOpen(false)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, fontFamily: 'Poppins' }}>
+          Shift Route Map - {activeMapShift?.date}
+          <IconButton size="small" onClick={() => setMapOpen(false)}>
+            <Icons.X size={18} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          <Box 
+            id="route-map-container" 
+            sx={{ 
+              width: '100%', 
+              height: '500px', 
+              backgroundColor: '#F1F5F9' 
+            }} 
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2 }}>
+          <Button onClick={() => setMapOpen(false)} variant="contained">
+            Close Map
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

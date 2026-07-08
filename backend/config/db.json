@@ -9,6 +9,36 @@
       "status": "Active",
       "joinDate": "2026-07-08",
       "password": "gagan123"
+    },
+    {
+      "id": "EMP-002",
+      "name": "Mandeep",
+      "email": "mandeep@gmail.com",
+      "phone": 1436123,
+      "role": "Employee",
+      "status": "Active",
+      "joinDate": "2026-07-08",
+      "password": "mandeep123",
+      "locationHistory": [
+        {
+          "date": "8/7/2026",
+          "totalKilometers": 0,
+          "path": []
+        }
+      ]
+    },
+    {
+      "id": "EMP-003",
+      "name": "Vipin",
+      "email": "vipin@gmail.com",
+      "phone": "1631321032",
+      "role": "Employee",
+      "status": "Active",
+      "joinDate": "2026-07-01",
+      "salary": 13000,
+      "dutyHours": 8,
+      "holidaysAllotted": 4,
+      "password": "vipin123"
     }
   ],
   "customers": [
@@ -45,7 +75,7 @@
       "phone": 9417094170,
       "source": "Facebook",
       "status": "In-Progress",
-      "assignedEmployeeId": "EMP-003",
+      "assignedEmployeeId": "EMP-002",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 4500000,
@@ -62,7 +92,7 @@
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
-      "assignedEmployeeId": "EMP-004",
+      "assignedEmployeeId": "EMP-002",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 15000000,
@@ -1646,7 +1676,7 @@
       "status": "Late"
     },
     {
-      "id": "ATT-004",
+      "id": "ATT-005",
       "employeeId": "PROJ-002",
       "date": "2026-07-07",
       "inTime": "05:01 PM",
@@ -1654,7 +1684,7 @@
       "status": "Late"
     },
     {
-      "id": "ATT-004",
+      "id": "ATT-005",
       "employeeId": "PROJ-002",
       "date": "2026-07-07",
       "inTime": "05:01 PM",
@@ -1675,6 +1705,14 @@
       "date": "2026-07-08",
       "inTime": "02:22 PM",
       "outTime": "02:52 PM",
+      "status": "Late"
+    },
+    {
+      "id": "ATT-008",
+      "employeeId": "EMP-002",
+      "date": "2026-07-08",
+      "inTime": "06:10 PM",
+      "outTime": "08:28 PM",
       "status": "Late"
     }
   ],
@@ -1733,6 +1771,24 @@
     },
     {
       "id": "REM-006"
+    },
+    {
+      "id": "REM-1783522462675-9um3",
+      "targetModule": "leads",
+      "targetId": "LEAD-001",
+      "comment": "System: Lead rotated automatically from unassigned to Mandeep due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "8/7/2026",
+      "timestamp": "2026-07-08T14:54:22.785Z"
+    },
+    {
+      "id": "REM-1783522462785-kkdz",
+      "targetModule": "leads",
+      "targetId": "LEAD-002",
+      "comment": "System: Lead rotated automatically from unassigned to Mandeep due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "8/7/2026",
+      "timestamp": "2026-07-08T14:54:22.785Z"
     }
   ],
   "documents": [
@@ -1749,6 +1805,28 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783522850661",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record EMP-003 in employees",
+      "dateTime": "8/7/2026, 8:30:50 pm"
+    },
+    {
+      "id": "LOG-1783522709543",
+      "employeeName": "Mandeep",
+      "action": "Updated record ATT-008 in attendance",
+      "dateTime": "8/7/2026, 8:28:29 pm"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Mandeep (inactivity)",
+      "timestamp": "2026-07-08T14:54:22.785Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Amit Pathak\" to Mandeep (inactivity)",
+      "timestamp": "2026-07-08T14:54:22.785Z"
+    },
     {
       "id": "LOG-1783500741642",
       "employeeName": "Gagan Chopra",
@@ -2279,6 +2357,16 @@
       "longitude": "cHdpdn1nanZ4eGJ9dXtoZXM=",
       "status": "sharing",
       "timestamp": "2026-07-08T08:52:26.240Z"
+    },
+    {
+      "id": "LOC-1783522709722",
+      "employeeId": "EMP-002",
+      "employeeName": "Mandeep",
+      "latitude": "dw==",
+      "longitude": "dw==",
+      "status": "ended",
+      "timestamp": "2026-07-08T14:58:29.722Z"
     }
-  ]
+  ],
+  "active_paths": {}
 }

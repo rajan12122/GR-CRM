@@ -64,6 +64,30 @@
           "editable": true
         },
         {
+          "name": "salary",
+          "label": "Base Salary (Monthly)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "dutyHours",
+          "label": "Duty Hours (Daily)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "holidaysAllotted",
+          "label": "Allotted Holidays (Monthly)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "password",
           "label": "Login Password",
           "type": "text",
@@ -1951,7 +1975,8 @@
       ],
       "attendance": [
         "view",
-        "create"
+        "create",
+        "edit"
       ],
       "leaves": [
         "view",
@@ -1982,30 +2007,17 @@
       ]
     },
     "Employee": {
-      "employees": [
-        "view"
-      ],
-      "customers": [
-        "view"
-      ],
-      "leads": [
-        "view"
-      ],
-      "properties": [
-        "view"
-      ],
-      "projects": [
-        "view"
-      ],
-      "site_visits": [
-        "view"
-      ],
-      "follow_ups": [
-        "view"
-      ],
+      "employees": [],
+      "customers": [],
+      "leads": [],
+      "properties": [],
+      "projects": [],
+      "site_visits": [],
+      "follow_ups": [],
       "attendance": [
         "view",
-        "create"
+        "create",
+        "edit"
       ],
       "leaves": [
         "view",
@@ -2014,17 +2026,16 @@
       "sales": [],
       "tasks": [
         "view",
-        "create",
         "edit"
       ],
       "daily_prices": [
         "view"
       ],
-      "dealers": [
-        "view"
-      ],
+      "dealers": [],
       "notices": [
-        "create"
+        "create",
+        "view",
+        "edit"
       ]
     }
   },

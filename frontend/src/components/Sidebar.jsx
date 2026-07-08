@@ -24,18 +24,20 @@ export const DynamicIcon = ({ name, size = 20, color = 'currentColor', ...props 
 const DRAWER_WIDTH = 260;
 
 const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
-  const { metadata, logout, user } = useApp();
+  const { metadata, logout, user, hasPermission } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
 
   if (!metadata) return null;
 
-  const modules = Object.keys(metadata.modules).map(key => ({
-    id: key,
-    label: metadata.modules[key].label,
-    icon: metadata.modules[key].icon || 'Layers',
-    path: `/module/${key}`
-  }));
+  const modules = Object.keys(metadata.modules)
+    .filter(key => hasPermission(key, 'view'))
+    .map(key => ({
+      id: key,
+      label: metadata.modules[key].label,
+      icon: metadata.modules[key].icon || 'Layers',
+      path: `/module/${key}`
+    }));
 
   const activePath = location.pathname;
 
@@ -205,33 +207,35 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
         </Typography>
 
         {/* System Settings */}
-        <List sx={{ px: 1.5, py: 0 }}>
-          <ListItem disablePadding sx={{ mb: 0.5 }}>
-            <ListItemButton
-              onClick={() => handleNavClick('/settings')}
-              selected={activePath === '/settings'}
-              sx={{
-                borderRadius: '8px',
-                py: 1.2,
-                px: 2,
-                backgroundColor: activePath === '/settings' ? 'rgba(37, 99, 235, 0.15) !important' : 'transparent',
-                color: activePath === '/settings' ? '#3B82F6' : '#94A3B8',
-                '&:hover': {
-                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                  color: '#FFFFFF'
-                }
-              }}
-            >
-              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
-                <Icons.Settings size={20} />
-              </ListItemIcon>
-              <ListItemText 
-                primary="Admin Control Panel" 
-                primaryTypographyProps={{ fontSize: '14px', fontWeight: 600 }} 
-              />
-            </ListItemButton>
-          </ListItem>
-        </List>
+        {user?.role === 'Admin' && (
+          <List sx={{ px: 1.5, py: 0 }}>
+            <ListItem disablePadding sx={{ mb: 0.5 }}>
+              <ListItemButton
+                onClick={() => handleNavClick('/settings')}
+                selected={activePath === '/settings'}
+                sx={{
+                  borderRadius: '8px',
+                  py: 1.2,
+                  px: 2,
+                  backgroundColor: activePath === '/settings' ? 'rgba(37, 99, 235, 0.15) !important' : 'transparent',
+                  color: activePath === '/settings' ? '#3B82F6' : '#94A3B8',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: '#FFFFFF'
+                  }
+                }}
+              >
+                <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                  <Icons.Settings size={20} />
+                </ListItemIcon>
+                <ListItemText 
+                  primary="Admin Control Panel" 
+                  primaryTypographyProps={{ fontSize: '14px', fontWeight: 600 }} 
+                />
+              </ListItemButton>
+            </ListItem>
+          </List>
+        )}
       </Box>
 
       {/* User Session Footer */}

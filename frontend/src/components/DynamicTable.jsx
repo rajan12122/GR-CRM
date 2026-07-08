@@ -53,100 +53,30 @@ const EntityChip = ({ moduleName, id, onClick }) => {
 
 const DynamicTable = ({ 
   moduleKey, 
-  records, 
+  records, // Pre-filtered and pre-sorted records!
   fields, 
+  visibleColumns,
+  setVisibleColumns,
+  selectedRows,
+  setSelectedRows,
+  sortField,
+  sortDirection,
+  handleSortRequest,
+  colMenuOpen,
+  setColMenuOpen,
   onEditClick, 
   onDeleteClick, 
   onInspectClick 
 }) => {
   const { metadata } = useApp();
-  const [searchTerm, setSearchTerm] = useState('');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
-  
-  // Sorting State
-  const [sortField, setSortField] = useState('id');
-  const [sortDirection, setSortDirection] = useState('asc');
 
-  // Column Visibility State (reads initial values from fields config)
-  const [visibleColumns, setVisibleColumns] = useState(() => {
-    const initial = {};
-    fields.forEach(f => {
-      initial[f.name] = f.showInTable !== false;
-    });
-    return initial;
-  });
-
-  // Advanced Stacked Filters State
-  const [filterAnchorEl, setFilterAnchorEl] = useState(null);
-  const [stackedFilters, setStackedFilters] = useState({}); // e.g. { city: 'Mohali', stage: 'Negotiation' }
-
-  // Column Visibility Dialog
-  const [colMenuOpen, setColMenuOpen] = useState(false);
-  const [selectedRows, setSelectedRows] = useState([]);
-
-  // Handle Sort
-  const handleSortRequest = (fieldName) => {
-    const isAsc = sortField === fieldName && sortDirection === 'asc';
-    setSortDirection(isAsc ? 'desc' : 'asc');
-    setSortField(fieldName);
-  };
-
-  // Filter out records based on SearchTerm AND StackedFilters
-  const filteredRecords = useMemo(() => {
-    return records.filter(rec => {
-      // 1. Check Global Search Match (multi-word support)
-      const keywords = searchTerm.toLowerCase().trim().split(/\s+/).filter(w => w.length > 0);
-      const matchesSearch = keywords.length === 0 || keywords.every(word => {
-        return Object.keys(rec).some(key => {
-          const val = rec[key];
-          if (val === undefined || val === null) return false;
-          return String(val).toLowerCase().includes(word);
-        });
-      });
-
-      // 2. Check Stacked Filter Matches
-      const matchesFilters = Object.keys(stackedFilters).every(key => {
-        const filterVal = stackedFilters[key];
-        if (!filterVal || filterVal === 'ALL') return true;
-        
-        const recordVal = rec[key];
-        if (recordVal === undefined || recordVal === null) return false;
-        return String(recordVal).toLowerCase() === String(filterVal).toLowerCase();
-      });
-
-      return matchesSearch && matchesFilters;
-    });
-  }, [records, searchTerm, stackedFilters]);
-
-  // Sort filtered records
-  const sortedRecords = useMemo(() => {
-    const sorted = [...filteredRecords];
-    sorted.sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
-
-      if (valA === undefined || valA === null) return 1;
-      if (valB === undefined || valB === null) return -1;
-
-      if (typeof valA === 'string') {
-        return sortDirection === 'asc' 
-          ? valA.localeCompare(valB) 
-          : valB.localeCompare(valA);
-      } else {
-        return sortDirection === 'asc' 
-          ? valA - valB 
-          : valB - valA;
-      }
-    });
-    return sorted;
-  }, [filteredRecords, sortField, sortDirection]);
-
-  // Paginated records
+  // Paginated records based on pre-sorted pre-filtered records
   const paginatedRecords = useMemo(() => {
     const start = page * rowsPerPage;
-    return sortedRecords.slice(start, start + rowsPerPage);
-  }, [sortedRecords, page, rowsPerPage]);
+    return records.slice(start, start + rowsPerPage);
+  }, [records, page, rowsPerPage]);
 
   const handleChangePage = (event, newPage) => {
     setPage(newPage);
@@ -231,164 +161,9 @@ const DynamicTable = ({
     return String(val);
   };
 
-  // Stacked Filters generation helper
-  // Extract all distinct options for select-type fields dynamically to display in the filter sheet!
-  const filterOptions = useMemo(() => {
-    const options = {};
-    fields.forEach(f => {
-      if (f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup]) {
-        options[f.name] = metadata.chips[f.chipGroup];
-      }
-    });
-    return options;
-  }, [fields, metadata]);
-
-  const handleFilterChange = (fieldName, val) => {
-    setStackedFilters(prev => ({
-      ...prev,
-      [fieldName]: val === 'ALL' ? undefined : val
-    }));
-    setPage(0);
-  };
-
-  // Excel / CSV Export
-  const handleExportCSV = () => {
-    const headers = fields.filter(f => visibleColumns[f.name]).map(f => f.label);
-    const keys = fields.filter(f => visibleColumns[f.name]).map(f => f.name);
-    
-    // Check if exporting selected rows or all
-    const targets = selectedRows.length > 0 
-      ? records.filter(r => selectedRows.includes(r.id))
-      : sortedRecords;
-
-    let csvContent = "data:text/csv;charset=utf-8," 
-      + [headers.join(",")].concat(
-          targets.map(rec => keys.map(k => {
-            const val = rec[k] || '';
-            return `"${String(val).replace(/"/g, '""')}"`;
-          }).join(","))
-        ).join("\n");
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `gagan_realtech_${moduleKey}_export.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <Box sx={{ width: '100%' }}>
       
-      {/* Table toolbar utilities */}
-      <Box sx={{ p: 2.5, display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 2, borderBottom: '1px solid #E2E8F0', backgroundColor: '#FFFFFF', borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
-        {/* Search */}
-        <TextField
-          size="small"
-          placeholder="Filter table content..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Icons.Search size={16} color="#64748B" />
-              </InputAdornment>
-            )
-          }}
-          sx={{ width: 280 }}
-        />
-
-        {/* Action Controls */}
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
-          {/* Stacked Filters Dropdown trigger */}
-          {Object.keys(filterOptions).length > 0 && (
-            <>
-              <Button 
-                variant="outlined" 
-                startIcon={<Icons.SlidersHorizontal size={16} />}
-                onClick={(e) => setFilterAnchorEl(e.currentTarget)}
-                sx={{ borderColor: '#E2E8F0', color: '#0F172A' }}
-              >
-                Filters
-                {Object.keys(stackedFilters).filter(k => stackedFilters[k]).length > 0 && (
-                  <Chip 
-                    label={Object.keys(stackedFilters).filter(k => stackedFilters[k]).length} 
-                    size="small" 
-                    color="primary" 
-                    sx={{ ml: 1, height: 18, fontSize: '10px', fontWeight: 800 }} 
-                  />
-                )}
-              </Button>
-              <Menu
-                anchorEl={filterAnchorEl}
-                open={Boolean(filterAnchorEl)}
-                onClose={() => setFilterAnchorEl(null)}
-                PaperProps={{ style: { padding: '16px', minWidth: 250 } }}
-              >
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Stack Filters</Typography>
-                {Object.keys(filterOptions).map(fieldName => {
-                  const fieldLabel = fields.find(f => f.name === fieldName)?.label || fieldName;
-                  return (
-                    <FormControl key={fieldName} size="small" fullWidth sx={{ mb: 2 }}>
-                      <InputLabel>{fieldLabel}</InputLabel>
-                      <Select
-                        label={fieldLabel}
-                        value={stackedFilters[fieldName] || 'ALL'}
-                        onChange={(e) => handleFilterChange(fieldName, e.target.value)}
-                      >
-                        <MenuItem value="ALL"><em>All options</em></MenuItem>
-                        {filterOptions[fieldName].map(opt => (
-                          <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  );
-                })}
-                <Box display="flex" justifyContent="flex-end" gap={1}>
-                  <Button size="small" onClick={() => { setStackedFilters({}); setFilterAnchorEl(null); }}>Reset</Button>
-                  <Button size="small" variant="contained" onClick={() => setFilterAnchorEl(null)}>Apply</Button>
-                </Box>
-              </Menu>
-            </>
-          )}
-
-          {/* Column toggler */}
-          <Button 
-            variant="outlined" 
-            startIcon={<Icons.EyeOff size={16} />}
-            onClick={() => setColMenuOpen(true)}
-            sx={{ borderColor: '#E2E8F0', color: '#0F172A' }}
-          >
-            Columns
-          </Button>
-
-          {/* Export */}
-          <Button 
-            variant="outlined" 
-            startIcon={<Icons.Download size={16} />}
-            onClick={handleExportCSV}
-            sx={{ borderColor: '#E2E8F0', color: '#0F172A' }}
-          >
-            CSV Export
-          </Button>
-
-          {selectedRows.length > 0 && onDeleteClick && (
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<Icons.Trash2 size={16} />}
-              onClick={() => {
-                selectedRows.forEach(id => onDeleteClick(id));
-                setSelectedRows([]);
-              }}
-            >
-              Bulk Delete ({selectedRows.length})
-            </Button>
-          )}
-        </Box>
-      </Box>
-
       {/* Grid Table Container */}
       <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E2E8F0', borderRadius: 0, overflowX: 'auto', maxWidth: '100%' }}>
         <Table stickyHeader size="medium">
@@ -530,7 +305,7 @@ const DynamicTable = ({
       <TablePagination
         rowsPerPageOptions={[5, 10, 25, 50]}
         component="div"
-        count={sortedRecords.length}
+        count={records.length}
         rowsPerPage={rowsPerPage}
         page={page}
         onPageChange={handleChangePage}

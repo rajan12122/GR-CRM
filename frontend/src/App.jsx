@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { Box, CssBaseline, ThemeProvider, Typography, useMediaQuery, BottomNavigation, BottomNavigationAction, Paper } from '@mui/material';
 import * as Icons from 'lucide-react';
+import { Geolocation } from '@capacitor/geolocation';
+import { Capacitor } from '@capacitor/core';
 import theme from './theme/theme';
 import { AppProvider, useApp } from './context/AppContext';
 import Sidebar from './components/Sidebar';
@@ -22,28 +24,54 @@ import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
 
+const ModuleRouteGuard = ({ element, moduleName, action = 'view' }) => {
+  const { hasPermission } = useApp();
+  return hasPermission(moduleName, action) ? element : <Navigate to="/" replace />;
+};
+
 const ModuleManagerWrapper = () => {
   const { moduleName } = useParams();
-  return <ModuleManager key={moduleName} />;
+  const { hasPermission } = useApp();
+  return hasPermission(moduleName, 'view') ? <ModuleManager key={moduleName} /> : <Navigate to="/" replace />;
 };
 
 const EntityDetailWrapper = () => {
   const { moduleName, id } = useParams();
-  return <EntityDetail key={`${moduleName}-${id}`} />;
+  const { hasPermission } = useApp();
+  return hasPermission(moduleName, 'view') ? <EntityDetail key={`${moduleName}-${id}`} /> : <Navigate to="/" replace />;
 };
 
 const PipelineViewWrapper = () => {
   const { pipelineType } = useParams();
-  return <PipelineView key={pipelineType} />;
+  // pipelineType matches a moduleName (properties or customers)
+  const { hasPermission } = useApp();
+  return hasPermission(pipelineType, 'view') ? <PipelineView key={pipelineType} /> : <Navigate to="/" replace />;
 };
 
 const MainLayout = () => {
-  const { token, loadingMetadata, reloadKey, triggerAppReload } = useApp();
+  const { token, loadingMetadata, reloadKey, triggerAppReload, hasPermission, user } = useApp();
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const isMobile = useMediaQuery('(max-width:900px)');
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Request location permission on startup for native mobile app
+  React.useEffect(() => {
+    const requestLocationPermissionOnStartup = async () => {
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const status = await Geolocation.checkPermissions();
+          if (status.location !== 'granted') {
+            await Geolocation.requestPermissions();
+          }
+        } catch (err) {
+          console.error('Error requesting location permission on startup:', err);
+        }
+      }
+    };
+    requestLocationPermissionOnStartup();
+  }, []);
 
   // Keyboard shortcut listener for Global Search (⌘K / Ctrl+K)
   React.useEffect(() => {
@@ -99,12 +127,12 @@ const MainLayout = () => {
           <PullToRefresh>
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/module/attendance" element={<Attendance />} />
-              <Route path="/module/location_tracker" element={<LocationTracker />} />
+              <Route path="/module/attendance" element={<ModuleRouteGuard element={<Attendance />} moduleName="attendance" />} />
+              <Route path="/module/location_tracker" element={<ModuleRouteGuard element={<LocationTracker />} moduleName="location_tracker" />} />
               <Route path="/module/:moduleName" element={<ModuleManagerWrapper />} />
               <Route path="/module/:moduleName/:id" element={<EntityDetailWrapper />} />
               <Route path="/pipeline/:pipelineType" element={<PipelineViewWrapper />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/settings" element={user?.role === 'Admin' ? <Settings /> : <Navigate to="/" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </PullToRefresh>
@@ -117,7 +145,9 @@ const MainLayout = () => {
           <BottomNavigation
             value={location.pathname.startsWith('/module/customers') ? '/module/customers' : location.pathname.startsWith('/module/properties') ? '/module/properties' : location.pathname}
             onChange={(event, newValue) => {
-              navigate(newValue);
+              if (newValue !== 'menu_trigger') {
+                navigate(newValue);
+              }
             }}
             showLabels
             sx={{ height: 65 }}
@@ -127,21 +157,27 @@ const MainLayout = () => {
               value="/" 
               icon={<Icons.LayoutDashboard size={20} />} 
             />
-            <BottomNavigationAction 
-              label="Clients" 
-              value="/module/customers" 
-              icon={<Icons.Users size={20} />} 
-            />
-            <BottomNavigationAction 
-              label="Property" 
-              value="/module/properties" 
-              icon={<Icons.Home size={20} />} 
-            />
-            <BottomNavigationAction 
-              label="CheckIn" 
-              value="/module/attendance" 
-              icon={<Icons.Clock size={20} />} 
-            />
+            {hasPermission('customers', 'view') && (
+              <BottomNavigationAction 
+                label="Clients" 
+                value="/module/customers" 
+                icon={<Icons.Users size={20} />} 
+              />
+            )}
+            {hasPermission('properties', 'view') && (
+              <BottomNavigationAction 
+                label="Property" 
+                value="/module/properties" 
+                icon={<Icons.Home size={20} />} 
+              />
+            )}
+            {hasPermission('attendance', 'view') && (
+              <BottomNavigationAction 
+                label="CheckIn" 
+                value="/module/attendance" 
+                icon={<Icons.Clock size={20} />} 
+              />
+            )}
             <BottomNavigationAction 
               label="Menu" 
               value="menu_trigger"

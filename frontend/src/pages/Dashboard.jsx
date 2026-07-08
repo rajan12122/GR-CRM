@@ -42,7 +42,9 @@ const Dashboard = () => {
     moduleData, 
     fetchModuleData, 
     activityLogs, 
-    user 
+    user,
+    metadata,
+    hasPermission
   } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -62,27 +64,40 @@ const Dashboard = () => {
   
   const handleAddOption = (moduleKey) => {
     handleAddClose();
-    navigate(`/module/${moduleKey}?add=true`);
+    navigate(`/module/${moduleKey}?new=true`);
   };
 
   // Load modules on dashboard boot
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
-      await Promise.all([
-        fetchModuleData('employees'),
-        fetchModuleData('customers'),
-        fetchModuleData('leads'),
-        fetchModuleData('properties'),
-        fetchModuleData('sales'),
-        fetchModuleData('site_visits'),
-        fetchModuleData('follow_ups'),
-        fetchModuleData('attendance')
-      ]);
+      const modulesToFetch = [
+        'employees',
+        'customers',
+        'leads',
+        'properties',
+        'sales',
+        'site_visits',
+        'follow_ups',
+        'attendance'
+      ];
+      await Promise.all(
+        modulesToFetch.map(async (m) => {
+          if (hasPermission(m, 'view')) {
+            try {
+              await fetchModuleData(m);
+            } catch (e) {
+              console.error(e);
+            }
+          }
+        })
+      );
       setLoading(false);
     };
-    loadAllData();
-  }, []);
+    if (metadata) {
+      loadAllData();
+    }
+  }, [metadata]);
 
   // Calculate Metrics (Declared at top level so Hooks execute unconditionally)
   const employees = moduleData.employees || [];
@@ -237,34 +252,48 @@ const Dashboard = () => {
               }
             }}
           >
-            <MenuItem onClick={() => handleAddOption('properties')}>
-              <Icons.Home size={16} style={{ marginRight: 8, color: '#64748B' }} />
-              Property
-            </MenuItem>
-            <MenuItem onClick={() => handleAddOption('customers')}>
-              <Icons.Users size={16} style={{ marginRight: 8, color: '#64748B' }} />
-              Customer
-            </MenuItem>
-            <MenuItem onClick={() => handleAddOption('leads')}>
-              <Icons.Compass size={16} style={{ marginRight: 8, color: '#64748B' }} />
-              Lead
-            </MenuItem>
-            <MenuItem onClick={() => handleAddOption('employees')}>
-              <Icons.UserSquare2 size={16} style={{ marginRight: 8, color: '#64748B' }} />
-              Employee
-            </MenuItem>
-            <MenuItem onClick={() => handleAddOption('projects')}>
-              <Icons.Layers size={16} style={{ marginRight: 8, color: '#64748B' }} />
-              Project
-            </MenuItem>
-            <MenuItem onClick={() => handleAddOption('daily_prices')}>
-              <Icons.BadgePercent size={16} style={{ marginRight: 8, color: '#64748B' }} />
-              Daily Price List
-            </MenuItem>
-            <MenuItem onClick={() => handleAddOption('dealers')}>
-              <Icons.Building size={16} style={{ marginRight: 8, color: '#64748B' }} />
-              Property Dealer
-            </MenuItem>
+            {hasPermission('properties', 'create') && (
+              <MenuItem onClick={() => handleAddOption('properties')}>
+                <Icons.Home size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Property
+              </MenuItem>
+            )}
+            {hasPermission('customers', 'create') && (
+              <MenuItem onClick={() => handleAddOption('customers')}>
+                <Icons.Users size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Customer
+              </MenuItem>
+            )}
+            {hasPermission('leads', 'create') && (
+              <MenuItem onClick={() => handleAddOption('leads')}>
+                <Icons.Compass size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Lead
+              </MenuItem>
+            )}
+            {hasPermission('employees', 'create') && (
+              <MenuItem onClick={() => handleAddOption('employees')}>
+                <Icons.UserSquare2 size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Employee
+              </MenuItem>
+            )}
+            {hasPermission('projects', 'create') && (
+              <MenuItem onClick={() => handleAddOption('projects')}>
+                <Icons.Layers size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Project
+              </MenuItem>
+            )}
+            {hasPermission('daily_prices', 'create') && (
+              <MenuItem onClick={() => handleAddOption('daily_prices')}>
+                <Icons.BadgePercent size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Daily Price List
+              </MenuItem>
+            )}
+            {hasPermission('dealers', 'create') && (
+              <MenuItem onClick={() => handleAddOption('dealers')}>
+                <Icons.Building size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Property Dealer
+              </MenuItem>
+            )}
           </Menu>
         </Box>
       </Box>

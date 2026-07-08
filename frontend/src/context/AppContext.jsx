@@ -266,6 +266,13 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  const hasPermission = (moduleName, action = 'view') => {
+    if (user?.role === 'Admin') return true;
+    const permissions = metadata?.rolesPermissions?.[user?.role];
+    const modulePerms = permissions?.[moduleName] || [];
+    return modulePerms.includes(action);
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -291,7 +298,8 @@ export const AppProvider = ({ children }) => {
         saveMetadata,
         testSheetsSync,
         triggerFullSheetsSync,
-        logEmployeeLocation
+        logEmployeeLocation,
+        hasPermission
       }}
     >
       {children}

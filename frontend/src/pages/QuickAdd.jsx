@@ -198,8 +198,25 @@ const QuickAdd = () => {
 
             {/* Dynamic Form fields */}
             {selectedModule && (
-              <form onSubmit={handleSubmit}>
-                <Grid container spacing={2} sx={{ mb: 3 }}>
+              <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'flex-start', mb: 2.5 }}>
+                  <Button 
+                    startIcon={<Icons.ArrowLeft size={16} />}
+                    onClick={() => {
+                      setSelectedModule('');
+                      setFormData({});
+                      setCustomValues({});
+                      setSubmitError('');
+                      setSubmitSuccess(false);
+                    }}
+                    sx={{ color: '#3B82F6', textTransform: 'none', fontWeight: 700 }}
+                    size="small"
+                  >
+                    Change Sheet / Go Back
+                  </Button>
+                </Box>
+                <form onSubmit={handleSubmit}>
+                  <Grid container spacing={2} sx={{ mb: 3 }}>
                   {fields.map(f => {
                     const value = formData[f.name] || '';
                     const isSelect = f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup];
@@ -418,7 +435,8 @@ const QuickAdd = () => {
                   {submitting ? 'Submitting Record...' : 'Submit Entry'}
                 </Button>
               </form>
-            )}
+            </Box>
+          )}
           </CardContent>
         </Card>
       </Container>

@@ -14,7 +14,8 @@ import {
   Paper,
   Chip,
   Menu,
-  MenuItem
+  MenuItem,
+  TextField
 } from '@mui/material';
 import EntityTooltip from '../components/EntityTooltip';
 import * as Icons from 'lucide-react';

@@ -1048,6 +1048,25 @@ app.get('/api/public/metadata', (req, res) => {
   }
 });
 
+// Public lookup endpoint for dropdown selections in Quick-Add portal
+app.get('/api/public/lookup/:module', (req, res) => {
+  try {
+    const { module } = req.params;
+    const db = readDb();
+    if (!db[module] || !Array.isArray(db[module])) {
+      return res.json([]);
+    }
+    // Return only ID and Name of the records to prevent sensitive leakage
+    const lookupList = db[module].map(rec => ({
+      id: rec.id,
+      name: rec.name || rec.contact_person_name || rec.contactName || rec.title || rec.id
+    }));
+    res.json(lookupList);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load lookup list." });
+  }
+});
+
 // Public Customer Intake Form Submission
 app.post('/api/public/lead-intake', (req, res) => {
   const { name, phone, locality, sector, propertyType, optionType, size, plc, budget } = req.body;

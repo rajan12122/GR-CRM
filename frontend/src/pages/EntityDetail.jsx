@@ -172,69 +172,69 @@ const EntityDetail = () => {
         </Box>
       </Box>
 
-      {/* Main content Split */}
-      <Grid container spacing={3}>
-        
-        {/* Left Side: General Profile Card details */}
-        <Grid item xs={12} md={4}>
-          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
-            <CardContent sx={{ p: 3 }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 3, fontFamily: 'Poppins' }}>
-                Profile Fields
-              </Typography>
-              
-              <List disablePadding>
-                {moduleConfig.fields.map(f => {
-                  const val = record[f.name];
-                  return (
-                    <Box key={f.name} sx={{ mb: 2.5 }}>
-                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', textTransform: 'uppercase', fontWeight: 700, fontSize: '10px' }}>
-                        {f.label}
-                      </Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', mt: 0.5 }}>
-                        {val === undefined || val === null ? (
-                          <span style={{ color: '#94A3B8', fontWeight: 400 }}>Not Specified</span>
-                        ) : f.type === 'select' ? (
-                          <Chip 
-                            label={val} 
-                            size="small" 
-                            sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} 
-                          />
-                        ) : f.type === 'ref' ? (
-                          <EntityTooltip moduleName={f.refModule} id={val}>
+      {/* 1. Horizontal Profile Fields Card at the very top */}
+      <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', mb: 3 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 2.5, fontFamily: 'Poppins' }}>
+            Profile Details
+          </Typography>
+          <Grid container spacing={2.5}>
+            {moduleConfig.fields.map(f => {
+              const val = record[f.name];
+              return (
+                <Grid item xs={6} sm={4} md={3} lg={2.4} key={f.name}>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', textTransform: 'uppercase', fontWeight: 700, fontSize: '9px', letterSpacing: '0.05em' }}>
+                    {f.label}
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: '#0F172A', mt: 0.5 }}>
+                    {val === undefined || val === null || val === '' ? (
+                      <span style={{ color: '#94A3B8', fontWeight: 400 }}>Not Specified</span>
+                    ) : f.type === 'select' ? (
+                      <Chip 
+                        label={val} 
+                        size="small" 
+                        sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} 
+                      />
+                    ) : f.type === 'ref' ? (
+                      <EntityTooltip moduleName={f.refModule} id={val}>
+                        <Chip 
+                          label={val} 
+                          size="small" 
+                          onClick={() => navigate(`/module/${f.refModule}/${val}`)}
+                          sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
+                        />
+                      </EntityTooltip>
+                    ) : f.type === 'multiref' ? (
+                      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                        {String(val).split(',').filter(Boolean).map(itemId => (
+                          <EntityTooltip key={itemId} moduleName={f.refModule} id={itemId}>
                             <Chip 
-                              label={val} 
+                              label={itemId} 
                               size="small" 
-                              onClick={() => navigate(`/module/${f.refModule}/${val}`)}
+                              onClick={() => navigate(`/module/${f.refModule}/${itemId}`)}
                               sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
                             />
                           </EntityTooltip>
-                        ) : f.type === 'multiref' ? (
-                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                            {String(val).split(',').filter(Boolean).map(itemId => (
-                              <EntityTooltip key={itemId} moduleName={f.refModule} id={itemId}>
-                                <Chip 
-                                  label={itemId} 
-                                  size="small" 
-                                  onClick={() => navigate(`/module/${f.refModule}/${itemId}`)}
-                                  sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
-                                />
-                              </EntityTooltip>
-                            ))}
-                          </Box>
-                        ) : f.name === 'price' || f.name === 'budget' || f.name === 'salary' ? (
-                          `₹${Number(val).toLocaleString('en-IN')}`
-                        ) : (
-                          String(val)
-                        )}
-                      </Typography>
-                    </Box>
-                  );
-                })}
-              </List>
-             </CardContent>
-          </Card>
+                        ))}
+                      </Box>
+                    ) : f.name === 'price' || f.name === 'budget' || f.name === 'salary' ? (
+                      `₹${Number(val).toLocaleString('en-IN')}`
+                    ) : (
+                      String(val)
+                    )}
+                  </Typography>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </CardContent>
+      </Card>
 
+      {/* 2. Main content Split */}
+      <Grid container spacing={3}>
+        
+        {/* Left Side: Quick Outreach & Matcher */}
+        <Grid item xs={12} md={4}>
           {/* Quick Outreach Card */}
           {(moduleName === 'leads' || moduleName === 'customers') && (
             <Card sx={{ mt: 3, border: '1px solid #E2E8F0', borderRadius: '16px', backgroundColor: 'rgba(37, 99, 235, 0.01)' }}>

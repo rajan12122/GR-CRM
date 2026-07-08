@@ -28,10 +28,37 @@ const QuickAdd = () => {
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
 
+  const [lookups, setLookups] = useState({});
+
   useEffect(() => {
     axios.get(`${API_BASE_URL}/public/metadata`)
-      .then(res => {
+      .then(async (res) => {
         setMetadata(res.data);
+        
+        // Find all referenced modules dynamically
+        const refModules = new Set();
+        Object.values(res.data.modules).forEach(mod => {
+          mod.fields.forEach(f => {
+            if (f.type === 'ref' && f.refModule) {
+              refModules.add(f.refModule);
+            }
+          });
+        });
+
+        // Fetch lookups for those referenced modules
+        const promises = Array.from(refModules).map(mModule => {
+          return axios.get(`${API_BASE_URL}/public/lookup/${mModule}`)
+            .then(lRes => ({ module: mModule, data: lRes.data }))
+            .catch(() => ({ module: mModule, data: [] }));
+        });
+
+        const results = await Promise.all(promises);
+        const lookupMap = {};
+        results.forEach(r => {
+          lookupMap[r.module] = r.data;
+        });
+
+        setLookups(lookupMap);
         setLoading(false);
       })
       .catch(err => {
@@ -153,6 +180,7 @@ const QuickAdd = () => {
                   {fields.map(f => {
                     const value = formData[f.name] || '';
                     const isSelect = f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup];
+                    const isRef = f.type === 'ref' && f.refModule && lookups[f.refModule];
                     const isDate = f.type === 'date';
 
                     return (
@@ -176,6 +204,28 @@ const QuickAdd = () => {
                             >
                               {metadata.chips[f.chipGroup].map(choice => (
                                 <MenuItem key={choice} value={choice}>{choice}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        ) : isRef ? (
+                          <FormControl fullWidth>
+                            <InputLabel id={`label-${f.name}`} sx={{ color: '#94A3B8' }}>{f.label} {f.required && '*'}</InputLabel>
+                            <Select
+                              labelId={`label-${f.name}`}
+                              value={value}
+                              label={`${f.label} ${f.required ? '*' : ''}`}
+                              required={f.required}
+                              onChange={(e) => handleInputChange(f.name, e.target.value)}
+                              sx={{ 
+                                color: '#FFFFFF',
+                                backgroundColor: '#0F172A',
+                                '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' },
+                                '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#475569' },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
+                              }}
+                            >
+                              {lookups[f.refModule].map(opt => (
+                                <MenuItem key={opt.id} value={opt.id}>{opt.name} ({opt.id})</MenuItem>
                               ))}
                             </Select>
                           </FormControl>

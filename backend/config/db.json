@@ -75,7 +75,7 @@
   ],
   "properties": [
     {
-      "id": "PROJ-002",
+      "id": "PROP-001",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Alam",
@@ -99,7 +99,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROJ-003",
+      "id": "PROP-002",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Alam",
@@ -123,7 +123,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROJ-004",
+      "id": "PROP-003",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "",
@@ -147,7 +147,7 @@
       "initial_notes": "Ground Floor"
     },
     {
-      "id": "PROJ-005",
+      "id": "PROP-004",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "",
@@ -171,7 +171,7 @@
       "initial_notes": "Book Deal "
     },
     {
-      "id": "PROJ-006",
+      "id": "PROP-005",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Mansi",
@@ -195,7 +195,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROJ-007",
+      "id": "PROP-006",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Mansi",
@@ -219,7 +219,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROJ-008",
+      "id": "PROP-007",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Puneet ",
@@ -243,7 +243,7 @@
       "initial_notes": ""
     },
     {
-      "id": "PROJ-009",
+      "id": "PROP-008",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Indu",
@@ -267,7 +267,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROJ-010",
+      "id": "PROP-009",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Varun Sahni ",
@@ -291,7 +291,7 @@
       "initial_notes": ""
     },
     {
-      "id": "PROJ-011",
+      "id": "PROP-010",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Pushap Bhatia",
@@ -315,7 +315,7 @@
       "initial_notes": "Party Deal "
     },
     {
-      "id": "PROJ-012",
+      "id": "PROP-011",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Pushap Bhatia",
@@ -339,7 +339,7 @@
       "initial_notes": "Oustee Case 25% Paid"
     },
     {
-      "id": "PROJ-013",
+      "id": "PROP-012",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "        Amit Gupta",
@@ -363,7 +363,7 @@
       "initial_notes": "25% built up"
     },
     {
-      "id": "PROJ-014",
+      "id": "PROP-013",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Parmvir Singh",
@@ -385,54 +385,6 @@
       "demand": "8.40 Cr",
       "lead_source": "Whatsapp",
       "initial_notes": "25% built up, Booked Deal"
-    },
-    {
-      "id": "PROP-014",
-      "status": "",
-      "date": "8/7/2026",
-      "contact_person_name": "",
-      "contact_number": "",
-      "dealer_owner_booked": "",
-      "dealer_firm_name": "",
-      "r_c_i": "",
-      "propertyType": "",
-      "locality": "",
-      "sector_block": "",
-      "address_number": "",
-      "size": "",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "",
-      "time": "",
-      "demand": "",
-      "lead_source": "",
-      "initial_notes": ""
-    },
-    {
-      "id": "PROP-015",
-      "status": "",
-      "date": "8/7/2026",
-      "contact_person_name": "",
-      "contact_number": "",
-      "dealer_owner_booked": "",
-      "dealer_firm_name": "",
-      "r_c_i": "",
-      "propertyType": "",
-      "locality": "",
-      "sector_block": "",
-      "address_number": "",
-      "size": "",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "",
-      "time": "",
-      "demand": "",
-      "lead_source": "",
-      "initial_notes": ""
     }
   ],
   "projects": [

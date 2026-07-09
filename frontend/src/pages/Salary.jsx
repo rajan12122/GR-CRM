@@ -330,13 +330,12 @@ const Salary = () => {
     // Leaves deductions: 4 leaves permitted for free
     const paidLeavesUsed = Math.min(attendanceCounts.leaveDays, 4);
 
-    // Calculate Earned Days: present weekdays + halfDays * 0.5 + Sunday weekly offs + paid leaves used + extra days worked
+    // Calculate Earned Days: present weekdays + halfDays * 0.5 + paid leaves used + extra days worked + 4 (Weekly Off Sundays)
     const finalExtraDays = extraDaysOverride > 0 ? extraDaysOverride : attendanceCounts.extraDays;
     const earnedDays = attendanceCounts.presentDays + 
                        (attendanceCounts.halfDays * 0.5) + 
-                       attendanceCounts.sundayDays + 
                        paidLeavesUsed + 
-                       finalExtraDays;
+                       finalExtraDays + 4;
 
     const earnedSalary = earnedDays * dailyRate;
 
@@ -1182,17 +1181,17 @@ const Salary = () => {
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.halfDays * 0.5} Days</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Paid Days: Weekly Offs</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.sundayDays} Days</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Paid Days: Paid Leaves</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.paidLeavesUsed} Days</Typography>
               </Box>
-              {payrollStats.earnedDays - (attendanceCounts.presentDays + attendanceCounts.halfDays*0.5 + attendanceCounts.sundayDays + payrollStats.paidLeavesUsed) > 0 && (
+              <Box display="flex" justifyContent="space-between" py={0.5}>
+                <Typography variant="body2">Paid Days: Weekly Offs (Sundays)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>4 Days</Typography>
+              </Box>
+              {payrollStats.earnedDays - (attendanceCounts.presentDays + attendanceCounts.halfDays*0.5 + payrollStats.paidLeavesUsed + 4) > 0 && (
                 <Box display="flex" justifyContent="space-between" py={0.5}>
                   <Typography variant="body2">Paid Days: Extra Work</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.earnedDays - (attendanceCounts.presentDays + attendanceCounts.halfDays*0.5 + attendanceCounts.sundayDays + payrollStats.paidLeavesUsed)} Days</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.earnedDays - (attendanceCounts.presentDays + attendanceCounts.halfDays*0.5 + payrollStats.paidLeavesUsed + 4)} Days</Typography>
                 </Box>
               )}
               <Box display="flex" justifyContent="space-between" py={0.5} sx={{ borderTop: '1px dashed #CBD5E1', mt: 0.5, pt: 0.5 }}>

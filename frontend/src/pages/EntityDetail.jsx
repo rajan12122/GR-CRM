@@ -1114,6 +1114,10 @@ const EntityDetail = () => {
                       <Typography variant="body2">Paid Days: Paid Leaves</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>{activeSalarySlip.paidLeavesUsed || 0} Days</Typography>
                     </Box>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Paid Days: Weekly Offs (Sundays)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>4 Days</Typography>
+                    </Box>
                     {activeSalarySlip.extraDays > 0 && (
                       <Box display="flex" justifyContent="space-between" py={0.5}>
                         <Typography variant="body2">Paid Days: Extra Work</Typography>
@@ -1121,8 +1125,8 @@ const EntityDetail = () => {
                       </Box>
                     )}
                     <Box display="flex" justifyContent="space-between" py={0.5} sx={{ borderTop: '1px dashed #CBD5E1', mt: 0.5, pt: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>Total Earned Salary ({activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays)} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 800 }}>₹{formatCurrency(activeSalarySlip.earnedSalary || ((activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays)) * (activeSalarySlip.dailyRate || (activeSalarySlip.baseSalary / 30))))}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>Total Earned Salary ({activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays + 4)} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 800 }}>₹{formatCurrency(activeSalarySlip.earnedSalary || ((activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays + 4)) * (activeSalarySlip.dailyRate || (activeSalarySlip.baseSalary / 30))))}</Typography>
                     </Box>
                     
                     {activeSalarySlip.allowancesJson && (

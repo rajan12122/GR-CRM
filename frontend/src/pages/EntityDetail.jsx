@@ -1099,16 +1099,30 @@ const EntityDetail = () => {
                   <Grid item xs={6}>
                     <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>EARNINGS</Typography>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
-                      <Typography variant="body2">Base Salary</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.baseSalary)}</Typography>
+                      <Typography variant="body2">Daily Payout Rate (Salary/30)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.dailyRate || (activeSalarySlip.baseSalary / 30))}</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
-                      <Typography variant="body2">Extra Days Pay ({activeSalarySlip.extraDays} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.extraDayPayment)}</Typography>
+                      <Typography variant="body2">Paid Days: Full Work</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{activeSalarySlip.presentDays} Days</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
-                      <Typography variant="body2">Overtime Pay ({activeSalarySlip.overtimeHours} hrs)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.overtimePayment)}</Typography>
+                      <Typography variant="body2">Paid Days: Half Work (0.5x)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{activeSalarySlip.halfDays * 0.5} Days</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Paid Days: Paid Leaves</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{activeSalarySlip.paidLeavesUsed || 0} Days</Typography>
+                    </Box>
+                    {activeSalarySlip.extraDays > 0 && (
+                      <Box display="flex" justifyContent="space-between" py={0.5}>
+                        <Typography variant="body2">Paid Days: Extra Work</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{activeSalarySlip.extraDays} Days</Typography>
+                      </Box>
+                    )}
+                    <Box display="flex" justifyContent="space-between" py={0.5} sx={{ borderTop: '1px dashed #CBD5E1', mt: 0.5, pt: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>Total Earned Salary ({activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays)} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 800 }}>₹{formatCurrency(activeSalarySlip.earnedSalary || ((activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays)) * (activeSalarySlip.dailyRate || (activeSalarySlip.baseSalary / 30))))}</Typography>
                     </Box>
                     
                     {activeSalarySlip.allowancesJson && (
@@ -1117,8 +1131,21 @@ const EntityDetail = () => {
                           const allows = JSON.parse(activeSalarySlip.allowancesJson);
                           return allows.map((a, i) => (
                             <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
-                              <Typography variant="body2">{a.name}</Typography>
+                              <Typography variant="body2">{a.name} (Allowance)</Typography>
                               <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(a.amount)}</Typography>
+                            </Box>
+                          ));
+                        } catch (e) { return null; }
+                      })()
+                    )}
+                    {activeSalarySlip.expensesJson && (
+                      (() => {
+                        try {
+                          const exps = JSON.parse(activeSalarySlip.expensesJson);
+                          return exps.map((e, i) => (
+                            <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
+                              <Typography variant="body2">{e.name} (Reimbursement)</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(e.amount)}</Typography>
                             </Box>
                           ));
                         } catch (e) { return null; }
@@ -1128,20 +1155,16 @@ const EntityDetail = () => {
                   <Grid item xs={6}>
                     <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS</Typography>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
-                      <Typography variant="body2">Leave Deductions ({activeSalarySlip.chargeableLeaves} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.leaveDeduction)}</Typography>
+                      <Typography variant="body2">Unpaid Leaves ({Math.max(0, (activeSalarySlip.leaveDays || 0) - 4)} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#EF4444' }}>Deducted from Earned Days</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
-                      <Typography variant="body2">Half Day Deductions ({activeSalarySlip.halfDays} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.halfDayDeduction)}</Typography>
-                    </Box>
-                    <Box display="flex" justifyContent="space-between" py={0.5}>
-                      <Typography variant="body2">Absent Deductions ({activeSalarySlip.absentDays || 0} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.absentDeduction)}</Typography>
+                      <Typography variant="body2">Absent Days ({activeSalarySlip.absentDays || 0} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#EF4444' }}>Deducted from Earned Days</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Advance Recovery</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.advanceRecovery)}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.advanceRecovery)}</Typography>
                     </Box>
 
                     {activeSalarySlip.deductionsJson && (
@@ -1151,7 +1174,7 @@ const EntityDetail = () => {
                           return deds.map((d, i) => (
                             <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
                               <Typography variant="body2">{d.name}</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(d.amount)}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(d.amount)}</Typography>
                             </Box>
                           ));
                         } catch (e) { return null; }

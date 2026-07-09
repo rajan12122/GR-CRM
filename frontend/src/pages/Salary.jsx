@@ -295,8 +295,8 @@ const Salary = () => {
     let halfDays = 0;
     let absent = 0;
     let extra = 0;
-    let otHours = 0;
-    const dutyHours = selectedEmployeeObj ? (Number(selectedEmployeeObj.dutyHours) || 8) : 8;
+    let sundays = 0;
+    let future = 0;
 
     dailyLogs.forEach(log => {
       if (log.status === 'Present') present++;
@@ -305,11 +305,8 @@ const Salary = () => {
       if (log.status === 'Absent') absent++;
       if (log.status === 'Extra Day') extra++;
       if (log.status === 'Half Extra Day') extra += 0.5;
-
-      // Auto overtime hour counts: worked hours minus dutyHours
-      if (log.workHoursDecimal > dutyHours) {
-        otHours += (log.workHoursDecimal - dutyHours);
-      }
+      if (log.status === 'Sunday') sundays++;
+      if (log.status === '--') future++;
     });
 
     return {
@@ -318,9 +315,10 @@ const Salary = () => {
       halfDays,
       absentDays: absent,
       extraDays: extra,
-      autoOvertimeHours: Number(otHours.toFixed(1))
+      sundayDays: sundays,
+      futureDays: future
     };
-  }, [dailyLogs, selectedEmployeeObj]);
+  }, [dailyLogs]);
 
   // Financial Payroll calculations
   const payrollStats = useMemo(() => {
@@ -331,24 +329,16 @@ const Salary = () => {
     
     // Leaves deductions: 4 leaves permitted for free
     const paidLeavesUsed = Math.min(attendanceCounts.leaveDays, 4);
-    const chargeableLeaves = Math.max(attendanceCounts.leaveDays - 4, 0);
-    const leaveDeduction = chargeableLeaves * dailyRate;
 
-    // Half days deductions: 0.5 days rate deducted
-    const halfDayDeduction = attendanceCounts.halfDays * 0.5 * dailyRate;
-
-    // Absent deductions: 1.0 day rate deducted per absent day
-    const absentDeduction = attendanceCounts.absentDays * dailyRate;
-
-    // Extra days worked payments
+    // Calculate Earned Days: present weekdays + halfDays * 0.5 + Sunday weekly offs + paid leaves used + extra days worked
     const finalExtraDays = extraDaysOverride > 0 ? extraDaysOverride : attendanceCounts.extraDays;
-    const extraDayPayment = finalExtraDays * dailyRate;
+    const earnedDays = attendanceCounts.presentDays + 
+                       (attendanceCounts.halfDays * 0.5) + 
+                       attendanceCounts.sundayDays + 
+                       paidLeavesUsed + 
+                       finalExtraDays;
 
-    // Overtime
-    const finalOtHours = overtimeHours > 0 ? overtimeHours : attendanceCounts.autoOvertimeHours;
-    const calculatedOtRate = Number((dailyRate / 7).toFixed(2));
-    const finalOtRate = isOvertimeManual ? overtimeHourlyRate : calculatedOtRate;
-    const overtimePayment = finalOtHours * finalOtRate;
+    const earnedSalary = earnedDays * dailyRate;
 
     // Allowances, Deductions, Expenses totals
     const allowancesTotal = allowances.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
@@ -360,23 +350,14 @@ const Salary = () => {
     const finalBalance = Math.max(0, advanceTaken - finalRecovery);
 
     // Final Net salary settlement calculations
-    const grossPay = baseSalary + extraDayPayment + overtimePayment + allowancesTotal + expensesReimbursement;
-    const grossDeductions = leaveDeduction + halfDayDeduction + absentDeduction + deductionsTotal + finalRecovery;
-    const netPay = Math.max(0, grossPay - grossDeductions);
+    const netPay = Math.max(0, earnedSalary + allowancesTotal + expensesReimbursement - deductionsTotal - finalRecovery);
 
     return {
       baseSalary,
       dailyRate,
       paidLeavesUsed,
-      chargeableLeaves,
-      leaveDeduction,
-      halfDayDeduction,
-      absentDeduction,
-      extraDayPayment,
-      finalExtraDays,
-      finalOtHours,
-      finalOtRate,
-      overtimePayment,
+      earnedDays,
+      earnedSalary,
       allowancesTotal,
       deductionsTotal,
       expensesReimbursement,
@@ -384,12 +365,11 @@ const Salary = () => {
       advanceBalance: finalBalance,
       netPay
     };
-  }, [selectedEmployeeObj, attendanceCounts, allowances, deductions, expenses, overtimeHours, overtimeHourlyRate, isOvertimeManual, extraDaysOverride, advanceTaken, recoveredAmount]);
+  }, [selectedEmployeeObj, attendanceCounts, allowances, deductions, expenses, extraDaysOverride, advanceTaken, recoveredAmount]);
 
   // Sync state values on changes
   useEffect(() => {
     if (payrollStats) {
-      setOvertimeHourlyRate(payrollStats.finalOtRate);
       setAdvanceBalance(payrollStats.advanceBalance);
     }
   }, [payrollStats]);
@@ -459,13 +439,14 @@ const Salary = () => {
       halfDays: attendanceCounts.halfDays,
       absentDays: attendanceCounts.absentDays,
       extraDays: payrollStats.finalExtraDays,
-      overtimeHours: payrollStats.finalOtHours,
+      earnedDays: Number(payrollStats.earnedDays.toFixed(2)),
+      earnedSalary: Number(payrollStats.earnedSalary.toFixed(2)),
       allowancesTotal: Number(payrollStats.allowancesTotal.toFixed(2)),
       expensesReimbursement: Number(payrollStats.expensesReimbursement.toFixed(2)),
       deductionsTotal: Number(payrollStats.deductionsTotal.toFixed(2)),
-      leaveDeduction: Number(payrollStats.leaveDeduction.toFixed(2)),
-      halfDayDeduction: Number(payrollStats.halfDayDeduction.toFixed(2)),
-      absentDeduction: Number(payrollStats.absentDeduction.toFixed(2)),
+      leaveDeduction: Number((payrollStats.baseSalary - payrollStats.earnedSalary).toFixed(2)), // For backward compatibility/exports
+      halfDayDeduction: Number((attendanceCounts.halfDays * 0.5 * payrollStats.dailyRate).toFixed(2)),
+      absentDeduction: Number((attendanceCounts.absentDays * payrollStats.dailyRate).toFixed(2)),
       advanceRecovery: Number(payrollStats.advanceRecovery.toFixed(2)),
       netPay: Number(payrollStats.netPay.toFixed(2)),
       status: salaryStatus,
@@ -642,7 +623,7 @@ const Salary = () => {
                   <Icons.Timer size={20} color="#2563EB" /> Overtime & Duty Overrides
                 </Typography>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12}>
                     <TextField 
                       fullWidth
                       size="small"
@@ -654,43 +635,6 @@ const Salary = () => {
                       onChange={(e) => setExtraDaysOverride(Number(e.target.value))}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField 
-                      fullWidth
-                      size="small"
-                      type="number"
-                      label="Overtime Hours worked"
-                      helperText={`Default calculated: ${attendanceCounts.autoOvertimeHours} hours`}
-                      value={overtimeHours}
-                      disabled={user.role !== 'Admin' && user.role !== 'Manager'}
-                      onChange={(e) => setOvertimeHours(Number(e.target.value))}
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControlLabel
-                      control={
-                        <Switch 
-                          checked={isOvertimeManual} 
-                          disabled={user.role !== 'Admin' && user.role !== 'Manager'}
-                          onChange={(e) => setIsOvertimeManual(e.target.checked)} 
-                        />
-                      }
-                      label="Manual Overtime Hourly Rate Override"
-                    />
-                  </Grid>
-                  {isOvertimeManual && (
-                    <Grid item xs={12} sm={6}>
-                      <TextField 
-                        fullWidth
-                        size="small"
-                        type="number"
-                        label="Hourly Overtime Rate (INR)"
-                        value={overtimeHourlyRate}
-                        disabled={user.role !== 'Admin' && user.role !== 'Manager'}
-                        onChange={(e) => setOvertimeHourlyRate(Number(e.target.value))}
-                      />
-                    </Grid>
-                  )}
                 </Grid>
               </CardContent>
             </Card>
@@ -1083,20 +1027,23 @@ const Salary = () => {
                 <Typography variant="h3" sx={{ fontWeight: 800, color: '#38BDF8', mb: 3, fontFamily: 'Poppins' }}>
                   ₹{formatCurrency(payrollStats.netPay)}
                 </Typography>
-                
                 <Divider sx={{ borderColor: '#334155', mb: 2 }} />
 
                 <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Base Salary</Typography>
+                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Base Salary (Ref)</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.baseSalary)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Extra Days Payment</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.extraDayPayment)}</Typography>
+                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Daily Rate (Salary/30)</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.dailyRate)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Overtime Payment</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.overtimePayment)}</Typography>
+                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Total Earned Days</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#38BDF8' }}>{payrollStats.earnedDays} Days</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Earned Salary</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>₹{formatCurrency(payrollStats.earnedSalary)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Total Allowances</Typography>
@@ -1109,18 +1056,6 @@ const Salary = () => {
                 
                 <Divider sx={{ borderColor: '#334155', my: 1.5 }} />
 
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Leave Deductions</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.leaveDeduction)}</Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Half Day Deductions</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.halfDayDeduction)}</Typography>
-                </Box>
-                <Box display="flex" justifyContent="space-between" mb={1}>
-                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Absent Deductions</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.absentDeduction)}</Typography>
-                </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Custom Deductions</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.deductionsTotal)}</Typography>
@@ -1235,20 +1170,38 @@ const Salary = () => {
             <Grid item xs={6}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>EARNING BREAKDOWN</Typography>
               <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Base Salary</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.baseSalary)}</Typography>
+                <Typography variant="body2">Daily Payout Rate (Salary/30)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.dailyRate)}</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Extra Days Pay ({payrollStats.finalExtraDays} days)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.extraDayPayment)}</Typography>
+                <Typography variant="body2">Paid Days: Full Work</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.presentDays} Days</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Overtime Pay ({payrollStats.finalOtHours} hrs)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.overtimePayment)}</Typography>
+                <Typography variant="body2">Paid Days: Half Work (0.5x)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.halfDays * 0.5} Days</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-between" py={0.5}>
+                <Typography variant="body2">Paid Days: Weekly Offs</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.sundayDays} Days</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-between" py={0.5}>
+                <Typography variant="body2">Paid Days: Paid Leaves</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.paidLeavesUsed} Days</Typography>
+              </Box>
+              {payrollStats.earnedDays - (attendanceCounts.presentDays + attendanceCounts.halfDays*0.5 + attendanceCounts.sundayDays + payrollStats.paidLeavesUsed) > 0 && (
+                <Box display="flex" justifyContent="space-between" py={0.5}>
+                  <Typography variant="body2">Paid Days: Extra Work</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.earnedDays - (attendanceCounts.presentDays + attendanceCounts.halfDays*0.5 + attendanceCounts.sundayDays + payrollStats.paidLeavesUsed)} Days</Typography>
+                </Box>
+              )}
+              <Box display="flex" justifyContent="space-between" py={0.5} sx={{ borderTop: '1px dashed #CBD5E1', mt: 0.5, pt: 0.5 }}>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>Total Earned Salary ({payrollStats.earnedDays} days)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 800 }}>₹{formatCurrency(payrollStats.earnedSalary)}</Typography>
               </Box>
               {allowances.map((a, i) => (
                 <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
-                  <Typography variant="body2">{a.name}</Typography>
+                  <Typography variant="body2">{a.name} (Allowance)</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(a.amount)}</Typography>
                 </Box>
               ))}
@@ -1262,19 +1215,15 @@ const Salary = () => {
             <Grid item xs={6}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS BREAKDOWN</Typography>
               <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Leave Deductions ({payrollStats.chargeableLeaves} days)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.leaveDeduction)}</Typography>
+                <Typography variant="body2">Unpaid Leaves ({Math.max(0, attendanceCounts.leaveDays - 4)} days)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: '#EF4444' }}>Deducted from Earned Days</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Half Day Deductions ({attendanceCounts.halfDays} days)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.halfDayDeduction)}</Typography>
+                <Typography variant="body2">Absent Days ({attendanceCounts.absentDays} days)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: '#EF4444' }}>Deducted from Earned Days</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Absent Deductions ({attendanceCounts.absentDays} days)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.absentDeduction)}</Typography>
-              </Box>
-              <Box display="flex" justifyContent="space-between" py={0.5}>
-                <Typography variant="body2">Advance Recovered</Typography>
+                <Typography variant="body2">Advance Recovery</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.advanceRecovery)}</Typography>
               </Box>
               {deductions.map((d, i) => (

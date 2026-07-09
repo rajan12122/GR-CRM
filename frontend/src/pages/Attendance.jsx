@@ -381,7 +381,8 @@ const Attendance = () => {
       setLoading(true);
       await Promise.all([
         fetchModuleData('attendance'),
-        fetchModuleData('employees')
+        fetchModuleData('employees'),
+        fetchModuleData('leaves')
       ]);
       setLoading(false);
     };
@@ -390,11 +391,127 @@ const Attendance = () => {
 
   const employees = moduleData.employees || [];
   const attendanceList = moduleData.attendance || [];
+  const leavesList = moduleData.leaves || [];
 
   // Filter attendance for the logged-in user to compute metrics
   const myAttendance = useMemo(() => {
     return attendanceList.filter(a => String(a.employeeId) === String(user?.id));
   }, [attendanceList, user]);
+
+  // Unified helper to calculate identical earned/payable days matching Salary page
+  const calculatePayableDaysHelper = (empId, targetMonth, targetYear) => {
+    const empObj = employees.find(e => String(e.id) === String(empId));
+    if (!empObj) return 0;
+
+    const dutyHours = Number(empObj.dutyHours) || 8;
+    const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+
+    // Group logs by date
+    const logsMap = {};
+    attendanceList
+      .filter(a => String(a.employeeId) === String(empId))
+      .forEach(a => {
+        const parts = a.date.split('-');
+        if (parts.length >= 2) {
+          const yr = Number(parts[0]);
+          const mo = Number(parts[1]);
+          if (yr === targetYear && mo === targetMonth) {
+            if (!logsMap[a.date] || a.status !== 'Absent') {
+              logsMap[a.date] = a;
+            }
+          }
+        }
+      });
+
+    // Count approved leaves
+    const monthLeaves = leavesList.filter(l => 
+      String(l.employeeId) === String(empId) &&
+      l.status === 'Approved' &&
+      new Date(l.date).getMonth() + 1 === targetMonth &&
+      new Date(l.date).getFullYear() === targetYear
+    );
+
+    let present = 0;
+    let leaves = 0;
+    let halfDays = 0;
+    let extra = 0;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dateStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const isSunday = new Date(targetYear, targetMonth - 1, d).getDay() === 0;
+      const att = logsMap[dateStr];
+      const hasLeave = monthLeaves.find(l => l.date === dateStr);
+
+      if (hasLeave) {
+        leaves++;
+      } else if (att) {
+        if (att.status === 'Absent') {
+          // Keep as absent
+        } else if (isSunday) {
+          // Sunday worked
+          const inTimeNum = att.inTime;
+          const outTimeNum = att.outTime;
+          if (inTimeNum && outTimeNum && outTimeNum !== '--') {
+            const getHrs = (inT, outT) => {
+              try {
+                const parseTime = (tStr) => {
+                  const [time, modifier] = tStr.split(' ');
+                  let [hours, minutes] = time.split(':');
+                  if (hours === '12') hours = '00';
+                  if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+                  return new Date(2000, 0, 1, hours, minutes);
+                };
+                const start = parseTime(inT);
+                const end = parseTime(outT);
+                return (end - start) / 1000 / 60 / 60;
+              } catch (e) { return 0; }
+            };
+            const hrs = getHrs(inTimeNum, outTimeNum);
+            if (hrs >= dutyHours) {
+              extra++;
+            } else if (hrs > 0) {
+              extra += 0.5;
+            }
+          } else {
+            extra++;
+          }
+        } else {
+          // Weekday worked
+          const inTimeNum = att.inTime;
+          const outTimeNum = att.outTime;
+          if (inTimeNum && outTimeNum && outTimeNum !== '--') {
+            const getHrs = (inT, outT) => {
+              try {
+                const parseTime = (tStr) => {
+                  const [time, modifier] = tStr.split(' ');
+                  let [hours, minutes] = time.split(':');
+                  if (hours === '12') hours = '00';
+                  if (modifier === 'PM') hours = parseInt(hours, 10) + 12;
+                  return new Date(2000, 0, 1, hours, minutes);
+                };
+                const start = parseTime(inT);
+                const end = parseTime(outT);
+                return (end - start) / 1000 / 60 / 60;
+              } catch (e) { return 0; }
+            };
+            const hrs = getHrs(inTimeNum, outTimeNum);
+            if (hrs > 0 && hrs < dutyHours) {
+              halfDays++;
+            } else if (hrs >= dutyHours) {
+              present++;
+            }
+          } else {
+            present++;
+          }
+        }
+      }
+    }
+
+    const paidLeavesUsed = Math.min(leaves, 4);
+    const isOffDutyFullMonth = present === 0 && halfDays === 0 && paidLeavesUsed === 0 && extra === 0;
+
+    return isOffDutyFullMonth ? 0 : (present + halfDays * 0.5 + paidLeavesUsed + extra + 4);
+  };
 
   const stats = useMemo(() => {
     const totalDays = myAttendance.length;
@@ -416,9 +533,7 @@ const Attendance = () => {
       }
     });
 
-    const workedDays = presentDays + (0.5 * halfDays);
-    const latePenaltyDays = Math.floor(lateDays / 3);
-    const payableDays = Math.max(0, workedDays - latePenaltyDays);
+    const payableDays = calculatePayableDaysHelper(user?.id, new Date().getMonth() + 1, new Date().getFullYear());
 
     return {
       totalDays,
@@ -428,7 +543,7 @@ const Attendance = () => {
       absentDays,
       payableDays
     };
-  }, [myAttendance, employees, user]);
+  }, [myAttendance, employees, user, leavesList, attendanceList]);
 
   // Selected Employee object for payroll
   const selectedEmployeeObj = useMemo(() => {
@@ -508,10 +623,10 @@ const Attendance = () => {
     const calculatedExtraDays = sundaysWorked;
     const extraDays = extraDaysOverride !== '' ? Number(extraDaysOverride) : calculatedExtraDays;
 
-    const standardWorkingDays = Math.max(1, calendarDays - holidaysAllotted);
-    const dailyRate = Math.round(baseSalary / standardWorkingDays);
+    const standardWorkingDays = 26;
+    const dailyRate = Math.round(baseSalary / 30);
 
-    const finalPayableDays = Math.max(0, workedDays - latePenaltyDays + extraDays);
+    const finalPayableDays = calculatePayableDaysHelper(selectedEmployeeObj.id, payMonth, payYear);
     const totalEarnings = Math.round(finalPayableDays * dailyRate);
 
     const adjustmentsSum = adjustments.reduce((acc, curr) => acc + curr.amount, 0);

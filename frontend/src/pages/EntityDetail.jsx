@@ -1136,6 +1136,10 @@ const EntityDetail = () => {
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.halfDayDeduction)}</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Absent Deductions ({activeSalarySlip.absentDays || 0} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.absentDeduction)}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Advance Recovery</Typography>
                       <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.advanceRecovery)}</Typography>
                     </Box>

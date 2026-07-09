@@ -237,30 +237,38 @@ const Salary = () => {
         } else if (attRec.status === 'Leave') {
           status = 'Leave';
         } else {
-          // If worked hours is less than 7 hours -> Half Day!
-          if (workHours > 0 && workHours < 7) {
-            status = 'Half Day';
-          } else {
-            status = 'Present';
-          }
-
-          // Sunday/Extra duties
           if (dayName === 'Sun' || attRec.status === 'Extra Day') {
-            status = 'Extra Day';
-            remarks = 'Sunday/Extra Shift Duty';
+            if (workHours > 0 && workHours < 7) {
+              status = 'Half Extra Day';
+              remarks = 'Sunday Half Shift (0.5 Extra Day)';
+            } else {
+              status = 'Extra Day';
+              remarks = 'Sunday/Extra Shift Duty';
+            }
+          } else {
+            if (workHours > 0 && workHours < 7) {
+              status = 'Half Day';
+            } else {
+              status = 'Present';
+            }
           }
         }
       } else {
         if (isLeaveApproved) {
           status = 'Leave';
         } else {
-          // Check if date is in the future
-          const todayStr = new Date().toISOString().split('T')[0];
-          if (dateStr > todayStr) {
-            status = '--';
+          if (dayName === 'Sun') {
+            status = 'Sunday';
+            remarks = 'Weekly Off';
           } else {
-            status = 'Absent';
-            remarks = 'No Clock In (Auto Absent)';
+            // Check if date is in the future
+            const todayStr = new Date().toISOString().split('T')[0];
+            if (dateStr > todayStr) {
+              status = '--';
+            } else {
+              status = 'Absent';
+              remarks = 'No Clock In (Auto Absent)';
+            }
           }
         }
       }
@@ -296,6 +304,7 @@ const Salary = () => {
       if (log.status === 'Half Day') halfDays++;
       if (log.status === 'Absent') absent++;
       if (log.status === 'Extra Day') extra++;
+      if (log.status === 'Half Extra Day') extra += 0.5;
 
       // Auto overtime hour counts: worked hours minus dutyHours
       if (log.workHoursDecimal > dutyHours) {
@@ -328,6 +337,9 @@ const Salary = () => {
     // Half days deductions: 0.5 days rate deducted
     const halfDayDeduction = attendanceCounts.halfDays * 0.5 * dailyRate;
 
+    // Absent deductions: 1.0 day rate deducted per absent day
+    const absentDeduction = attendanceCounts.absentDays * dailyRate;
+
     // Extra days worked payments
     const finalExtraDays = extraDaysOverride > 0 ? extraDaysOverride : attendanceCounts.extraDays;
     const extraDayPayment = finalExtraDays * dailyRate;
@@ -349,7 +361,7 @@ const Salary = () => {
 
     // Final Net salary settlement calculations
     const grossPay = baseSalary + extraDayPayment + overtimePayment + allowancesTotal + expensesReimbursement;
-    const grossDeductions = leaveDeduction + halfDayDeduction + deductionsTotal + finalRecovery;
+    const grossDeductions = leaveDeduction + halfDayDeduction + absentDeduction + deductionsTotal + finalRecovery;
     const netPay = Math.max(0, grossPay - grossDeductions);
 
     return {
@@ -359,6 +371,7 @@ const Salary = () => {
       chargeableLeaves,
       leaveDeduction,
       halfDayDeduction,
+      absentDeduction,
       extraDayPayment,
       finalExtraDays,
       finalOtHours,
@@ -452,6 +465,7 @@ const Salary = () => {
       deductionsTotal: Number(payrollStats.deductionsTotal.toFixed(2)),
       leaveDeduction: Number(payrollStats.leaveDeduction.toFixed(2)),
       halfDayDeduction: Number(payrollStats.halfDayDeduction.toFixed(2)),
+      absentDeduction: Number(payrollStats.absentDeduction.toFixed(2)),
       advanceRecovery: Number(payrollStats.advanceRecovery.toFixed(2)),
       netPay: Number(payrollStats.netPay.toFixed(2)),
       status: salaryStatus,
@@ -1104,6 +1118,10 @@ const Salary = () => {
                   <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.halfDayDeduction)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Absent Deductions</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.absentDeduction)}</Typography>
+                </Box>
+                <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Custom Deductions</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.deductionsTotal)}</Typography>
                 </Box>
@@ -1245,6 +1263,10 @@ const Salary = () => {
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Half Day Deductions ({attendanceCounts.halfDays} days)</Typography>
                 <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.halfDayDeduction)}</Typography>
+              </Box>
+              <Box display="flex" justifyContent="space-between" py={0.5}>
+                <Typography variant="body2">Absent Deductions ({attendanceCounts.absentDays} days)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.absentDeduction)}</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Advance Recovered</Typography>

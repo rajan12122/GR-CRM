@@ -1387,6 +1387,14 @@
           "editable": true
         },
         {
+          "name": "absentDeduction",
+          "label": "Absent Deduction",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "advanceRecovery",
           "label": "Advance Recovery",
           "type": "number",

@@ -350,6 +350,16 @@ const Attendance = () => {
     };
   }, []);
 
+  useEffect(() => {
+    if (todayRecord && todayRecord.outTime === '--') {
+      if (!sharingLocation) {
+        setSharingLocation(true);
+        localStorage.setItem('gr_sharing_location', 'true');
+        startLocationSharing();
+      }
+    }
+  }, [todayRecord, sharingLocation]);
+
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   

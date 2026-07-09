@@ -87,7 +87,7 @@
       "phone": 9417094170,
       "source": "Facebook",
       "status": "In-Progress",
-      "assignedEmployeeId": "EMP-002",
+      "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 4500000,
@@ -104,7 +104,7 @@
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
-      "assignedEmployeeId": "EMP-002",
+      "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 15000000,
@@ -1769,6 +1769,24 @@
       "author": "System Rotation Engine",
       "date": "9/7/2026",
       "timestamp": "2026-07-09T08:08:30.745Z"
+    },
+    {
+      "id": "REM-1783588400399-7iso",
+      "targetModule": "leads",
+      "targetId": "LEAD-001",
+      "comment": "System: Lead rotated automatically from Mandeep to Vipin due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "9/7/2026",
+      "timestamp": "2026-07-09T09:13:20.416Z"
+    },
+    {
+      "id": "REM-1783588400420-oelk",
+      "targetModule": "leads",
+      "targetId": "LEAD-002",
+      "comment": "System: Lead rotated automatically from Mandeep to Vipin due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "9/7/2026",
+      "timestamp": "2026-07-09T09:13:20.420Z"
     }
   ],
   "documents": [
@@ -1785,6 +1803,16 @@
     }
   ],
   "activity_logs": [
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Vipin (inactivity)",
+      "timestamp": "2026-07-09T09:13:20.420Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Amit Pathak\" to Vipin (inactivity)",
+      "timestamp": "2026-07-09T09:13:20.419Z"
+    },
     {
       "user": "System",
       "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Mandeep (inactivity)",

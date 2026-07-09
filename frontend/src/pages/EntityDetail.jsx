@@ -40,6 +40,7 @@ const EntityDetail = () => {
     fetchEntity360, 
     createRemark, 
     uploadDocument,
+    deleteRecord,
     loadingData 
   } = useApp();
 
@@ -278,6 +279,18 @@ const EntityDetail = () => {
       // Reload connections
       const rels = await fetchEntity360(moduleName, id);
       setConnections(rels);
+    }
+  };
+
+  const handleDeleteDoc = async (docId) => {
+    if (window.confirm("Are you sure you want to delete this document?")) {
+      const res = await deleteRecord('documents', docId);
+      if (res.success) {
+        const rels = await fetchEntity360(moduleName, id);
+        setConnections(rels);
+      } else {
+        alert(res.message || "Failed to delete document.");
+      }
     }
   };
 
@@ -910,9 +923,14 @@ const EntityDetail = () => {
                             <Typography variant="caption" sx={{ color: '#64748B' }}>Uploaded: {doc.dateAdded} • By: {doc.uploadedBy}</Typography>
                           </Box>
                         </Box>
-                        <Button variant="outlined" size="small" component="a" href={doc.fileUrl} download sx={{ textTransform: 'none' }}>
-                          Download
-                        </Button>
+                        <Box display="flex" alignItems="center" gap={1}>
+                          <Button variant="outlined" size="small" component="a" href={doc.fileUrl} download sx={{ textTransform: 'none' }}>
+                            Download
+                          </Button>
+                          <IconButton size="small" color="error" onClick={() => handleDeleteDoc(doc.id)}>
+                            <Icons.Trash2 size={16} />
+                          </IconButton>
+                        </Box>
                       </Paper>
                     ))
                   )}

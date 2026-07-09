@@ -56,6 +56,7 @@ const Settings = () => {
   const [permSelectedModule, setPermSelectedModule] = useState('customers');
   const [passwordSelectedEmp, setPasswordSelectedEmp] = useState('');
   const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [selectedUserForPerms, setSelectedUserForPerms] = useState('');
 
   // Lead Rotation local form states
   const [rotationActive, setRotationActive] = useState(false);
@@ -523,6 +524,47 @@ const Settings = () => {
     const res = await saveMetadata(updated);
     if (!res.success) {
       showStatus('error', res.message);
+    }
+  };
+
+  const handleUserPermissionToggle = async (userId, moduleKey, action) => {
+    const updated = { ...metadata };
+    if (!updated.userPermissions) {
+      updated.userPermissions = {};
+    }
+    if (!updated.userPermissions[userId]) {
+      const emp = (moduleData.employees || []).find(e => String(e.id) === String(userId));
+      const role = emp?.role || 'Employee';
+      updated.userPermissions[userId] = JSON.parse(JSON.stringify(updated.rolesPermissions[role] || {}));
+    }
+    if (!updated.userPermissions[userId][moduleKey]) {
+      updated.userPermissions[userId][moduleKey] = [];
+    }
+
+    const perms = updated.userPermissions[userId][moduleKey];
+    if (perms.includes(action)) {
+      updated.userPermissions[userId][moduleKey] = perms.filter(a => a !== action);
+    } else {
+      updated.userPermissions[userId][moduleKey].push(action);
+    }
+
+    const res = await saveMetadata(updated);
+    if (!res.success) {
+      showStatus('error', res.message);
+    }
+  };
+
+  const handleResetUserPermissions = async (userId) => {
+    if (!window.confirm("Are you sure you want to reset this user's custom permissions? They will revert to default role permissions.")) return;
+    const updated = { ...metadata };
+    if (updated.userPermissions && updated.userPermissions[userId]) {
+      delete updated.userPermissions[userId];
+      const res = await saveMetadata(updated);
+      if (res.success) {
+        showStatus('success', 'Reset user permissions to default role permissions.');
+      } else {
+        showStatus('error', res.message);
+      }
     }
   };
 
@@ -1079,6 +1121,123 @@ const Settings = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
+
+                {/* Individual Employee Permissions Override section */}
+                <Box sx={{ mt: 5 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 700, fontSize: '16px', mb: 1, fontFamily: 'Poppins' }}>
+                    Individual Employee Permissions (Overrides)
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                    Set custom access controls for a specific employee by name. Overrides their default role settings.
+                  </Typography>
+
+                  <Grid container spacing={3} sx={{ mb: 3 }}>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl size="small" fullWidth>
+                        <InputLabel>Select Employee</InputLabel>
+                        <Select
+                          label="Select Employee"
+                          value={selectedUserForPerms}
+                          onChange={(e) => setSelectedUserForPerms(e.target.value)}
+                        >
+                          <MenuItem value=""><em>None selected</em></MenuItem>
+                          {(moduleData.employees || []).filter(e => e.role !== 'Admin').map(emp => (
+                            <MenuItem key={emp.id} value={emp.id}>
+                              {emp.name} ({emp.id} • {emp.role || 'Staff'})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    {selectedUserForPerms && metadata?.userPermissions?.[selectedUserForPerms] && (
+                      <Grid item xs={12} sm={6}>
+                        <Button 
+                          variant="outlined" 
+                          color="error" 
+                          size="small"
+                          onClick={() => handleResetUserPermissions(selectedUserForPerms)}
+                          sx={{ textTransform: 'none', fontWeight: 600 }}
+                        >
+                          Reset User Permissions Override
+                        </Button>
+                      </Grid>
+                    )}
+                  </Grid>
+
+                  {selectedUserForPerms && (() => {
+                    const empObj = (moduleData.employees || []).find(e => e.id === selectedUserForPerms);
+                    const userRole = empObj?.role || 'Employee';
+                    
+                    // User perms or fallback display of role perms
+                    const userHasOverride = Boolean(metadata?.userPermissions?.[selectedUserForPerms]);
+                    const currentPerms = metadata?.userPermissions?.[selectedUserForPerms] || metadata?.rolesPermissions?.[userRole] || {};
+
+                    return (
+                      <Box>
+                        {!userHasOverride && (
+                          <Alert severity="info" sx={{ mb: 2, fontSize: '12px' }}>
+                            Currently showing default role permissions for <strong>{userRole}</strong>. Interacting with checkboxes will automatically create a custom override for <strong>{empObj?.name}</strong>.
+                          </Alert>
+                        )}
+                        <TableContainer component={Paper} sx={{ border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                          <Table size="small">
+                            <TableHead>
+                              <TableRow>
+                                <TableCell sx={{ fontWeight: 600 }}>Module Target</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>View</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Create</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Edit</TableCell>
+                                <TableCell align="center" sx={{ fontWeight: 600 }}>Delete</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {Object.keys(metadata.modules).map(moduleKey => {
+                                const hasView = (currentPerms[moduleKey] || []).includes('view');
+                                const hasCreate = (currentPerms[moduleKey] || []).includes('create');
+                                const hasEdit = (currentPerms[moduleKey] || []).includes('edit');
+                                const hasDelete = (currentPerms[moduleKey] || []).includes('delete');
+
+                                return (
+                                  <TableRow key={moduleKey}>
+                                    <TableCell sx={{ fontWeight: 600 }}>{metadata.modules[moduleKey].label}</TableCell>
+                                    <TableCell align="center">
+                                      <Checkbox 
+                                        size="small" 
+                                        checked={hasView} 
+                                        onChange={() => handleUserPermissionToggle(selectedUserForPerms, moduleKey, 'view')} 
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Checkbox 
+                                        size="small" 
+                                        checked={hasCreate} 
+                                        onChange={() => handleUserPermissionToggle(selectedUserForPerms, moduleKey, 'create')} 
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Checkbox 
+                                        size="small" 
+                                        checked={hasEdit} 
+                                        onChange={() => handleUserPermissionToggle(selectedUserForPerms, moduleKey, 'edit')} 
+                                      />
+                                    </TableCell>
+                                    <TableCell align="center">
+                                      <Checkbox 
+                                        size="small" 
+                                        checked={hasDelete} 
+                                        onChange={() => handleUserPermissionToggle(selectedUserForPerms, moduleKey, 'delete')} 
+                                      />
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    );
+                  })()}
+                </Box>
 
                 <Box sx={{ mt: 5 }}>
                   <Typography variant="h5" sx={{ fontWeight: 700, fontSize: '16px', mb: 1, fontFamily: 'Poppins' }}>

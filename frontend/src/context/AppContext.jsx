@@ -268,6 +268,15 @@ export const AppProvider = ({ children }) => {
 
   const hasPermission = (moduleName, action = 'view') => {
     if (user?.role === 'Admin') return true;
+    
+    // Check specific user-level override permissions first
+    const userId = user?.id;
+    if (userId && metadata?.userPermissions?.[userId]) {
+      const userModulePerms = metadata.userPermissions[userId][moduleName] || [];
+      return userModulePerms.includes(action);
+    }
+
+    // Fallback to role-level default permissions
     const permissions = metadata?.rolesPermissions?.[user?.role];
     const modulePerms = permissions?.[moduleName] || [];
     return modulePerms.includes(action);

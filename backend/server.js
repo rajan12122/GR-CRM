@@ -564,11 +564,25 @@ app.post('/api/location/log', authenticateToken, (req, res) => {
 
   if (status === 'sharing' && decLat !== 0 && decLng !== 0) {
     db.active_paths[employeeId] = db.active_paths[employeeId] || [];
-    db.active_paths[employeeId].push({
-      lat: decLat,
-      lng: decLng,
-      timestamp: logEntry.timestamp
-    });
+    const currentPath = db.active_paths[employeeId];
+    if (currentPath.length === 0) {
+      currentPath.push({
+        lat: decLat,
+        lng: decLng,
+        timestamp: logEntry.timestamp
+      });
+    } else {
+      const lastPoint = currentPath[currentPath.length - 1];
+      const dist = calculateDistanceKm(lastPoint.lat, lastPoint.lng, decLat, decLng);
+      // Only capture when moved more than 100 meters (0.1 km)
+      if (dist >= 0.1) {
+        currentPath.push({
+          lat: decLat,
+          lng: decLng,
+          timestamp: logEntry.timestamp
+        });
+      }
+    }
   } else if (status === 'ended') {
     const path = db.active_paths[employeeId] || [];
     let distance = 0;

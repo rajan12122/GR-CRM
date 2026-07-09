@@ -8,6 +8,9 @@
       "role": "Admin",
       "status": "Active",
       "joinDate": "2026-07-08",
+      "salary": "",
+      "dutyHours": "",
+      "holidaysAllotted": "",
       "password": "gagan123"
     },
     {
@@ -18,20 +21,16 @@
       "role": "Employee",
       "status": "Active",
       "joinDate": "2026-07-08",
-      "password": "mandeep123",
-      "locationHistory": [
-        {
-          "date": "8/7/2026",
-          "totalKilometers": 0,
-          "path": []
-        }
-      ]
+      "salary": "",
+      "dutyHours": "",
+      "holidaysAllotted": "",
+      "password": "mandeep123"
     },
     {
       "id": "EMP-003",
       "name": "Vipin",
       "email": "vipin@gmail.com",
-      "phone": "1631321032",
+      "phone": 1631321032,
       "role": "Employee",
       "status": "Active",
       "joinDate": "2026-07-01",
@@ -415,6 +414,30 @@
       "demand": "8.40 Cr",
       "lead_source": "Whatsapp",
       "initial_notes": "25% built up, Booked Deal"
+    },
+    {
+      "id": "PROP-014",
+      "status": "Available",
+      "date": "12/09/2026",
+      "contact_person_name": "Abhi",
+      "contact_number": 828289,
+      "dealer_owner_booked": "Owner",
+      "dealer_firm_name": "",
+      "r_c_i": "Residential",
+      "propertyType": "Kothi",
+      "locality": "Aerocity",
+      "sector_block": "A",
+      "address_number": 514,
+      "size": "300 Gaj",
+      "bhk_and_washrooms": "2 BhK",
+      "dimensions": "",
+      "location_type": "Normal",
+      "facing": "South",
+      "white": "Normal",
+      "time": "1 month",
+      "demand": "1.2 Cr",
+      "lead_source": "Referral",
+      "initial_notes": "Aerocity "
     }
   ],
   "projects": [
@@ -1650,72 +1673,7 @@
       "status": "Completed"
     }
   ],
-  "attendance": [
-    {
-      "id": "ATT-001",
-      "employeeId": "EMP-001",
-      "date": "2026-07-03",
-      "inTime": "09:30 AM",
-      "outTime": "06:15 PM",
-      "status": "Present"
-    },
-    {
-      "id": "ATT-002",
-      "employeeId": "EMP-003",
-      "date": "2026-07-03",
-      "inTime": "09:05 AM",
-      "outTime": "07:00 PM",
-      "status": "Present"
-    },
-    {
-      "id": "ATT-003",
-      "employeeId": "EMP-004",
-      "date": "2026-07-03",
-      "inTime": "10:15 AM",
-      "outTime": "06:00 PM",
-      "status": "Late"
-    },
-    {
-      "id": "ATT-005",
-      "employeeId": "PROJ-002",
-      "date": "2026-07-07",
-      "inTime": "05:01 PM",
-      "outTime": "05:01 PM",
-      "status": "Late"
-    },
-    {
-      "id": "ATT-005",
-      "employeeId": "PROJ-002",
-      "date": "2026-07-07",
-      "inTime": "05:01 PM",
-      "outTime": "--",
-      "status": "Late"
-    },
-    {
-      "id": "ATT-006",
-      "employeeId": "EMP-001",
-      "date": "2026-07-07",
-      "inTime": "06:10 PM",
-      "outTime": "06:12 PM",
-      "status": "Late"
-    },
-    {
-      "id": "ATT-007",
-      "employeeId": "EMP-001",
-      "date": "2026-07-08",
-      "inTime": "02:22 PM",
-      "outTime": "02:52 PM",
-      "status": "Late"
-    },
-    {
-      "id": "ATT-008",
-      "employeeId": "EMP-002",
-      "date": "2026-07-08",
-      "inTime": "06:10 PM",
-      "outTime": "08:28 PM",
-      "status": "Late"
-    }
-  ],
+  "attendance": [],
   "leaves": [
     {
       "id": "LV-001",
@@ -1773,22 +1731,22 @@
       "id": "REM-006"
     },
     {
-      "id": "REM-1783522462675-9um3",
+      "id": "REM-1783577753580-2zu4",
       "targetModule": "leads",
       "targetId": "LEAD-001",
-      "comment": "System: Lead rotated automatically from unassigned to Mandeep due to inactivity.",
+      "comment": "System: Lead rotated automatically from Vipin to Mandeep due to inactivity.",
       "author": "System Rotation Engine",
-      "date": "8/7/2026",
-      "timestamp": "2026-07-08T14:54:22.785Z"
+      "date": "9/7/2026",
+      "timestamp": "2026-07-09T06:15:53.681Z"
     },
     {
-      "id": "REM-1783522462785-kkdz",
+      "id": "REM-1783577753682-cee1",
       "targetModule": "leads",
       "targetId": "LEAD-002",
       "comment": "System: Lead rotated automatically from unassigned to Mandeep due to inactivity.",
       "author": "System Rotation Engine",
-      "date": "8/7/2026",
-      "timestamp": "2026-07-08T14:54:22.785Z"
+      "date": "9/7/2026",
+      "timestamp": "2026-07-09T06:15:53.682Z"
     }
   ],
   "documents": [
@@ -1805,6 +1763,16 @@
     }
   ],
   "activity_logs": [
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Mandeep (inactivity)",
+      "timestamp": "2026-07-09T06:15:53.682Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Amit Pathak\" to Mandeep (inactivity)",
+      "timestamp": "2026-07-09T06:15:53.681Z"
+    },
     {
       "id": "LOG-1783522850661",
       "employeeName": "Gagan Chopra",

@@ -25,7 +25,8 @@ import {
   DialogActions,
   FormGroup,
   FormControlLabel,
-  Checkbox
+  Checkbox,
+  useMediaQuery
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -175,6 +176,15 @@ const ModuleManager = () => {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const isMobile = useMediaQuery('(max-width:900px)');
+
+  useEffect(() => {
+    if (isMobile) {
+      setViewMode('card');
+    } else {
+      setViewMode('table');
+    }
+  }, [isMobile]);
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');

@@ -210,18 +210,18 @@ const Dashboard = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
+    <Box sx={{ p: { xs: 1.5, md: 3 }, pb: '100px' }}>
       {/* Welcome Greetings Banner */}
-      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexDirection: { xs: 'column', sm: 'row' }, gap: 2 }}>
         <Box>
-          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '28px', color: '#0F172A', fontFamily: 'Poppins' }}>
+          <Typography variant="h2" sx={{ fontWeight: 800, fontSize: { xs: '22px', sm: '28px' }, color: '#0F172A', fontFamily: 'Poppins' }}>
             Welcome back, {user?.name || 'Manager'}
           </Typography>
-          <Typography variant="body2" sx={{ color: '#64748B' }}>
+          <Typography variant="body2" sx={{ color: '#64748B', fontSize: '13px' }}>
             Here is your sales performance and operational overview for Gagan Realtech today.
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 1.5, width: { xs: '100%', sm: 'auto' }, justifyContent: 'flex-end' }}>
           <Button 
             variant="outlined" 
             startIcon={<Icons.CalendarDays size={18} />} 
@@ -296,6 +296,58 @@ const Dashboard = () => {
             )}
           </Menu>
         </Box>
+      </Box>
+
+      {/* QUICK ACTIONS GRID FOR MOBILE-FIRST ONE-HAND USE */}
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '11px' }}>
+          <Icons.Zap size={14} color="#2563EB" /> Quick Actions
+        </Typography>
+        <Grid container spacing={1.5}>
+          {[
+            { label: 'Add Client', icon: <Icons.UserPlus size={18} />, color: '#2563EB', path: '/module/customers?new=true' },
+            { label: 'Add Lead', icon: <Icons.Star size={18} />, color: '#16A34A', path: '/module/leads?new=true' },
+            { label: 'Attendance', icon: <Icons.Clock size={18} />, color: '#F59E0B', path: '/module/attendance' },
+            { label: 'Salary', icon: <Icons.CircleDollarSign size={18} />, color: '#10B981', path: '/module/salary' },
+            { label: 'Projects', icon: <Icons.FolderOpen size={18} />, color: '#8B5CF6', path: '/module/projects' },
+            { label: 'Properties', icon: <Icons.Home size={18} />, color: '#EC4899', path: '/module/properties' },
+            { label: 'Employees', icon: <Icons.Users size={18} />, color: '#14B8A6', path: '/module/employees' },
+            { label: 'Expenses', icon: <Icons.Receipt size={18} />, color: '#DC2626', path: '/module/salary' }
+          ].map((act, idx) => (
+            <Grid item xs={6} sm={3} key={idx}>
+              <Button
+                variant="contained"
+                fullWidth
+                onClick={() => navigate(act.path)}
+                startIcon={act.icon}
+                sx={{
+                  height: 48,
+                  borderRadius: '12px',
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  fontSize: '13px',
+                  backgroundColor: '#FFFFFF',
+                  color: '#0F172A',
+                  border: '1px solid #E2E8F0',
+                  boxShadow: 'none',
+                  justifyContent: 'flex-start',
+                  px: 2,
+                  '&:hover': {
+                    backgroundColor: '#F8FAFC',
+                    borderColor: '#CBD5E1',
+                    boxShadow: 'none'
+                  },
+                  '& .MuiButton-startIcon': {
+                    color: act.color,
+                    mr: 1
+                  }
+                }}
+              >
+                {act.label}
+              </Button>
+            </Grid>
+          ))}
+        </Grid>
       </Box>
 
       {/* KPI Cards Row (Upgraded with Revenue Intelligence & Mobile Smart Lead Swiper) */}

@@ -21,6 +21,7 @@ import PullToRefresh from './components/PullToRefresh';
 import PublicIntake from './pages/PublicIntake';
 import QuickAdd from './pages/QuickAdd';
 import LeadNotificationListener from './components/LeadNotificationListener';
+import Salary from './pages/Salary';
 import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
@@ -129,6 +130,7 @@ const MainLayout = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/module/attendance" element={<ModuleRouteGuard element={<Attendance />} moduleName="attendance" />} />
+              <Route path="/module/salary" element={<ModuleRouteGuard element={<Salary />} moduleName="salaries" />} />
               <Route path="/module/location_tracker" element={<ModuleRouteGuard element={<LocationTracker />} moduleName="location_tracker" />} />
               <Route path="/module/:moduleName" element={<ModuleManagerWrapper />} />
               <Route path="/module/:moduleName/:id" element={<EntityDetailWrapper />} />
@@ -144,7 +146,7 @@ const MainLayout = () => {
       {isMobile && (
         <Paper sx={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 1100, borderTop: '1px solid #E2E8F0' }} elevation={3}>
           <BottomNavigation
-            value={location.pathname.startsWith('/module/customers') ? '/module/customers' : location.pathname.startsWith('/module/properties') ? '/module/properties' : location.pathname}
+            value={location.pathname.startsWith('/module/customers') ? '/module/customers' : location.pathname.startsWith('/module/tasks') ? '/module/tasks' : location.pathname}
             onChange={(event, newValue) => {
               if (newValue !== 'menu_trigger') {
                 navigate(newValue);
@@ -154,33 +156,40 @@ const MainLayout = () => {
             sx={{ height: 65 }}
           >
             <BottomNavigationAction 
-              label="Home" 
+              label="Dashboard" 
               value="/" 
               icon={<Icons.LayoutDashboard size={20} />} 
             />
             {hasPermission('customers', 'view') && (
               <BottomNavigationAction 
-                label="Clients" 
+                label="CRM" 
                 value="/module/customers" 
                 icon={<Icons.Users size={20} />} 
               />
             )}
-            {hasPermission('properties', 'view') && (
+            {hasPermission('tasks', 'view') && (
               <BottomNavigationAction 
-                label="Property" 
-                value="/module/properties" 
-                icon={<Icons.Home size={20} />} 
+                label="Tasks" 
+                value="/module/tasks" 
+                icon={<Icons.CheckSquare size={20} />} 
               />
             )}
             {hasPermission('attendance', 'view') && (
               <BottomNavigationAction 
-                label="CheckIn" 
+                label="Attendance" 
                 value="/module/attendance" 
                 icon={<Icons.Clock size={20} />} 
               />
             )}
+            {hasPermission('salaries', 'view') && (
+              <BottomNavigationAction 
+                label="Salary" 
+                value="/module/salary" 
+                icon={<Icons.CircleDollarSign size={20} />} 
+              />
+            )}
             <BottomNavigationAction 
-              label="Menu" 
+              label="More" 
               value="menu_trigger"
               onClick={() => setMobileOpen(true)}
               icon={<Icons.Menu size={20} />} 

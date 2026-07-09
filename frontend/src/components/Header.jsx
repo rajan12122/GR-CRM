@@ -12,7 +12,8 @@ import {
   Chip,
   Menu,
   MenuItem,
-  Divider
+  Divider,
+  useMediaQuery
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -21,6 +22,7 @@ const Header = ({ onSearchClick, onMenuClick, onReload }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, metadata, activityLogs } = useApp();
+  const isMobile = useMediaQuery('(max-width:900px)');
 
   const [notiAnchor, setNotiAnchor] = React.useState(null);
   const notiOpen = Boolean(notiAnchor);
@@ -49,6 +51,100 @@ const Header = ({ onSearchClick, onMenuClick, onReload }) => {
   const handlePageReload = () => {
     onReload();
   };
+
+  if (isMobile) {
+    return (
+      <AppBar position="sticky" sx={{ zIndex: 1100, backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0', boxShadow: 'none' }}>
+        <Toolbar sx={{ px: 2, display: 'flex', justifyContent: 'space-between', minHeight: 65 }}>
+          {/* Left: Avatar + Greeting */}
+          <Box display="flex" alignItems="center" gap={1.5} onClick={() => navigate('/settings')} sx={{ cursor: 'pointer' }}>
+            <Box sx={{
+              width: 38,
+              height: 38,
+              borderRadius: '50%',
+              backgroundColor: '#2563EB',
+              color: '#FFFFFF',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+              fontWeight: 700,
+              fontFamily: 'Poppins'
+            }}>
+              {user?.name ? user.name[0].toUpperCase() : 'U'}
+            </Box>
+            <Box>
+              <Typography variant="caption" sx={{ color: '#64748B', display: 'block', lineHeight: 1.1 }}>
+                Welcome Back,
+              </Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', fontFamily: 'Poppins', lineHeight: 1.1 }}>
+                {user?.name?.split(' ')[0] || 'User'}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Right: Search, Notification, Quick Add */}
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <IconButton onClick={onSearchClick} sx={{ color: '#475569' }}>
+              <Icons.Search size={20} />
+            </IconButton>
+            <IconButton onClick={handleNotiClick} sx={{ color: '#475569' }}>
+              <Badge color="error" badgeContent={activityLogs?.slice(0, 5).length || 0}>
+                <Icons.Bell size={20} />
+              </Badge>
+            </IconButton>
+            <IconButton onClick={() => navigate('/quick-add')} sx={{ color: '#2563EB', backgroundColor: 'rgba(37, 99, 235, 0.1)', '&:hover': { backgroundColor: 'rgba(37, 99, 235, 0.2)' } }}>
+              <Icons.Plus size={20} />
+            </IconButton>
+          </Box>
+        </Toolbar>
+
+        <Menu
+          anchorEl={notiAnchor}
+          open={notiOpen}
+          onClose={handleNotiClose}
+          PaperProps={{
+            sx: {
+              borderRadius: '12px',
+              mt: 1.5,
+              boxShadow: '0 10px 25px rgba(0,0,0,0.08)',
+              border: '1px solid #E2E8F0',
+              width: 320,
+              maxHeight: 400
+            }
+          }}
+        >
+          <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>
+              Recent Activities
+            </Typography>
+            <Chip label="Live Feed" color="success" size="small" sx={{ height: 18, fontSize: '9px', fontWeight: 800 }} />
+          </Box>
+          <Divider />
+          {(!activityLogs || activityLogs.length === 0) ? (
+            <Box sx={{ p: 3, textAlign: 'center' }}>
+              <Typography variant="caption" sx={{ color: '#94A3B8' }}>
+                No recent activities recorded.
+              </Typography>
+            </Box>
+          ) : (
+            activityLogs.slice(0, 5).map((log, index) => (
+              <Box key={index} sx={{ p: 1.5, borderBottom: '1px solid #F1F5F9', '&:last-child': { borderBottom: 'none' } }}>
+                <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', color: '#0F172A' }}>
+                  {log.employeeName || log.user || 'System'}
+                </Typography>
+                <Typography variant="body2" sx={{ color: '#475569', fontSize: '11px', mt: 0.5 }}>
+                  {log.action}
+                </Typography>
+                <Typography variant="caption" sx={{ color: '#94A3B8', fontSize: '9px', display: 'block', mt: 0.5 }}>
+                  {log.dateTime || 'Just now'}
+                </Typography>
+              </Box>
+            ))
+          )}
+        </Menu>
+      </AppBar>
+    );
+  }
 
   return (
     <AppBar position="sticky" sx={{ zIndex: 1100 }}>

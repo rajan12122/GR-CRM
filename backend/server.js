@@ -66,7 +66,8 @@ function resequenceAllModules() {
     sales: 'SALE',
     documents: 'DOC',
     attendance: 'ATT',
-    daily_prices: 'PRICE'
+    daily_prices: 'PRICE',
+    salaries: 'SAL'
   };
 
   Object.keys(prefixMap).forEach(module => {
@@ -273,8 +274,10 @@ app.get('/api/data/:module', authenticateToken, (req, res, next) => {
 }, (req, res) => {
   const { module } = req.params;
   const { role } = req.user;
-  const db = readDb();
-  const records = db[module] || [];
+  let records = db[module] || [];
+  if (module === 'salaries' && role !== 'Admin' && role !== 'Manager') {
+    records = records.filter(r => String(r.employeeId) === String(req.user.id));
+  }
   
   // Apply field-level filtering for non-Admin roles
   const metadata = readMetadata();
@@ -323,7 +326,8 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       sales: 'SALE',
       documents: 'DOC',
       attendance: 'ATT',
-      daily_prices: 'PRICE'
+      daily_prices: 'PRICE',
+      salaries: 'SAL'
     };
     const prefix = prefixMap[module] || module.substring(0, 4).toUpperCase();
     
@@ -491,7 +495,8 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     sales: 'SALE',
     documents: 'DOC',
     attendance: 'ATT',
-    daily_prices: 'PRICE'
+    daily_prices: 'PRICE',
+    salaries: 'SAL'
   };
 
   const prefix = prefixMap[module];
@@ -845,6 +850,7 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     data.tasks = allTasks.filter(t => String(t.assignedTo) === String(id));
     data.remarks = allRemarks.filter(r => r.targetModule === 'employees' && String(r.targetId) === String(id));
     data.documents = allDocs.filter(d => d.targetModule === 'employees' && String(d.targetId) === String(id));
+    data.salaries = (db.salaries || []).filter(s => String(s.employeeId) === String(id));
   } else if (module === 'customers') {
     const cust = allCustomers.find(c => String(c.id) === String(id));
     data.employee = allEmployees.find(e => String(e.id) === String(cust && cust.assignedEmployeeId));
@@ -1212,7 +1218,8 @@ app.post('/api/public/quick-add', (req, res) => {
     sales: 'SALE',
     documents: 'DOC',
     attendance: 'ATT',
-    daily_prices: 'PRICE'
+    daily_prices: 'PRICE',
+    salaries: 'SAL'
   };
   const prefix = prefixMap[module] || module.substring(0, 4).toUpperCase();
   

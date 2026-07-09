@@ -1227,6 +1227,231 @@
           "editable": false
         }
       ]
+    },
+    "salaries": {
+      "id": "salaries",
+      "label": "Salaries",
+      "icon": "CircleDollarSign",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Settlement ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "employeeId",
+          "label": "Employee",
+          "type": "ref",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "employees"
+        },
+        {
+          "name": "month",
+          "label": "Month",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "year",
+          "label": "Year",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "baseSalary",
+          "label": "Base Salary",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "dailyRate",
+          "label": "Daily Rate",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "presentDays",
+          "label": "Present Days",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "leaveDays",
+          "label": "Leave Days",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "paidLeavesUsed",
+          "label": "Paid Leaves Used",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "chargeableLeaves",
+          "label": "Chargeable Leaves",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "halfDays",
+          "label": "Half Days",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "absentDays",
+          "label": "Absent Days",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "extraDays",
+          "label": "Extra Days",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "overtimeHours",
+          "label": "Overtime Hours",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "allowancesTotal",
+          "label": "Allowances Total",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "expensesReimbursement",
+          "label": "Expenses Reimbursed",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "deductionsTotal",
+          "label": "Deductions Total",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "leaveDeduction",
+          "label": "Leave Deduction",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "halfDayDeduction",
+          "label": "Half Day Deduction",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "advanceRecovery",
+          "label": "Advance Recovery",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "netPay",
+          "label": "Net Pay",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Status",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "salaryStages"
+        },
+        {
+          "name": "generatedDate",
+          "label": "Generated Date",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "allowancesJson",
+          "label": "Allowances Data",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "deductionsJson",
+          "label": "Deductions Data",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "expensesJson",
+          "label": "Expenses Data",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "attendanceJson",
+          "label": "Attendance Data",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        }
+      ]
     }
   },
   "chips": {
@@ -1741,6 +1966,33 @@
         "label": "Applied / Pending ⏳",
         "color": "#F59E0B"
       }
+    ],
+    "salaryStages": [
+      {
+        "value": "Draft",
+        "label": "Draft 📝",
+        "color": "#64748B"
+      },
+      {
+        "value": "Approved",
+        "label": "Approved ✅",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Rejected",
+        "label": "Rejected ❌",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Hold",
+        "label": "Hold ⏸️",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Locked",
+        "label": "Locked 🔒",
+        "color": "#0F172A"
+      }
     ]
   },
   "rolesPermissions": {
@@ -1851,6 +2103,14 @@
       ],
       "location_tracker": [
         "view"
+      ],
+      "salaries": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
       ]
     },
     "Manager": {
@@ -1941,6 +2201,14 @@
         "edit",
         "delete",
         "export"
+      ],
+      "salaries": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
       ]
     },
     "Sales": {
@@ -2004,6 +2272,9 @@
       "notices": [
         "view",
         "create"
+      ],
+      "salaries": [
+        "view"
       ]
     },
     "Employee": {
@@ -2036,6 +2307,9 @@
         "create",
         "view",
         "edit"
+      ],
+      "salaries": [
+        "view"
       ]
     }
   },

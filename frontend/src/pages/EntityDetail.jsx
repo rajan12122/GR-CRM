@@ -52,6 +52,7 @@ const EntityDetail = () => {
   // Map dialog state
   const [mapOpen, setMapOpen] = useState(false);
   const [activeMapShift, setActiveMapShift] = useState(null);
+  const [activeSalarySlip, setActiveSalarySlip] = useState(null);
 
   const locationHistoryPastMonth = useMemo(() => {
     if (!record || !record.locationHistory) return [];
@@ -734,7 +735,53 @@ const EntityDetail = () => {
                               </Grid>
                             )}
                           </Grid>
-                          
+
+                          <Grid item xs={12}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Icons.DollarSign size={18} style={{ color: '#16A34A' }} />
+                              Salary Settlement slips ({connections.salaries?.length || 0})
+                            </Typography>
+                            {!connections.salaries || connections.salaries.length === 0 ? (
+                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No salary settlements found.</Typography>
+                            ) : (
+                              <Grid container spacing={2}>
+                                {connections.salaries.map((sal, idx) => (
+                                  <Grid item xs={12} sm={4} key={idx}>
+                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                          Month: {sal.month}/{sal.year}
+                                        </Typography>
+                                        <Chip 
+                                          label={sal.status || 'Draft'} 
+                                          size="small" 
+                                          sx={{ 
+                                            backgroundColor: sal.status === 'Locked' ? 'rgba(15,23,42,0.1)' : sal.status === 'Approved' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+                                            color: sal.status === 'Locked' ? '#0F172A' : sal.status === 'Approved' ? '#22C55E' : '#F59E0B',
+                                            fontWeight: 700,
+                                            fontSize: '10px'
+                                          }} 
+                                        />
+                                      </Box>
+                                      <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}>
+                                        Net Payable: <strong>₹{Number(sal.netPay || 0).toLocaleString('en-IN')}</strong>
+                                      </Typography>
+                                      <Button 
+                                        variant="outlined" 
+                                        size="small" 
+                                        fullWidth 
+                                        sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '12px' }}
+                                        onClick={() => setActiveSalarySlip(sal)}
+                                      >
+                                        View & Print Slip
+                                      </Button>
+                                    </Paper>
+                                  </Grid>
+                                ))}
+                              </Grid>
+                            )}
+                          </Grid>
+
                           <Grid item xs={12}>
                             <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <Icons.MapPin size={18} style={{ color: '#EF4444' }} />
@@ -995,6 +1042,142 @@ const EntityDetail = () => {
           </Button>
           <Button onClick={handleGrantPermissionAndUpload} variant="contained" sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '6px' }}>
             Allow & Upload
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Salary Slip Detail View Dialog */}
+      <Dialog 
+        open={Boolean(activeSalarySlip)} 
+        onClose={() => setActiveSalarySlip(null)}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px' } }}
+      >
+        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontWeight: 700, fontFamily: 'Poppins' }}>
+          Salary payslip slip detail view
+          <IconButton size="small" onClick={() => setActiveSalarySlip(null)}>
+            <Icons.X size={18} />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          {activeSalarySlip && (
+            <Box>
+              {/* Print View Wrapper */}
+              <Box id="printable-salary-slip-view" sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={3} borderBottom="2px solid #0F172A" pb={2}>
+                  <Box>
+                    <Typography variant="h5" sx={{ fontWeight: 800 }}>GAGAN REALTECH</Typography>
+                    <Typography variant="caption" color="textSecondary">Corporate Real Estate & CRM Solutions Hub</Typography>
+                  </Box>
+                  <Box textAlign="right">
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#64748B' }}>SALARY PAYSLIP SLIP</Typography>
+                    <Typography variant="body2">Month: {activeSalarySlip.month}/{activeSalarySlip.year}</Typography>
+                  </Box>
+                </Box>
+
+                <Grid container spacing={2} sx={{ mb: 3, backgroundColor: '#F8FAFC', p: 2, borderRadius: '8px' }}>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="textSecondary">Employee Details</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{record?.name}</Typography>
+                    <Typography variant="body2">ID: {record?.id}</Typography>
+                    <Typography variant="body2">Designation: {record?.designation || 'Real Estate Officer'}</Typography>
+                  </Grid>
+                  <Grid item xs={6} style={{ textAlign: 'right' }}>
+                    <Typography variant="caption" color="textSecondary">Settlement Details</Typography>
+                    <Typography variant="body2">Date Issued: {activeSalarySlip.generatedDate || '---'}</Typography>
+                    <Typography variant="body2">Status: <strong>{activeSalarySlip.status || 'Draft'}</strong></Typography>
+                    <Typography variant="body2">ID: {activeSalarySlip.id}</Typography>
+                  </Grid>
+                </Grid>
+
+                <Grid container spacing={4} sx={{ mb: 3 }}>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>EARNINGS</Typography>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Base Salary</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(activeSalarySlip.baseSalary || 0).toLocaleString('en-IN')}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Extra Days Pay ({activeSalarySlip.extraDays} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(activeSalarySlip.extraDayPayment || 0).toLocaleString('en-IN')}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Overtime Pay ({activeSalarySlip.overtimeHours} hrs)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(activeSalarySlip.overtimePayment || 0).toLocaleString('en-IN')}</Typography>
+                    </Box>
+                    
+                    {activeSalarySlip.allowancesJson && (
+                      (() => {
+                        try {
+                          const allows = JSON.parse(activeSalarySlip.allowancesJson);
+                          return allows.map((a, i) => (
+                            <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
+                              <Typography variant="body2">{a.name}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(a.amount || 0).toLocaleString('en-IN')}</Typography>
+                            </Box>
+                          ));
+                        } catch (e) { return null; }
+                      })()
+                    )}
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS</Typography>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Leave Deductions ({activeSalarySlip.chargeableLeaves} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(activeSalarySlip.leaveDeduction || 0).toLocaleString('en-IN')}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Half Day Deductions ({activeSalarySlip.halfDays} days)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(activeSalarySlip.halfDayDeduction || 0).toLocaleString('en-IN')}</Typography>
+                    </Box>
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Advance Recovery</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(activeSalarySlip.advanceRecovery || 0).toLocaleString('en-IN')}</Typography>
+                    </Box>
+
+                    {activeSalarySlip.deductionsJson && (
+                      (() => {
+                        try {
+                          const deds = JSON.parse(activeSalarySlip.deductionsJson);
+                          return deds.map((d, i) => (
+                            <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
+                              <Typography variant="body2">{d.name}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(d.amount || 0).toLocaleString('en-IN')}</Typography>
+                            </Box>
+                          ));
+                        } catch (e) { return null; }
+                      })()
+                    )}
+                  </Grid>
+                </Grid>
+
+                <Box sx={{ p: 2, border: '2px solid #0F172A', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>NET PAYABLE SETTLEMENT</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 850 }}>₹{Number(activeSalarySlip.netPay || 0).toLocaleString('en-IN')}</Typography>
+                </Box>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setActiveSalarySlip(null)} sx={{ textTransform: 'none' }}>
+            Close
+          </Button>
+          <Button 
+            variant="contained" 
+            startIcon={<Icons.Printer size={16} />}
+            onClick={() => {
+              const originalContent = document.body.innerHTML;
+              const printContent = document.getElementById("printable-salary-slip-view").innerHTML;
+              document.body.innerHTML = printContent;
+              window.print();
+              document.body.innerHTML = originalContent;
+              window.location.reload();
+            }}
+            sx={{ textTransform: 'none', borderRadius: '8px' }}
+          >
+            Print Payslip
           </Button>
         </DialogActions>
       </Dialog>

@@ -622,8 +622,11 @@ app.get('/api/location/active', authenticateToken, (req, res) => {
     }
   });
   
-  // Only return those who are actively 'sharing'
-  const result = Object.values(activeLocs).filter(loc => loc.status === 'sharing');
+  // Only return those who are actively 'sharing' and have pinged in the last 5 minutes
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  const result = Object.values(activeLocs).filter(loc => 
+    loc.status === 'sharing' && new Date(loc.timestamp) > fiveMinutesAgo
+  );
   res.json(result);
 });
 

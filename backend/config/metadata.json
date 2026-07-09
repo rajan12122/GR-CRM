@@ -345,7 +345,7 @@
         {
           "name": "date",
           "label": "Date",
-          "type": "text",
+          "type": "date",
           "required": false,
           "showInTable": true,
           "editable": true

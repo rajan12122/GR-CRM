@@ -52,6 +52,25 @@ const EntityDetail = () => {
   const [mapOpen, setMapOpen] = useState(false);
   const [activeMapShift, setActiveMapShift] = useState(null);
 
+  const locationHistoryPastMonth = useMemo(() => {
+    if (!record || !record.locationHistory) return [];
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+    return record.locationHistory.filter(hist => {
+      const parts = hist.date.split(/[-/]/);
+      let histDate;
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        histDate = new Date(year, month, day);
+      } else {
+        histDate = new Date(hist.date);
+      }
+      return isNaN(histDate.getTime()) || histDate >= oneMonthAgo;
+    });
+  }, [record]);
+
   // Load Leaflet resources dynamically
   useEffect(() => {
     if (!document.getElementById('leaflet-css')) {
@@ -187,24 +206,6 @@ const EntityDetail = () => {
     );
   }
 
-  const locationHistoryPastMonth = useMemo(() => {
-    if (!record || !record.locationHistory) return [];
-    const oneMonthAgo = new Date();
-    oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
-    return record.locationHistory.filter(hist => {
-      const parts = hist.date.split(/[-/]/);
-      let histDate;
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1;
-        const year = parseInt(parts[2], 10);
-        histDate = new Date(year, month, day);
-      } else {
-        histDate = new Date(hist.date);
-      }
-      return isNaN(histDate.getTime()) || histDate >= oneMonthAgo;
-    });
-  }, [record]);
 
   const handlePostRemark = async (e) => {
     e.preventDefault();

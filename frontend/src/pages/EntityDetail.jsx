@@ -1116,7 +1116,7 @@ const EntityDetail = () => {
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Paid Days: Weekly Offs (Sundays)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>4 Days</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{activeSalarySlip.earnedDays === 0 ? 0 : 4} Days</Typography>
                     </Box>
                     {activeSalarySlip.extraDays > 0 && (
                       <Box display="flex" justifyContent="space-between" py={0.5}>
@@ -1124,10 +1124,22 @@ const EntityDetail = () => {
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{activeSalarySlip.extraDays} Days</Typography>
                       </Box>
                     )}
-                    <Box display="flex" justifyContent="space-between" py={0.5} sx={{ borderTop: '1px dashed #CBD5E1', mt: 0.5, pt: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>Total Earned Salary ({activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays + 4)} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 800 }}>₹{formatCurrency(activeSalarySlip.earnedSalary || ((activeSalarySlip.earnedDays || (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + activeSalarySlip.extraDays + 4)) * (activeSalarySlip.dailyRate || (activeSalarySlip.baseSalary / 30))))}</Typography>
-                    </Box>
+                    {(() => {
+                      const earnedDaysVal = activeSalarySlip.earnedDays !== undefined ? activeSalarySlip.earnedDays : (
+                        (activeSalarySlip.presentDays === 0 && activeSalarySlip.halfDays === 0 && (activeSalarySlip.paidLeavesUsed || 0) === 0 && (activeSalarySlip.extraDays || 0) === 0)
+                          ? 0
+                          : (activeSalarySlip.presentDays + activeSalarySlip.halfDays*0.5 + (activeSalarySlip.paidLeavesUsed || 0) + (activeSalarySlip.extraDays || 0) + 4)
+                      );
+                      const earnedSalaryVal = activeSalarySlip.earnedSalary !== undefined ? activeSalarySlip.earnedSalary : (
+                        earnedDaysVal * (activeSalarySlip.dailyRate || (activeSalarySlip.baseSalary / 30))
+                      );
+                      return (
+                        <Box display="flex" justifyContent="space-between" py={0.5} sx={{ borderTop: '1px dashed #CBD5E1', mt: 0.5, pt: 0.5 }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>Total Earned Salary ({earnedDaysVal} days)</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 800 }}>₹{formatCurrency(earnedSalaryVal)}</Typography>
+                        </Box>
+                      );
+                    })()}
                     
                     {activeSalarySlip.allowancesJson && (
                       (() => {

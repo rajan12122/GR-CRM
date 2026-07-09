@@ -332,10 +332,13 @@ const Salary = () => {
 
     // Calculate Earned Days: present weekdays + halfDays * 0.5 + paid leaves used + extra days worked + 4 (Weekly Off Sundays)
     const finalExtraDays = extraDaysOverride > 0 ? extraDaysOverride : attendanceCounts.extraDays;
-    const earnedDays = attendanceCounts.presentDays + 
-                       (attendanceCounts.halfDays * 0.5) + 
-                       paidLeavesUsed + 
-                       finalExtraDays + 4;
+    const isOffDutyFullMonth = attendanceCounts.presentDays === 0 && attendanceCounts.halfDays === 0 && paidLeavesUsed === 0 && finalExtraDays === 0;
+    const earnedDays = isOffDutyFullMonth ? 0 : (
+      attendanceCounts.presentDays + 
+      (attendanceCounts.halfDays * 0.5) + 
+      paidLeavesUsed + 
+      finalExtraDays + 4
+    );
 
     const earnedSalary = earnedDays * dailyRate;
 
@@ -1186,7 +1189,7 @@ const Salary = () => {
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Paid Days: Weekly Offs (Sundays)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>4 Days</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.earnedDays === 0 ? 0 : 4} Days</Typography>
               </Box>
               {payrollStats.earnedDays - (attendanceCounts.presentDays + attendanceCounts.halfDays*0.5 + payrollStats.paidLeavesUsed + 4) > 0 && (
                 <Box display="flex" justifyContent="space-between" py={0.5}>

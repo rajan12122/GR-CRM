@@ -274,6 +274,7 @@ app.get('/api/data/:module', authenticateToken, (req, res, next) => {
 }, (req, res) => {
   const { module } = req.params;
   const { role } = req.user;
+  const db = readDb();
   let records = db[module] || [];
   if (module === 'salaries' && role !== 'Admin' && role !== 'Manager') {
     records = records.filter(r => String(r.employeeId) === String(req.user.id));

@@ -868,7 +868,7 @@ const Attendance = () => {
       </Grid>
 
       {/* Salary Settlement Redirect Card */}
-      {false && selectedEmployeeObj && (
+      {selectedEmployeeObj && (
         <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', mt: 4, mb: 4, background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)', color: '#FFFFFF' }}>
           <CardContent sx={{ p: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 3 }}>
             <Box>

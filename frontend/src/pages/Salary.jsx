@@ -1292,6 +1292,39 @@ const Salary = () => {
             <Typography variant="h4" sx={{ fontWeight: 850 }}>₹{formatCurrency(payrollStats.netPay)}</Typography>
           </Box>
 
+          {/* Daily Attendance Logs for verification */}
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, mt: 3, borderBottom: '1px solid #E2E8F0', pb: 0.5, textTransform: 'uppercase', fontSize: '11px' }}>
+            DAILY ATTENDANCE & IN-OUT DETAILS
+          </Typography>
+          <TableContainer component={Box} sx={{ mb: 4, border: '1px solid #E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+            <Table size="small">
+              <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
+                <TableRow>
+                  <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Date</TableCell>
+                  <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>In Time</TableCell>
+                  <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Out Time</TableCell>
+                  <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Hours</TableCell>
+                  <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Status</TableCell>
+                  <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Remarks</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {dailyLogs.map((log, idx) => (
+                  <TableRow key={idx} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#F8FAFC' } }}>
+                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.date} ({log.day})</TableCell>
+                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkIn}</TableCell>
+                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkOut}</TableCell>
+                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.hours}</TableCell>
+                    <TableCell sx={{ py: 0.2, fontSize: '9px', fontWeight: log.status === 'Half Day' || log.status === 'Absent' ? 700 : 400, color: log.status === 'Half Day' ? '#F59E0B' : log.status === 'Absent' ? '#EF4444' : '#0F172A' }}>
+                      {log.status}
+                    </TableCell>
+                    <TableCell sx={{ py: 0.2, fontSize: '9px', color: '#64748B' }}>{log.remarks}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+
           {/* Signatures placeholders */}
           <Box display="flex" justifyContent="space-between" mt={8} pt={4} borderTop="1px dashed #64748B">
             <Box textAlign="center" width="25%">

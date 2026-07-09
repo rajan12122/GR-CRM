@@ -2111,6 +2111,14 @@
       ],
       "location_tracker": [
         "view"
+      ],
+      "salaries": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
       ]
     },
     "Manager": {
@@ -2201,6 +2209,14 @@
         "edit",
         "delete",
         "export"
+      ],
+      "salaries": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
       ]
     },
     "Sales": {
@@ -2264,6 +2280,9 @@
       "notices": [
         "view",
         "create"
+      ],
+      "salaries": [
+        "view"
       ]
     },
     "Employee": {
@@ -2296,6 +2315,9 @@
         "create",
         "view",
         "edit"
+      ],
+      "salaries": [
+        "view"
       ]
     }
   },

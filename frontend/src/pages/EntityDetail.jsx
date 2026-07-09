@@ -740,54 +740,51 @@ const EntityDetail = () => {
                             )}
                           </Grid>
 
-                          {/* Salaries history section hidden */}
-                          {false && (
-                            <Grid item xs={12}>
-                              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                <Icons.DollarSign size={18} style={{ color: '#16A34A' }} />
-                                Salary Settlement slips ({connections.salaries?.length || 0})
-                              </Typography>
-                              {!connections.salaries || connections.salaries.length === 0 ? (
-                                <Typography variant="body2" sx={{ color: '#94A3B8' }}>No salary settlements found.</Typography>
-                              ) : (
-                                <Grid container spacing={2}>
-                                  {connections.salaries.map((sal, idx) => (
-                                    <Grid item xs={12} sm={4} key={idx}>
-                                      <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
-                                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                                            Month: {sal.month}/{sal.year}
-                                          </Typography>
-                                          <Chip 
-                                            label={sal.status || 'Draft'} 
-                                            size="small" 
-                                            sx={{ 
-                                              backgroundColor: sal.status === 'Locked' ? 'rgba(15,23,42,0.1)' : sal.status === 'Approved' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
-                                              color: sal.status === 'Locked' ? '#0F172A' : sal.status === 'Approved' ? '#22C55E' : '#F59E0B',
-                                              fontWeight: 700,
-                                              fontSize: '10px'
-                                            }} 
-                                          />
-                                        </Box>
-                                        <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}>
-                                          Net Payable: <strong>₹{formatCurrency(sal.netPay)}</strong>
+                          <Grid item xs={12}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Icons.DollarSign size={18} style={{ color: '#16A34A' }} />
+                              Salary Settlement slips ({connections.salaries?.length || 0})
+                            </Typography>
+                            {!connections.salaries || connections.salaries.length === 0 ? (
+                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No salary settlements found.</Typography>
+                            ) : (
+                              <Grid container spacing={2}>
+                                {connections.salaries.map((sal, idx) => (
+                                  <Grid item xs={12} sm={4} key={idx}>
+                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                          Month: {sal.month}/{sal.year}
                                         </Typography>
-                                        <Button 
-                                          variant="outlined" 
+                                        <Chip 
+                                          label={sal.status || 'Draft'} 
                                           size="small" 
-                                          fullWidth 
-                                          sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '12px' }}
-                                          onClick={() => setActiveSalarySlip(sal)}
-                                        >
-                                          View & Print Slip
-                                        </Button>
-                                      </Paper>
-                                    </Grid>
-                                  ))}
-                                </Grid>
-                              )}
-                            </Grid>
-                          )}
+                                          sx={{ 
+                                            backgroundColor: sal.status === 'Locked' ? 'rgba(15,23,42,0.1)' : sal.status === 'Approved' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+                                            color: sal.status === 'Locked' ? '#0F172A' : sal.status === 'Approved' ? '#22C55E' : '#F59E0B',
+                                            fontWeight: 700,
+                                            fontSize: '10px'
+                                          }} 
+                                        />
+                                      </Box>
+                                      <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}>
+                                        Net Payable: <strong>₹{formatCurrency(sal.netPay)}</strong>
+                                      </Typography>
+                                      <Button 
+                                        variant="outlined" 
+                                        size="small" 
+                                        fullWidth 
+                                        sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '12px' }}
+                                        onClick={() => setActiveSalarySlip(sal)}
+                                      >
+                                        View & Print Slip
+                                      </Button>
+                                    </Paper>
+                                  </Grid>
+                                ))}
+                              </Grid>
+                            )}
+                          </Grid>
 
                           <Grid item xs={12}>
                             <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -1166,6 +1163,66 @@ const EntityDetail = () => {
                 <Box sx={{ p: 2, border: '2px solid #0F172A', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>NET PAYABLE SETTLEMENT</Typography>
                   <Typography variant="h5" sx={{ fontWeight: 850 }}>₹{formatCurrency(activeSalarySlip.netPay)}</Typography>
+                </Box>
+
+                {activeSalarySlip.attendanceJson && (() => {
+                  try {
+                    const parsedLogs = JSON.parse(activeSalarySlip.attendanceJson);
+                    return (
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, borderBottom: '1px solid #E2E8F0', pb: 0.5, textTransform: 'uppercase', fontSize: '11px' }}>
+                          DAILY ATTENDANCE & IN-OUT DETAILS
+                        </Typography>
+                        <TableContainer component={Box} sx={{ mb: 4, border: '1px solid #E2E8F0', borderRadius: '4px', overflow: 'hidden' }}>
+                          <Table size="small">
+                            <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
+                              <TableRow>
+                                <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Date</TableCell>
+                                <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>In Time</TableCell>
+                                <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Out Time</TableCell>
+                                <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Hours</TableCell>
+                                <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Status</TableCell>
+                                <TableCell sx={{ py: 0.5, fontSize: '9px', fontWeight: 700 }}>Remarks</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {parsedLogs.map((log, idx) => (
+                                <TableRow key={idx} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#F8FAFC' } }}>
+                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.date} ({log.day})</TableCell>
+                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkIn}</TableCell>
+                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkOut}</TableCell>
+                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.hours}</TableCell>
+                                  <TableCell sx={{ py: 0.2, fontSize: '9px', fontWeight: log.status === 'Half Day' || log.status === 'Absent' ? 700 : 400, color: log.status === 'Half Day' ? '#F59E0B' : log.status === 'Absent' ? '#EF4444' : '#0F172A' }}>
+                                    {log.status}
+                                  </TableCell>
+                                  <TableCell sx={{ py: 0.2, fontSize: '9px', color: '#64748B' }}>{log.remarks}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      </Box>
+                    );
+                  } catch (e) { return null; }
+                })()}
+
+                {/* Signatures placeholders inside printable slip view */}
+                <Box display="flex" justifyContent="space-between" mt={8} pt={4} borderTop="1px dashed #64748B">
+                  <Box textAlign="center" width="25%">
+                    <Box sx={{ height: 40 }} />
+                    <Divider sx={{ mb: 1, borderColor: '#0F172A' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>Employee Signature</Typography>
+                  </Box>
+                  <Box textAlign="center" width="25%">
+                    <Box sx={{ height: 40 }} />
+                    <Divider sx={{ mb: 1, borderColor: '#0F172A' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>HR Manager Signature</Typography>
+                  </Box>
+                  <Box textAlign="center" width="25%">
+                    <Box sx={{ height: 40 }} />
+                    <Divider sx={{ mb: 1, borderColor: '#0F172A' }} />
+                    <Typography variant="caption" sx={{ fontWeight: 700 }}>Authorised Signature</Typography>
+                  </Box>
                 </Box>
               </Box>
             </Box>

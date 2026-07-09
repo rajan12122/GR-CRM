@@ -740,51 +740,54 @@ const EntityDetail = () => {
                             )}
                           </Grid>
 
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Icons.DollarSign size={18} style={{ color: '#16A34A' }} />
-                              Salary Settlement slips ({connections.salaries?.length || 0})
-                            </Typography>
-                            {!connections.salaries || connections.salaries.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No salary settlements found.</Typography>
-                            ) : (
-                              <Grid container spacing={2}>
-                                {connections.salaries.map((sal, idx) => (
-                                  <Grid item xs={12} sm={4} key={idx}>
-                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
-                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                                          Month: {sal.month}/{sal.year}
+                          {/* Salaries history section hidden */}
+                          {false && (
+                            <Grid item xs={12}>
+                              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                <Icons.DollarSign size={18} style={{ color: '#16A34A' }} />
+                                Salary Settlement slips ({connections.salaries?.length || 0})
+                              </Typography>
+                              {!connections.salaries || connections.salaries.length === 0 ? (
+                                <Typography variant="body2" sx={{ color: '#94A3B8' }}>No salary settlements found.</Typography>
+                              ) : (
+                                <Grid container spacing={2}>
+                                  {connections.salaries.map((sal, idx) => (
+                                    <Grid item xs={12} sm={4} key={idx}>
+                                      <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                                        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                            Month: {sal.month}/{sal.year}
+                                          </Typography>
+                                          <Chip 
+                                            label={sal.status || 'Draft'} 
+                                            size="small" 
+                                            sx={{ 
+                                              backgroundColor: sal.status === 'Locked' ? 'rgba(15,23,42,0.1)' : sal.status === 'Approved' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
+                                              color: sal.status === 'Locked' ? '#0F172A' : sal.status === 'Approved' ? '#22C55E' : '#F59E0B',
+                                              fontWeight: 700,
+                                              fontSize: '10px'
+                                            }} 
+                                          />
+                                        </Box>
+                                        <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}>
+                                          Net Payable: <strong>₹{formatCurrency(sal.netPay)}</strong>
                                         </Typography>
-                                        <Chip 
-                                          label={sal.status || 'Draft'} 
+                                        <Button 
+                                          variant="outlined" 
                                           size="small" 
-                                          sx={{ 
-                                            backgroundColor: sal.status === 'Locked' ? 'rgba(15,23,42,0.1)' : sal.status === 'Approved' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
-                                            color: sal.status === 'Locked' ? '#0F172A' : sal.status === 'Approved' ? '#22C55E' : '#F59E0B',
-                                            fontWeight: 700,
-                                            fontSize: '10px'
-                                          }} 
-                                        />
-                                      </Box>
-                                      <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}>
-                                        Net Payable: <strong>₹{formatCurrency(sal.netPay)}</strong>
-                                      </Typography>
-                                      <Button 
-                                        variant="outlined" 
-                                        size="small" 
-                                        fullWidth 
-                                        sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '12px' }}
-                                        onClick={() => setActiveSalarySlip(sal)}
-                                      >
-                                        View & Print Slip
-                                      </Button>
-                                    </Paper>
-                                  </Grid>
-                                ))}
-                              </Grid>
-                            )}
-                          </Grid>
+                                          fullWidth 
+                                          sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '12px' }}
+                                          onClick={() => setActiveSalarySlip(sal)}
+                                        >
+                                          View & Print Slip
+                                        </Button>
+                                      </Paper>
+                                    </Grid>
+                                  ))}
+                                </Grid>
+                              )}
+                            </Grid>
+                          )}
 
                           <Grid item xs={12}>
                             <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>

@@ -21,7 +21,6 @@ import PullToRefresh from './components/PullToRefresh';
 import PublicIntake from './pages/PublicIntake';
 import QuickAdd from './pages/QuickAdd';
 import LeadNotificationListener from './components/LeadNotificationListener';
-import Salary from './pages/Salary';
 import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
@@ -130,7 +129,6 @@ const MainLayout = () => {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/module/attendance" element={<ModuleRouteGuard element={<Attendance />} moduleName="attendance" />} />
-              <Route path="/module/salary" element={<ModuleRouteGuard element={<Salary />} moduleName="salaries" />} />
               <Route path="/module/location_tracker" element={<ModuleRouteGuard element={<LocationTracker />} moduleName="location_tracker" />} />
               <Route path="/module/:moduleName" element={<ModuleManagerWrapper />} />
               <Route path="/module/:moduleName/:id" element={<EntityDetailWrapper />} />
@@ -179,13 +177,6 @@ const MainLayout = () => {
                 label="Attendance" 
                 value="/module/attendance" 
                 icon={<Icons.Clock size={20} />} 
-              />
-            )}
-            {hasPermission('salaries', 'view') && (
-              <BottomNavigationAction 
-                label="Salary" 
-                value="/module/salary" 
-                icon={<Icons.CircleDollarSign size={20} />} 
               />
             )}
             <BottomNavigationAction 

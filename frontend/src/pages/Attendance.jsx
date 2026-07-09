@@ -808,12 +808,23 @@ const Attendance = () => {
         </Grid>
         <Grid item xs={12} sm={4} md={4}>
           <Card>
-            <CardContent>
-              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Late arrivals</Typography>
-              <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, color: '#F59E0B', fontFamily: 'Poppins' }}>
-                {stats.lateDays} Days
-              </Typography>
-              <Typography variant="caption" sx={{ color: '#94A3B8' }}>Deductions apply on 3+ late days</Typography>
+            <CardContent sx={{ pb: '16px !important' }}>
+              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, display: 'block', mb: 1 }}>Shift Breakdown</Typography>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Full Days</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: '#0F172A', fontFamily: 'Poppins' }}>
+                    {stats.presentDays} Days
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem sx={{ mx: 2 }} />
+                <Box>
+                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontSize: '11px' }}>Half Days</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 800, color: '#F59E0B', fontFamily: 'Poppins' }}>
+                    {stats.halfDays} Days
+                  </Typography>
+                </Box>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

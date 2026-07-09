@@ -76,6 +76,7 @@ const Attendance = () => {
   const [sharingError, setSharingError] = useState('');
   const watchIdRef = useRef(null);
   const intervalIdRef = useRef(null);
+  const hasAutoStartedRef = useRef(false);
 
   // Payroll / Salary Settlement states
   const [selectedEmpId, setSelectedEmpId] = useState('');
@@ -352,13 +353,16 @@ const Attendance = () => {
 
   useEffect(() => {
     if (todayRecord && todayRecord.outTime === '--') {
-      if (!sharingLocation) {
+      if (!hasAutoStartedRef.current) {
+        hasAutoStartedRef.current = true;
         setSharingLocation(true);
         localStorage.setItem('gr_sharing_location', 'true');
         startLocationSharing();
       }
+    } else {
+      hasAutoStartedRef.current = false;
     }
-  }, [todayRecord, sharingLocation]);
+  }, [todayRecord]);
 
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');

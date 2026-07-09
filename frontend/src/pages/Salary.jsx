@@ -1135,33 +1135,38 @@ const Salary = () => {
             {/* PRESET INFORMATION STATS */}
             <Card sx={{ borderRadius: '16px', border: '1px solid #E2E8F0', mb: 3, boxShadow: 'none' }}>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B', mb: 2 }}>
-                  Attendance Summary Details
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1E293B', mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Attendance Days Verification</span>
+                  <Chip 
+                    label="30 Days Total" 
+                    size="small" 
+                    sx={{ backgroundColor: '#EEF2F6', color: '#0F172A', fontWeight: 700, fontSize: '10px' }} 
+                  />
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Present Days</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.presentDays} Days</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Leave Days (Approved)</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.leaveDays} Days</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Paid Leaves Used</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.paidLeavesUsed} Days</Typography>
-                  </Grid>
-                  <Grid item xs={6}>
-                    <Typography variant="caption" color="textSecondary">Chargeable Leaves</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#EF4444' }}>{payrollStats.chargeableLeaves} Days</Typography>
+                    <Typography variant="caption" color="textSecondary">Full Days (Present)</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A' }}>{attendanceCounts.presentDays} Days</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="textSecondary">Half Days Worked</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{attendanceCounts.halfDays} Days</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#F59E0B' }}>{attendanceCounts.halfDays} Days</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="textSecondary">Approved Leave Days</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#3B82F6' }}>{attendanceCounts.leaveDays} Days</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="textSecondary">Absent Days (No In/Out)</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#EF4444' }}>{attendanceCounts.absentDays} Days</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" color="textSecondary">Sunday Weekly Offs</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#64748B' }}>{attendanceCounts.sundayDays} Days</Typography>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" color="textSecondary">Extra Days Worked</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{payrollStats.finalExtraDays} Days</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#10B981' }}>{attendanceCounts.extraDays} Days</Typography>
                   </Grid>
                 </Grid>
               </CardContent>

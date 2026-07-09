@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Card, 
@@ -60,6 +61,7 @@ const getShiftHours = (inTime, outTime) => {
 };
 
 const Attendance = () => {
+  const navigate = useNavigate();
   const { 
     moduleData, 
     fetchModuleData, 

@@ -131,6 +131,11 @@ const EntityDetail = () => {
     }
   }, [mapOpen, activeMapShift]);
 
+  // File upload state and permission handlers
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
   // Remarks Form State
   const [remarkInput, setRemarkInput] = useState('');
   // Document Upload State
@@ -220,10 +225,6 @@ const EntityDetail = () => {
     }
   };
 
-  // File upload state and permission handlers
-  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadingFile, setUploadingFile] = useState(false);
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];

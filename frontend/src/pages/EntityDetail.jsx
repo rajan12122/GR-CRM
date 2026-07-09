@@ -187,6 +187,25 @@ const EntityDetail = () => {
     );
   }
 
+  const locationHistoryPastMonth = useMemo(() => {
+    if (!record || !record.locationHistory) return [];
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setDate(oneMonthAgo.getDate() - 30);
+    return record.locationHistory.filter(hist => {
+      const parts = hist.date.split(/[-/]/);
+      let histDate;
+      if (parts.length === 3) {
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+        histDate = new Date(year, month, day);
+      } else {
+        histDate = new Date(hist.date);
+      }
+      return isNaN(histDate.getTime()) || histDate >= oneMonthAgo;
+    });
+  }, [record]);
+
   const handlePostRemark = async (e) => {
     e.preventDefault();
     if (!remarkInput.trim()) return;
@@ -197,6 +216,52 @@ const EntityDetail = () => {
       // Reload connections
       const rels = await fetchEntity360(moduleName, id);
       setConnections(rels);
+    }
+  };
+
+  // File upload state and permission handlers
+  const [permissionDialogOpen, setPermissionDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setSelectedFile(file);
+    setPermissionDialogOpen(true);
+  };
+
+  const handleGrantPermissionAndUpload = async () => {
+    setPermissionDialogOpen(false);
+    if (!selectedFile) return;
+
+    setUploadingFile(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target.result;
+        const token = localStorage.getItem('gr_crm_token');
+        
+        const res = await axios.post(`${API_BASE_URL}/upload`, {
+          fileName: selectedFile.name,
+          base64Data
+        }, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        if (res.data && res.data.fileUrl) {
+          setDocUrl(res.data.fileUrl);
+          if (!docName) {
+            setDocName(selectedFile.name);
+          }
+        }
+      };
+      reader.readAsDataURL(selectedFile);
+    } catch (err) {
+      console.error(err);
+      alert('Upload failed. Please check backend.');
+    } finally {
+      setUploadingFile(false);
     }
   };
 
@@ -614,17 +679,57 @@ const EntityDetail = () => {
                               ))
                             )}
                           </Grid>
+
+                          <Grid item xs={12}>
+                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                              <Icons.Clock size={18} style={{ color: '#2563EB' }} />
+                              Attendance Timing Logs History ({connections.attendance?.length || 0})
+                            </Typography>
+                            {!connections.attendance || connections.attendance.length === 0 ? (
+                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No attendance timing logs found.</Typography>
+                            ) : (
+                              <Grid container spacing={2}>
+                                {connections.attendance.map((att, idx) => (
+                                  <Grid item xs={12} sm={4} key={idx}>
+                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                                          {att.date}
+                                        </Typography>
+                                        <Chip 
+                                          label={att.status} 
+                                          size="small" 
+                                          sx={{ 
+                                            backgroundColor: att.status === 'Present' ? 'rgba(34,197,94,0.1)' : att.status === 'Late' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                                            color: att.status === 'Present' ? '#22C55E' : att.status === 'Late' ? '#F59E0B' : '#EF4444',
+                                            fontWeight: 700,
+                                            fontSize: '10px'
+                                          }} 
+                                        />
+                                      </Box>
+                                      <Typography variant="body2" sx={{ color: '#475569' }}>
+                                        In Time: <strong>{att.inTime}</strong>
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ color: '#475569' }}>
+                                        Out Time: <strong>{att.outTime || '---'}</strong>
+                                      </Typography>
+                                    </Paper>
+                                  </Grid>
+                                ))}
+                              </Grid>
+                            )}
+                          </Grid>
                           
                           <Grid item xs={12}>
                             <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
                               <Icons.MapPin size={18} style={{ color: '#EF4444' }} />
                               Location Tracking Shift History
                             </Typography>
-                            {!record.locationHistory || record.locationHistory.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No completed location tracking shifts found.</Typography>
+                            {!locationHistoryPastMonth || locationHistoryPastMonth.length === 0 ? (
+                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No completed location tracking shifts found in the past 30 days.</Typography>
                             ) : (
                               <Grid container spacing={2}>
-                                {record.locationHistory.map((hist, idx) => (
+                                {locationHistoryPastMonth.map((hist, idx) => (
                                   <Grid item xs={12} sm={6} key={idx}>
                                     <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
                                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -736,6 +841,32 @@ const EntityDetail = () => {
                   {/* Upload Simulator */}
                   <Box component="form" onSubmit={handleUploadDoc} sx={{ mb: 4, p: 2, border: '1px dashed #CBD5E1', borderRadius: '12px' }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Attach PDF / Document Details</Typography>
+                    
+                    <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                      <input 
+                        type="file" 
+                        id="direct-file-input" 
+                        style={{ display: 'none' }} 
+                        onChange={handleFileChange} 
+                      />
+                      <label htmlFor="direct-file-input">
+                        <Button 
+                          variant="outlined" 
+                          component="span" 
+                          startIcon={<Icons.Upload size={16} />} 
+                          sx={{ textTransform: 'none', fontWeight: 600 }}
+                        >
+                          Choose Local File / Photo
+                        </Button>
+                      </label>
+                      {selectedFile && (
+                        <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 500 }}>
+                          Selected: {selectedFile.name}
+                        </Typography>
+                      )}
+                      {uploadingFile && <CircularProgress size={20} />}
+                    </Box>
+
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={5}>
                         <TextField 
@@ -818,6 +949,32 @@ const EntityDetail = () => {
         <DialogActions sx={{ p: 2 }}>
           <Button onClick={() => setMapOpen(false)} variant="contained">
             Close Map
+          </Button>
+        </DialogActions>
+      </Dialog>
+      
+      {/* Photo/File upload permission dialog */}
+      <Dialog 
+        open={permissionDialogOpen} 
+        onClose={() => setPermissionDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', fontFamily: 'Poppins' }}>
+          File Upload Permission
+        </DialogTitle>
+        <DialogContent sx={{ py: 1 }}>
+          <Typography variant="body2" sx={{ color: '#475569' }}>
+            Gagan Realtech CRM wishes to access files and photos from your device to directly upload documents and screenshots to this record. Do you allow access?
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setPermissionDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>
+            Don't Allow
+          </Button>
+          <Button onClick={handleGrantPermissionAndUpload} variant="contained" sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '6px' }}>
+            Allow & Upload
           </Button>
         </DialogActions>
       </Dialog>

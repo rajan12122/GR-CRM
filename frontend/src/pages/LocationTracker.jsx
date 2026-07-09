@@ -131,11 +131,15 @@ const LocationTracker = () => {
               headers: { Authorization: `Bearer ${token}` }
             });
             setSelectedPathData(pathRes.data);
-            if (mapInstanceRef.current && window.L && pathRes.data.path.length > 0) {
+            if (mapInstanceRef.current && window.L) {
               if (polylineRef.current) polylineRef.current.remove();
               const pathCoords = pathRes.data.path.map(p => [p.lat, p.lng]);
               pathCoords.push([activeItem.lat, activeItem.lng]);
-              polylineRef.current = window.L.polyline(pathCoords, { color: '#2563EB', weight: 4, opacity: 0.8 }).addTo(mapInstanceRef.current);
+              if (pathCoords.length > 1) {
+                polylineRef.current = window.L.polyline(pathCoords, { color: '#2563EB', weight: 4, opacity: 0.8 }).addTo(mapInstanceRef.current);
+              }
+              // Smoothly center the map on their live location
+              mapInstanceRef.current.setView([activeItem.lat, activeItem.lng], 15);
             }
           } catch (e) {}
         } else {

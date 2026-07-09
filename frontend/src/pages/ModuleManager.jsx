@@ -286,12 +286,40 @@ const ModuleManager = () => {
         
         const recordVal = rec[key];
         if (recordVal === undefined || recordVal === null) return false;
+
+        const fieldObj = fields.find(f => f.name === key);
+        const isDateType = fieldObj?.type === 'date' || key.toLowerCase().includes('date');
+        
+        if (isDateType) {
+          const rDateStr = String(recordVal).toLowerCase();
+          const fDateStr = String(filterVal).toLowerCase();
+          const fParts = fDateStr.split('-');
+          if (fParts.length === 3) {
+            const yyyy = fParts[0];
+            const mm = fParts[1];
+            const dd = fParts[2];
+            const match1 = `${dd}/${mm}/${yyyy}`;
+            const match2 = `${yyyy}-${mm}-${dd}`;
+            const match3 = `${dd}-${mm}-${yyyy}`;
+            const match4 = `${parseInt(dd, 10)}/${parseInt(mm, 10)}/${yyyy}`;
+            const match5 = `${yyyy}/${mm}/${dd}`;
+            const match6 = `${parseInt(dd, 10)}-${parseInt(mm, 10)}-${yyyy}`;
+            return rDateStr.includes(match1) || 
+                   rDateStr.includes(match2) || 
+                   rDateStr.includes(match3) || 
+                   rDateStr.includes(match4) ||
+                   rDateStr.includes(match5) ||
+                   rDateStr.includes(match6) ||
+                   rDateStr.includes(fDateStr);
+          }
+        }
+        
         return String(recordVal).toLowerCase() === String(filterVal).toLowerCase();
       });
 
       return matchesSearch && matchesFilters;
     });
-  }, [records, searchTerm, stackedFilters]);
+  }, [records, searchTerm, stackedFilters, fields]);
 
   // Sort logic
   const sortedRecords = useMemo(() => {
@@ -571,28 +599,48 @@ const ModuleManager = () => {
         
         {activeFilterFields.map(fieldName => {
           const fieldLabel = fields.find(f => f.name === fieldName)?.label || fieldName;
+          const fieldObj = fields.find(f => f.name === fieldName);
+          const isDateType = fieldObj?.type === 'date' || fieldName.toLowerCase().includes('date');
           const opts = filterOptions[fieldName] || [];
           return (
             <Box key={fieldName} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
-              <FormControl size="small" sx={{ flexGrow: 1 }}>
-                <InputLabel>{fieldLabel}</InputLabel>
-                <Select
+              {isDateType ? (
+                <TextField
+                  type="date"
                   label={fieldLabel}
-                  value={stackedFilters[fieldName] || 'ALL'}
+                  size="small"
+                  InputLabelProps={{ shrink: true }}
+                  value={stackedFilters[fieldName] || ''}
                   onChange={(e) => {
                     const val = e.target.value;
                     setStackedFilters(prev => ({
                       ...prev,
-                      [fieldName]: val === 'ALL' ? undefined : val
+                      [fieldName]: val || undefined
                     }));
                   }}
-                >
-                  <MenuItem value="ALL"><em>All options</em></MenuItem>
-                  {opts.map(opt => (
-                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+                  sx={{ flexGrow: 1 }}
+                />
+              ) : (
+                <FormControl size="small" sx={{ flexGrow: 1 }}>
+                  <InputLabel>{fieldLabel}</InputLabel>
+                  <Select
+                    label={fieldLabel}
+                    value={stackedFilters[fieldName] || 'ALL'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setStackedFilters(prev => ({
+                        ...prev,
+                        [fieldName]: val === 'ALL' ? undefined : val
+                      }));
+                    }}
+                  >
+                    <MenuItem value="ALL"><em>All options</em></MenuItem>
+                    {opts.map(opt => (
+                      <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
               <IconButton 
                 size="small" 
                 color="error" 

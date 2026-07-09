@@ -82,6 +82,12 @@ const Attendance = () => {
   const [payMonth, setPayMonth] = useState(new Date().getMonth() + 1); // 1-12
   const [payYear, setPayYear] = useState(new Date().getFullYear());
   const [extraDaysOverride, setExtraDaysOverride] = useState('');
+  
+  // Custom manual settlements / adjustments
+  const [adjustments, setAdjustments] = useState([]);
+  const [newAdjDesc, setNewAdjDesc] = useState('');
+  const [newAdjAmt, setNewAdjAmt] = useState('');
+  const [geoPermissionDialogOpen, setGeoPermissionDialogOpen] = useState(false);
 
   // Default selectedEmpId once employees load
   useEffect(() => {
@@ -414,7 +420,6 @@ const Attendance = () => {
 
     monthlyAttendance.forEach(a => {
       if (a.status === 'Absent') {
-        absentDays++;
         return;
       }
       if (a.status === 'Late') {
@@ -440,6 +445,23 @@ const Attendance = () => {
     const latePenaltyDays = Math.floor(lateDays / 3);
     const calendarDays = new Date(payYear, payMonth, 0).getDate();
     
+    // Calculate absent days (days in selected month without any attendance entry, excluding Sundays)
+    const today = new Date();
+    const isCurrentMonth = payYear === today.getFullYear() && payMonth === today.getMonth() + 1;
+    const endDay = isCurrentMonth ? today.getDate() : calendarDays;
+    
+    for (let d = 1; d <= endDay; d++) {
+      const dateStr = `${payYear}-${String(payMonth).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const hasRecord = monthlyAttendance.find(a => a.date === dateStr);
+      const isSunday = new Date(payYear, payMonth - 1, d).getDay() === 0;
+      
+      if (!hasRecord && !isSunday) {
+        absentDays++;
+      }
+    }
+    // Also add explicit 'Absent' status logs if any
+    absentDays += monthlyAttendance.filter(a => a.status === 'Absent').length;
+
     const calculatedExtraDays = sundaysWorked;
     const extraDays = extraDaysOverride !== '' ? Number(extraDaysOverride) : calculatedExtraDays;
 
@@ -448,6 +470,9 @@ const Attendance = () => {
 
     const finalPayableDays = Math.max(0, workedDays - latePenaltyDays + extraDays);
     const totalEarnings = Math.round(finalPayableDays * dailyRate);
+
+    const adjustmentsSum = adjustments.reduce((acc, curr) => acc + curr.amount, 0);
+    const netPayableEarnings = totalEarnings + adjustmentsSum;
 
     return {
       calendarDays,
@@ -463,11 +488,13 @@ const Attendance = () => {
       dailyRate,
       finalPayableDays,
       totalEarnings,
+      adjustmentsSum,
+      netPayableEarnings,
       baseSalary,
       dutyHours,
       holidaysAllotted
     };
-  }, [monthlyAttendance, selectedEmployeeObj, payMonth, payYear, extraDaysOverride]);
+  }, [monthlyAttendance, selectedEmployeeObj, payMonth, payYear, extraDaysOverride, adjustments]);
 
   const handleLogSubmit = async (e) => {
     e.preventDefault();
@@ -559,7 +586,7 @@ const Attendance = () => {
                     variant="contained"
                     color="success"
                     size="small"
-                    onClick={handlePunchIn}
+                    onClick={() => setGeoPermissionDialogOpen(true)}
                     sx={{ borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'none', backgroundColor: '#22C55E' }}
                   >
                     Punch In
@@ -737,7 +764,7 @@ const Attendance = () => {
           <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
             <CardContent sx={{ p: 0 }}>
               <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', p: 3, pb: 2, fontFamily: 'Poppins' }}>
-                All Timing Records
+                Today's Timing Records
               </Typography>
               <Divider />
               <TableContainer sx={{ maxHeight: 420 }}>
@@ -753,14 +780,14 @@ const Attendance = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {attendanceList.length === 0 ? (
+                    {attendanceList.filter(a => a.date === todayStr).length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} align="center" sx={{ py: 4, color: '#94A3B8' }}>
-                          No timing records registered.
+                          No timing records registered for today.
                         </TableCell>
                       </TableRow>
                     ) : (
-                      attendanceList.map(a => {
+                      attendanceList.filter(a => a.date === todayStr).map(a => {
                         const empName = employees.find(e => e.id === a.employeeId)?.name || a.employeeId;
                         return (
                           <TableRow key={a.id} hover>
@@ -885,6 +912,71 @@ const Attendance = () => {
                     helperText="Sunday shifts are auto-calculated as extra days"
                   />
                 </Box>
+
+                {/* Manual Adjustments / Expenses / Settlements Form */}
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#475569', fontSize: '13px' }}>
+                  Manual Settlements / Expenses
+                </Typography>
+                <Grid container spacing={1} mb={1}>
+                  <Grid item xs={7}>
+                    <TextField
+                      label="Adjustment Description"
+                      size="small"
+                      fullWidth
+                      value={newAdjDesc}
+                      onChange={(e) => setNewAdjDesc(e.target.value)}
+                      placeholder="e.g. Travel Allowance"
+                      inputProps={{ style: { fontSize: '12px' } }}
+                      InputLabelProps={{ style: { fontSize: '12px' } }}
+                    />
+                  </Grid>
+                  <Grid item xs={5}>
+                    <TextField
+                      label="Amount (INR)"
+                      size="small"
+                      type="number"
+                      fullWidth
+                      value={newAdjAmt}
+                      onChange={(e) => setNewAdjAmt(e.target.value)}
+                      placeholder="e.g. 500"
+                      inputProps={{ style: { fontSize: '12px' } }}
+                      InputLabelProps={{ style: { fontSize: '12px' } }}
+                    />
+                  </Grid>
+                </Grid>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  onClick={() => {
+                    if (!newAdjDesc.trim() || !newAdjAmt) return;
+                    setAdjustments(prev => [...prev, { description: newAdjDesc, amount: Number(newAdjAmt) }]);
+                    setNewAdjDesc('');
+                    setNewAdjAmt('');
+                  }}
+                  sx={{ mb: 2, textTransform: 'none', fontWeight: 600, fontSize: '12px', py: 0.5 }}
+                  startIcon={<Icons.Plus size={14} />}
+                >
+                  Add Settlement/Expense
+                </Button>
+
+                {adjustments.length > 0 && (
+                  <Box mb={2} sx={{ border: '1px solid #E2E8F0', borderRadius: '8px', p: 1.5, backgroundColor: '#F8FAFC' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 700, display: 'block', mb: 1, color: '#64748B' }}>
+                      Added Adjustments ({adjustments.length})
+                    </Typography>
+                    {adjustments.map((adj, idx) => (
+                      <Box key={idx} display="flex" justifyContent="space-between" alignItems="center" mb={0.5}>
+                        <Typography variant="caption" sx={{ color: '#334155', fontSize: '11px' }}>
+                          {adj.description}: <strong>{adj.amount >= 0 ? '+' : ''}₹{adj.amount}</strong>
+                        </Typography>
+                        <IconButton size="small" onClick={() => setAdjustments(prev => prev.filter((_, i) => i !== idx))} sx={{ p: 0.2 }}>
+                          <Icons.X size={12} color="#EF4444" />
+                        </IconButton>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
                 
                 <Button
                   variant="contained"
@@ -990,6 +1082,26 @@ const Attendance = () => {
                         {monthlyStats.finalPayableDays} Days
                       </Typography>
                     </Box>
+                    <Box display="flex" justifyContent="space-between">
+                      <Typography variant="body2" sx={{ color: '#64748B' }}>Attendance Earned Salary</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{monthlyStats.totalEarnings.toLocaleString('en-IN')}</Typography>
+                    </Box>
+                    {adjustments.length > 0 && (
+                      <>
+                        <Divider />
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', mt: 1, display: 'block' }}>
+                          Manual Settlements & Expenses
+                        </Typography>
+                        {adjustments.map((adj, idx) => (
+                          <Box key={idx} display="flex" justifyContent="space-between">
+                            <Typography variant="body2" sx={{ color: '#64748B' }}>{adj.description}</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: adj.amount >= 0 ? '#10B981' : '#EF4444' }}>
+                              {adj.amount >= 0 ? '+' : ''}₹{adj.amount.toLocaleString('en-IN')}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </>
+                    )}
                   </Box>
                   <Divider sx={{ mb: 3 }} />
 
@@ -1006,11 +1118,11 @@ const Attendance = () => {
                     }}
                   >
                     <Box>
-                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>TOTAL EARNINGS (NET SETTLEMENT)</Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>TOTAL PAYABLE SALARY (NET SETTLEMENT)</Typography>
                       <Typography variant="caption" sx={{ color: '#94A3B8' }}>Tax & TDS applicable as per laws</Typography>
                     </Box>
                     <Typography variant="h3" sx={{ fontWeight: 900, color: '#16A34A', fontSize: '28px', fontFamily: 'Poppins' }}>
-                      ₹{monthlyStats.totalEarnings.toLocaleString('en-IN')}
+                      ₹{monthlyStats.netPayableEarnings.toLocaleString('en-IN')}
                     </Typography>
                   </Box>
 
@@ -1113,6 +1225,48 @@ const Attendance = () => {
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      {/* Background Geolocation Consent Explanation Dialog */}
+      <Dialog 
+        open={geoPermissionDialogOpen} 
+        onClose={() => setGeoPermissionDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: '16px', p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Icons.MapPin size={22} style={{ color: '#EF4444' }} />
+          Location Consent
+        </DialogTitle>
+        <DialogContent sx={{ py: 1 }}>
+          <Typography variant="body2" sx={{ color: '#475569', lineHeight: 1.6 }}>
+            Gagan Realtech CRM tracks your coordinates during active shifts to verify client meetings, draw your path routes, and calculate shift kilometers.
+            <br/><br/>
+            <strong>Background Tracking:</strong> To calculate your route accurately, this app reads your location even when the app is minimized, closed, or your screen is locked.
+            <br/><br/>
+            Tracking will run continuously in the background <strong>until you explicitly click "Punch Out"</strong> on this page.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button 
+            onClick={() => setGeoPermissionDialogOpen(false)} 
+            sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}
+          >
+            Don't Allow
+          </Button>
+          <Button 
+            onClick={() => {
+              setGeoPermissionDialogOpen(false);
+              handlePunchIn();
+            }} 
+            variant="contained" 
+            color="success"
+            sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '6px', backgroundColor: '#22C55E' }}
+          >
+            Allow & Punch In
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );

@@ -13,6 +13,12 @@ const JWT_SECRET = 'GR_CRM_SUPER_SECRET_KEY';
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir);
+}
+app.use('/uploads', express.static(uploadsDir));
+
 const metadataPath = path.join(__dirname, 'config/metadata.json');
 const dbPath = path.join(__dirname, 'config/db.json');
 
@@ -792,13 +798,13 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
 
   const data = {};
   if (module === 'employees') {
-    data.attendance = allAttendance.filter(a => a.employeeId === id);
-    data.leaves = allLeaves.filter(l => l.employeeId === id);
-    data.customers = allCustomers.filter(c => c.assignedEmployeeId === id);
-    data.properties = allProperties.filter(p => p.assignedEmployeeId === id);
-    data.tasks = allTasks.filter(t => t.assignedTo === id);
-    data.remarks = allRemarks.filter(r => r.targetModule === 'employees' && r.targetId === id);
-    data.documents = allDocs.filter(d => d.targetModule === 'employees' && d.targetId === id);
+    data.attendance = allAttendance.filter(a => String(a.employeeId) === String(id));
+    data.leaves = allLeaves.filter(l => String(l.employeeId) === String(id));
+    data.customers = allCustomers.filter(c => String(c.assignedEmployeeId) === String(id));
+    data.properties = allProperties.filter(p => String(p.assignedEmployeeId) === String(id));
+    data.tasks = allTasks.filter(t => String(t.assignedTo) === String(id));
+    data.remarks = allRemarks.filter(r => r.targetModule === 'employees' && String(r.targetId) === String(id));
+    data.documents = allDocs.filter(d => d.targetModule === 'employees' && String(d.targetId) === String(id));
   } else if (module === 'customers') {
     const cust = allCustomers.find(c => String(c.id) === String(id));
     data.employee = allEmployees.find(e => String(e.id) === String(cust && cust.assignedEmployeeId));
@@ -869,6 +875,31 @@ app.post('/api/remarks', authenticateToken, async (req, res) => {
 });
 
 // --- DOCUMENT SYSTEM ---
+
+app.post('/api/upload', authenticateToken, (req, res) => {
+  const { fileName, base64Data } = req.body;
+  if (!fileName || !base64Data) {
+    return res.status(400).json({ message: 'fileName and base64Data required.' });
+  }
+
+  try {
+    const base64Clean = base64Data.replace(/^data:.*?;base64,/, "");
+    const buffer = Buffer.from(base64Clean, 'base64');
+    
+    const ext = path.extname(fileName) || '.bin';
+    const baseName = path.basename(fileName, ext).replace(/[^a-zA-Z0-9]/g, '_');
+    const uniqueFileName = `${baseName}_${Date.now()}${ext}`;
+    
+    const filePath = path.join(uploadsDir, uniqueFileName);
+    fs.writeFileSync(filePath, buffer);
+
+    const fileUrl = `${req.protocol}://${req.get('host')}/uploads/${uniqueFileName}`;
+    res.json({ success: true, fileUrl, fileName: uniqueFileName });
+  } catch (err) {
+    console.error('File write failed:', err);
+    res.status(500).json({ message: 'File upload failed.' });
+  }
+});
 
 app.post('/api/documents', authenticateToken, (req, res) => {
   const { targetModule, targetId, name, fileUrl } = req.body;

@@ -154,8 +154,14 @@ const DynamicTable = ({
       );
     }
 
-    if (field.name === 'price' || field.name === 'budget' || field.name === 'salary' || field.name === 'salePrice') {
-      return `₹${Number(val).toLocaleString('en-IN')}`;
+    const currencyFields = [
+      'price', 'budget', 'salary', 'salePrice', 'netPay', 'baseSalary', 'dailyRate',
+      'leaveDeduction', 'halfDayDeduction', 'overtimePayment', 'allowancesTotal',
+      'deductionsTotal', 'expensesReimbursement', 'advanceRecovery', 'advanceBalance',
+      'advanceTaken'
+    ];
+    if (currencyFields.includes(field.name)) {
+      return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
     }
 
     return String(val);

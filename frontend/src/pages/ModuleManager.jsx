@@ -75,8 +75,14 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
             {visibleFields.map(f => {
               const val = rec[f.name];
               let displayVal = String(val);
-              if (f.name === 'price' || f.name === 'budget' || f.name === 'salary') {
-                displayVal = `₹${Number(val).toLocaleString('en-IN')}`;
+              const currencyFields = [
+                'price', 'budget', 'salary', 'salePrice', 'netPay', 'baseSalary', 'dailyRate',
+                'leaveDeduction', 'halfDayDeduction', 'overtimePayment', 'allowancesTotal',
+                'deductionsTotal', 'expensesReimbursement', 'advanceRecovery', 'advanceBalance',
+                'advanceTaken'
+              ];
+              if (currencyFields.includes(f.name)) {
+                displayVal = `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
               }
 
               return (

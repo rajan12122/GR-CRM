@@ -30,6 +30,10 @@ import * as Icons from 'lucide-react';
 import { useApp, API_BASE_URL } from '../context/AppContext';
 import EntityTooltip from '../components/EntityTooltip';
 
+const formatCurrency = (val) => {
+  return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
+
 const EntityDetail = () => {
   const { moduleName, id } = useParams();
   const navigate = useNavigate();
@@ -764,7 +768,7 @@ const EntityDetail = () => {
                                         />
                                       </Box>
                                       <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}>
-                                        Net Payable: <strong>₹{Number(sal.netPay || 0).toLocaleString('en-IN')}</strong>
+                                        Net Payable: <strong>₹{formatCurrency(sal.netPay)}</strong>
                                       </Typography>
                                       <Button 
                                         variant="outlined" 
@@ -1096,15 +1100,15 @@ const EntityDetail = () => {
                     <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>EARNINGS</Typography>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Base Salary</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(activeSalarySlip.baseSalary || 0).toLocaleString('en-IN')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.baseSalary)}</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Extra Days Pay ({activeSalarySlip.extraDays} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(activeSalarySlip.extraDayPayment || 0).toLocaleString('en-IN')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.extraDayPayment)}</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Overtime Pay ({activeSalarySlip.overtimeHours} hrs)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(activeSalarySlip.overtimePayment || 0).toLocaleString('en-IN')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(activeSalarySlip.overtimePayment)}</Typography>
                     </Box>
                     
                     {activeSalarySlip.allowancesJson && (
@@ -1114,7 +1118,7 @@ const EntityDetail = () => {
                           return allows.map((a, i) => (
                             <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
                               <Typography variant="body2">{a.name}</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{Number(a.amount || 0).toLocaleString('en-IN')}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(a.amount)}</Typography>
                             </Box>
                           ));
                         } catch (e) { return null; }
@@ -1125,15 +1129,15 @@ const EntityDetail = () => {
                     <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS</Typography>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Leave Deductions ({activeSalarySlip.chargeableLeaves} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(activeSalarySlip.leaveDeduction || 0).toLocaleString('en-IN')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.leaveDeduction)}</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Half Day Deductions ({activeSalarySlip.halfDays} days)</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(activeSalarySlip.halfDayDeduction || 0).toLocaleString('en-IN')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.halfDayDeduction)}</Typography>
                     </Box>
                     <Box display="flex" justifyContent="space-between" py={0.5}>
                       <Typography variant="body2">Advance Recovery</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(activeSalarySlip.advanceRecovery || 0).toLocaleString('en-IN')}</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(activeSalarySlip.advanceRecovery)}</Typography>
                     </Box>
 
                     {activeSalarySlip.deductionsJson && (
@@ -1143,7 +1147,7 @@ const EntityDetail = () => {
                           return deds.map((d, i) => (
                             <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
                               <Typography variant="body2">{d.name}</Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{Number(d.amount || 0).toLocaleString('en-IN')}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>- ₹{formatCurrency(d.amount)}</Typography>
                             </Box>
                           ));
                         } catch (e) { return null; }
@@ -1154,7 +1158,7 @@ const EntityDetail = () => {
 
                 <Box sx={{ p: 2, border: '2px solid #0F172A', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Typography variant="subtitle2" sx={{ fontWeight: 800 }}>NET PAYABLE SETTLEMENT</Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 850 }}>₹{Number(activeSalarySlip.netPay || 0).toLocaleString('en-IN')}</Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 850 }}>₹{formatCurrency(activeSalarySlip.netPay)}</Typography>
                 </Box>
               </Box>
             </Box>

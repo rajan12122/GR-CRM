@@ -865,8 +865,40 @@ const Attendance = () => {
         </Grid>
       </Grid>
 
-      {/* Salary Settlement & Printable Receipt Section */}
-      {selectedEmployeeObj && monthlyStats && (
+      {/* Salary Settlement Redirect Card */}
+      {selectedEmployeeObj && (
+        <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', mt: 4, mb: 4, background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)', color: '#FFFFFF' }}>
+          <CardContent sx={{ p: 4, display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: 'center', gap: 3 }}>
+            <Box>
+              <Typography variant="h3" sx={{ fontWeight: 800, fontSize: '20px', mb: 1, fontFamily: 'Poppins', color: '#38BDF8' }}>
+                Payroll & Salary Settlements
+              </Typography>
+              <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                Calculate monthly settlements, override extra days/overtime, manage allowances, deduct advance recoveries, and print corporate slips.
+              </Typography>
+            </Box>
+            <Button
+              variant="contained"
+              onClick={() => navigate('/module/salary')}
+              startIcon={<Icons.Coins size={18} />}
+              sx={{
+                borderRadius: '12px',
+                height: 48,
+                px: 3,
+                textTransform: 'none',
+                fontWeight: 700,
+                backgroundColor: '#2563EB',
+                '&:hover': { backgroundColor: '#1D4ED8' }
+              }}
+            >
+              Manage Payouts
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Salary Settlement & Printable Receipt Section (Deprecated) */}
+      {false && selectedEmployeeObj && monthlyStats && (
         <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', mt: 4, mb: 4 }} className="no-print-card">
           <CardContent sx={{ p: 4 }}>
             <Typography variant="h3" sx={{ fontWeight: 800, fontSize: '20px', mb: 3, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>

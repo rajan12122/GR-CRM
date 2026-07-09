@@ -58,6 +58,10 @@ const getShiftHours = (inTime, outTime) => {
   return diff > 0 ? diff : 0;
 };
 
+const formatCurrency = (val) => {
+  return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+};
+
 const Salary = () => {
   const { user, token, moduleData, fetchModuleData, createRecord, updateRecord } = useApp();
   
@@ -314,7 +318,7 @@ const Salary = () => {
     if (!selectedEmployeeObj) return null;
 
     const baseSalary = Number(selectedEmployeeObj.salary) || 0;
-    const dailyRate = Math.round(baseSalary / 30);
+    const dailyRate = baseSalary / 30;
     
     // Leaves deductions: 4 leaves permitted for free
     const paidLeavesUsed = Math.min(attendanceCounts.leaveDays, 4);
@@ -332,7 +336,7 @@ const Salary = () => {
     const finalOtHours = overtimeHours > 0 ? overtimeHours : attendanceCounts.autoOvertimeHours;
     const calculatedOtRate = Number((dailyRate / 7).toFixed(2));
     const finalOtRate = isOvertimeManual ? overtimeHourlyRate : calculatedOtRate;
-    const overtimePayment = Math.round(finalOtHours * finalOtRate);
+    const overtimePayment = finalOtHours * finalOtRate;
 
     // Allowances, Deductions, Expenses totals
     const allowancesTotal = allowances.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
@@ -346,7 +350,7 @@ const Salary = () => {
     // Final Net salary settlement calculations
     const grossPay = baseSalary + extraDayPayment + overtimePayment + allowancesTotal + expensesReimbursement;
     const grossDeductions = leaveDeduction + halfDayDeduction + deductionsTotal + finalRecovery;
-    const netPay = Math.max(0, Math.round(grossPay - grossDeductions));
+    const netPay = Math.max(0, grossPay - grossDeductions);
 
     return {
       baseSalary,
@@ -433,8 +437,8 @@ const Salary = () => {
       employeeId: selectedEmpId,
       month: Number(month),
       year: Number(year),
-      baseSalary: payrollStats.baseSalary,
-      dailyRate: payrollStats.dailyRate,
+      baseSalary: Number(payrollStats.baseSalary.toFixed(2)),
+      dailyRate: Number(payrollStats.dailyRate.toFixed(2)),
       presentDays: attendanceCounts.presentDays,
       leaveDays: attendanceCounts.leaveDays,
       paidLeavesUsed: payrollStats.paidLeavesUsed,
@@ -443,13 +447,13 @@ const Salary = () => {
       absentDays: attendanceCounts.absentDays,
       extraDays: payrollStats.finalExtraDays,
       overtimeHours: payrollStats.finalOtHours,
-      allowancesTotal: payrollStats.allowancesTotal,
-      expensesReimbursement: payrollStats.expensesReimbursement,
-      deductionsTotal: payrollStats.deductionsTotal,
-      leaveDeduction: payrollStats.leaveDeduction,
-      halfDayDeduction: payrollStats.halfDayDeduction,
-      advanceRecovery: payrollStats.advanceRecovery,
-      netPay: payrollStats.netPay,
+      allowancesTotal: Number(payrollStats.allowancesTotal.toFixed(2)),
+      expensesReimbursement: Number(payrollStats.expensesReimbursement.toFixed(2)),
+      deductionsTotal: Number(payrollStats.deductionsTotal.toFixed(2)),
+      leaveDeduction: Number(payrollStats.leaveDeduction.toFixed(2)),
+      halfDayDeduction: Number(payrollStats.halfDayDeduction.toFixed(2)),
+      advanceRecovery: Number(payrollStats.advanceRecovery.toFixed(2)),
+      netPay: Number(payrollStats.netPay.toFixed(2)),
       status: salaryStatus,
       notes,
       generatedDate: new Date().toLocaleDateString('en-IN'),
@@ -740,7 +744,7 @@ const Salary = () => {
                         allowances.map((allow, idx) => (
                           <TableRow key={idx}>
                             <TableCell>{allow.name}</TableCell>
-                            <TableCell align="right">₹{allow.amount.toLocaleString('en-IN')}</TableCell>
+                            <TableCell align="right">₹{formatCurrency(allow.amount)}</TableCell>
                             <TableCell>{allow.remarks || '---'}</TableCell>
                             {(user.role === 'Admin' || user.role === 'Manager') && (
                               <TableCell align="center">
@@ -820,7 +824,7 @@ const Salary = () => {
                         deductions.map((ded, idx) => (
                           <TableRow key={idx}>
                             <TableCell>{ded.name}</TableCell>
-                            <TableCell align="right">₹{ded.amount.toLocaleString('en-IN')}</TableCell>
+                            <TableCell align="right">₹{formatCurrency(ded.amount)}</TableCell>
                             <TableCell>{ded.remarks || '---'}</TableCell>
                             {(user.role === 'Admin' || user.role === 'Manager') && (
                               <TableCell align="center">
@@ -917,7 +921,7 @@ const Salary = () => {
                           <TableRow key={idx}>
                             <TableCell>{exp.name}</TableCell>
                             <TableCell>{exp.date}</TableCell>
-                            <TableCell align="right">₹{exp.amount.toLocaleString('en-IN')}</TableCell>
+                            <TableCell align="right">₹{formatCurrency(exp.amount)}</TableCell>
                             <TableCell>{exp.approvedBy || '---'}</TableCell>
                             <TableCell>{exp.description || '---'}</TableCell>
                             {(user.role === 'Admin' || user.role === 'Manager') && (
@@ -990,7 +994,7 @@ const Salary = () => {
                   </Grid>
                   <Grid item xs={12}>
                     <Alert severity="info" icon={<Icons.AlertCircle size={18} />}>
-                      Remaining Outstanding Balance: <strong>₹{advanceBalance.toLocaleString('en-IN')}</strong>
+                      Remaining Outstanding Balance: <strong>₹{formatCurrency(advanceBalance)}</strong>
                     </Alert>
                   </Grid>
                 </Grid>
@@ -1063,49 +1067,49 @@ const Salary = () => {
                   Estimated Net Settlement
                 </Typography>
                 <Typography variant="h3" sx={{ fontWeight: 800, color: '#38BDF8', mb: 3, fontFamily: 'Poppins' }}>
-                  ₹{payrollStats.netPay.toLocaleString('en-IN')}
+                  ₹{formatCurrency(payrollStats.netPay)}
                 </Typography>
                 
                 <Divider sx={{ borderColor: '#334155', mb: 2 }} />
 
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Base Salary</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{payrollStats.baseSalary.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.baseSalary)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Extra Days Payment</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{payrollStats.extraDayPayment.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.extraDayPayment)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Overtime Payment</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{payrollStats.overtimePayment.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.overtimePayment)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Total Allowances</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{payrollStats.allowancesTotal.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.allowancesTotal)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Expenses Reimbursed</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{payrollStats.expensesReimbursement.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.expensesReimbursement)}</Typography>
                 </Box>
                 
                 <Divider sx={{ borderColor: '#334155', my: 1.5 }} />
 
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Leave Deductions</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{payrollStats.leaveDeduction.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.leaveDeduction)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Half Day Deductions</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{payrollStats.halfDayDeduction.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.halfDayDeduction)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Custom Deductions</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{payrollStats.deductionsTotal.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.deductionsTotal)}</Typography>
                 </Box>
                 <Box display="flex" justifyContent="space-between" mb={1.5}>
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Advance Recovered</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{payrollStats.advanceRecovery.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#F87171' }}>- ₹{formatCurrency(payrollStats.advanceRecovery)}</Typography>
                 </Box>
               </CardContent>
             </Card>
@@ -1209,26 +1213,26 @@ const Salary = () => {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>EARNING BREAKDOWN</Typography>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Base Salary</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{payrollStats.baseSalary.toLocaleString('en-IN')}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.baseSalary)}</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Extra Days Pay ({payrollStats.finalExtraDays} days)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{payrollStats.extraDayPayment.toLocaleString('en-IN')}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.extraDayPayment)}</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Overtime Pay ({payrollStats.finalOtHours} hrs)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{payrollStats.overtimePayment.toLocaleString('en-IN')}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.overtimePayment)}</Typography>
               </Box>
               {allowances.map((a, i) => (
                 <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
                   <Typography variant="body2">{a.name}</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{a.amount.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(a.amount)}</Typography>
                 </Box>
               ))}
               {expenses.map((e, i) => (
                 <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
                   <Typography variant="body2">{e.name} (Reimbursement)</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{e.amount.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(e.amount)}</Typography>
                 </Box>
               ))}
             </Grid>
@@ -1236,20 +1240,20 @@ const Salary = () => {
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS BREAKDOWN</Typography>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Leave Deductions ({payrollStats.chargeableLeaves} days)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{payrollStats.leaveDeduction.toLocaleString('en-IN')}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.leaveDeduction)}</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Half Day Deductions ({attendanceCounts.halfDays} days)</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{payrollStats.halfDayDeduction.toLocaleString('en-IN')}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.halfDayDeduction)}</Typography>
               </Box>
               <Box display="flex" justifyContent="space-between" py={0.5}>
                 <Typography variant="body2">Advance Recovered</Typography>
-                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{payrollStats.advanceRecovery.toLocaleString('en-IN')}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(payrollStats.advanceRecovery)}</Typography>
               </Box>
               {deductions.map((d, i) => (
                 <Box display="flex" justifyContent="space-between" py={0.5} key={i}>
                   <Typography variant="body2">{d.name}</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{d.amount.toLocaleString('en-IN')}</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(d.amount)}</Typography>
                 </Box>
               ))}
             </Grid>
@@ -1258,7 +1262,7 @@ const Salary = () => {
           {/* NET PAYABLE BOX */}
           <Box sx={{ p: 3, border: '2px solid #0F172A', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 6 }}>
             <Typography variant="h6" sx={{ fontWeight: 800 }}>NET PAYABLE SETTLEMENT AMOUNT</Typography>
-            <Typography variant="h4" sx={{ fontWeight: 850 }}>₹{payrollStats.netPay.toLocaleString('en-IN')}</Typography>
+            <Typography variant="h4" sx={{ fontWeight: 850 }}>₹{formatCurrency(payrollStats.netPay)}</Typography>
           </Box>
 
           {/* Signatures placeholders */}

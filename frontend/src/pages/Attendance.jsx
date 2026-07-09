@@ -188,18 +188,16 @@ const Attendance = () => {
     const captureLocation = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true });
+          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 });
           if (pos) {
             setSharingError("");
             await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
           }
         } catch (err) {
-          console.error("Error logging position", err);
+          console.warn("GPS initial lock weak/delay:", err);
           const isPerm = err.code === 1 || (err.message && err.message.toLowerCase().includes('permission'));
           if (isPerm) {
             setSharingError("Failed to lock location. Please enable GPS permissions.");
-          } else {
-            setSharingError("GPS signal weak, searching for location...");
           }
         }
       } else {
@@ -215,14 +213,12 @@ const Attendance = () => {
             }
           },
           (err) => {
-            console.error("Error logging position", err);
+            console.warn("GPS initial lock weak/delay:", err);
             if (err.code === 1) {
               setSharingError("Failed to lock location. Please enable GPS permissions.");
-            } else {
-              setSharingError("GPS signal weak, searching for location...");
             }
           },
-          { enableHighAccuracy: true }
+          { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 }
         );
       }
     };
@@ -244,16 +240,15 @@ const Attendance = () => {
 
         // Watch position updates for instant movement updates
         const watchId = await Geolocation.watchPosition(
-          { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+          { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 },
           async (pos, err) => {
             if (err) {
               const isPerm = err.code === 1 || (err.message && err.message.toLowerCase().includes('permission'));
               if (isPerm) {
                 setSharingError("Failed to lock location. Please enable GPS permissions.");
               } else {
-                setSharingError("GPS signal weak, searching for location...");
+                console.warn("GPS temporary lock delay:", err);
               }
-              console.error(err);
               return;
             }
             if (pos) {
@@ -273,8 +268,6 @@ const Attendance = () => {
         const isPerm = err.code === 1 || (err.message && err.message.toLowerCase().includes('permission'));
         if (isPerm) {
           setSharingError("Failed to lock location. Please enable GPS permissions.");
-        } else {
-          setSharingError("GPS signal weak, searching for location...");
         }
         setSharingLocation(false);
         localStorage.removeItem('gr_sharing_location');
@@ -301,11 +294,10 @@ const Attendance = () => {
           if (err.code === 1) {
             setSharingError("Failed to lock location. Please enable GPS permissions.");
           } else {
-            setSharingError("GPS signal weak, searching for location...");
+            console.warn("GPS temporary lock delay:", err);
           }
-          console.error(err);
         },
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+        { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 }
       );
     }
 

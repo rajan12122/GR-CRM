@@ -38,6 +38,19 @@
       "dutyHours": 8,
       "holidaysAllotted": 4,
       "password": "vipin123"
+    },
+    {
+      "id": "EMP-004",
+      "name": "Rajan",
+      "email": "Rajan@123",
+      "phone": 6239978577,
+      "role": "Admin",
+      "status": "Active",
+      "joinDate": "2026-07-01",
+      "salary": 10000,
+      "dutyHours": 8,
+      "holidaysAllotted": 4,
+      "password": "rajan123"
     }
   ],
   "customers": [
@@ -74,7 +87,7 @@
       "phone": 9417094170,
       "source": "Facebook",
       "status": "In-Progress",
-      "assignedEmployeeId": "EMP-003",
+      "assignedEmployeeId": "EMP-002",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 4500000,
@@ -91,7 +104,7 @@
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
-      "assignedEmployeeId": "EMP-003",
+      "assignedEmployeeId": "EMP-002",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 15000000,
@@ -1673,7 +1686,16 @@
       "status": "Completed"
     }
   ],
-  "attendance": [],
+  "attendance": [
+    {
+      "id": "ATT-001",
+      "employeeId": "EMP-001",
+      "date": "2026-07-09",
+      "inTime": "12:37 PM",
+      "outTime": "--",
+      "status": "Late"
+    }
+  ],
   "leaves": [
     {
       "id": "LV-001",
@@ -1731,40 +1753,22 @@
       "id": "REM-006"
     },
     {
-      "id": "REM-1783577753580-2zu4",
+      "id": "REM-1783584510118-gslb",
       "targetModule": "leads",
       "targetId": "LEAD-001",
       "comment": "System: Lead rotated automatically from Vipin to Mandeep due to inactivity.",
       "author": "System Rotation Engine",
       "date": "9/7/2026",
-      "timestamp": "2026-07-09T06:15:53.681Z"
+      "timestamp": "2026-07-09T08:08:30.745Z"
     },
     {
-      "id": "REM-1783577753682-cee1",
+      "id": "REM-1783584510745-u8jw",
       "targetModule": "leads",
       "targetId": "LEAD-002",
       "comment": "System: Lead rotated automatically from unassigned to Mandeep due to inactivity.",
       "author": "System Rotation Engine",
       "date": "9/7/2026",
-      "timestamp": "2026-07-09T06:15:53.682Z"
-    },
-    {
-      "id": "REM-1783581643739-l7ul",
-      "targetModule": "leads",
-      "targetId": "LEAD-001",
-      "comment": "System: Lead rotated automatically from Mandeep to Vipin due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "9/7/2026",
-      "timestamp": "2026-07-09T07:20:43.805Z"
-    },
-    {
-      "id": "REM-1783581643810-idma",
-      "targetModule": "leads",
-      "targetId": "LEAD-002",
-      "comment": "System: Lead rotated automatically from Mandeep to Vipin due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "9/7/2026",
-      "timestamp": "2026-07-09T07:20:43.811Z"
+      "timestamp": "2026-07-09T08:08:30.745Z"
     }
   ],
   "documents": [
@@ -1781,6 +1785,16 @@
     }
   ],
   "activity_logs": [
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Mandeep (inactivity)",
+      "timestamp": "2026-07-09T08:08:30.745Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Amit Pathak\" to Mandeep (inactivity)",
+      "timestamp": "2026-07-09T08:08:30.745Z"
+    },
     {
       "user": "System",
       "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Vipin (inactivity)",

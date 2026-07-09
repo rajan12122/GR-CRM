@@ -369,6 +369,17 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     }
   }
 
+  if (module === 'leads') {
+    payload.assignmentStatus = payload.assignmentStatus || 'pending';
+    payload.assignmentTime = payload.assignmentTime || new Date().toISOString();
+    payload.droppedBy = payload.droppedBy || [];
+    if (payload.assignedEmployeeId) {
+      setTimeout(() => {
+        notifyUser(payload.assignedEmployeeId, 'new-lead', { leadId: payload.id, leadName: payload.name || payload.person_name || 'New Lead' });
+      }, 500);
+    }
+  }
+
   if (!db[module]) db[module] = [];
   db[module].push(payload);
   
@@ -419,6 +430,18 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
       payload[f.name] = new Date().toLocaleString('en-IN');
     }
   });
+
+  if (module === 'leads') {
+    const oldLead = db[module][index];
+    if (payload.assignedEmployeeId && payload.assignedEmployeeId !== oldLead.assignedEmployeeId) {
+      payload.assignmentStatus = 'pending';
+      payload.assignmentTime = new Date().toISOString();
+      payload.droppedBy = [];
+      setTimeout(() => {
+        notifyUser(payload.assignedEmployeeId, 'new-lead', { leadId: id, leadName: payload.name || payload.person_name || 'New Lead' });
+      }, 500);
+    }
+  }
 
   // Update record preserving fixed identifiers
   db[module][index] = { ...db[module][index], ...payload, id };
@@ -574,8 +597,8 @@ app.post('/api/location/log', authenticateToken, (req, res) => {
     } else {
       const lastPoint = currentPath[currentPath.length - 1];
       const dist = calculateDistanceKm(lastPoint.lat, lastPoint.lng, decLat, decLng);
-      // Only capture when moved more than 100 meters (0.1 km)
-      if (dist >= 0.1) {
+      // Only capture when moved more than 10 meters (0.01 km) to avoid GPS drift but capture steps
+      if (dist >= 0.01) {
         currentPath.push({
           lat: decLat,
           lng: decLng,
@@ -1221,6 +1244,176 @@ app.post('/api/public/quick-add', (req, res) => {
 // Start background task: Check immediately after 10 seconds, and run every 5 minutes
 setTimeout(rotateLeadsTask, 10000);
 setInterval(rotateLeadsTask, 5 * 60 * 1000);
+
+// --- LEAD ASSIGNMENT REAL-TIME NOTIFICATION ENGINE (SSE) ---
+let notificationClients = [];
+
+function notifyUser(userId, eventType, data) {
+  notificationClients.forEach(c => {
+    if (String(c.userId) === String(userId)) {
+      try {
+        c.res.write(`event: ${eventType}\n`);
+        c.res.write(`data: ${JSON.stringify(data)}\n\n`);
+      } catch (err) {
+        console.error("SSE write error:", err);
+      }
+    }
+  });
+}
+
+// Keep-alive heartbeat to prevent Render timeout
+setInterval(() => {
+  notificationClients.forEach(c => {
+    try {
+      c.res.write(': keep-alive\n\n');
+    } catch (e) {}
+  });
+}, 15000);
+
+app.get('/api/notifications/stream', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const userId = req.query.userId || 'anonymous';
+  const newClient = { userId, res };
+  notificationClients.push(newClient);
+
+  req.on('close', () => {
+    notificationClients = notificationClients.filter(c => c !== newClient);
+  });
+});
+
+// Polling fallback to check if user has any pending leads to accept
+app.get('/api/leads/pending', authenticateToken, (req, res) => {
+  const db = readDb();
+  const userId = req.user.id;
+  const pendingLeads = (db.leads || []).filter(lead => 
+    String(lead.assignedEmployeeId) === String(userId) && 
+    lead.assignmentStatus === 'pending'
+  );
+  res.json(pendingLeads);
+});
+
+// Accept Lead
+app.post('/api/leads/:id/accept', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const db = readDb();
+  const leadIndex = (db.leads || []).findIndex(l => String(l.id) === String(id));
+  if (leadIndex === -1) return res.status(404).json({ message: "Lead not found." });
+
+  db.leads[leadIndex].assignmentStatus = 'accepted';
+  db.leads[leadIndex].assignmentTime = null;
+  writeDb(db);
+  syncToSheets('leads');
+
+  res.json({ success: true, message: "Lead accepted successfully.", lead: db.leads[leadIndex] });
+});
+
+// Drop Lead (Pass to other employee)
+app.post('/api/leads/:id/drop', authenticateToken, (req, res) => {
+  const { id } = req.params;
+  const db = readDb();
+  const leadIndex = (db.leads || []).findIndex(l => String(l.id) === String(id));
+  if (leadIndex === -1) return res.status(404).json({ message: "Lead not found." });
+
+  const lead = db.leads[leadIndex];
+  const oldAssignee = lead.assignedEmployeeId;
+  lead.droppedBy = lead.droppedBy || [];
+  if (!lead.droppedBy.includes(oldAssignee)) {
+    lead.droppedBy.push(oldAssignee);
+  }
+
+  // Find all active employees who are not Admins and haven't dropped this lead yet
+  const employees = db.employees || [];
+  let candidates = employees.filter(emp => 
+    emp.role !== 'Admin' && 
+    String(emp.id) !== String(oldAssignee) && 
+    !lead.droppedBy.includes(emp.id)
+  );
+
+  if (candidates.length === 0) {
+    lead.droppedBy = [oldAssignee];
+    candidates = employees.filter(emp => emp.role !== 'Admin' && String(emp.id) !== String(oldAssignee));
+  }
+
+  if (candidates.length > 0) {
+    const nextEmp = candidates[0];
+    lead.assignedEmployeeId = nextEmp.id;
+    lead.assignmentStatus = 'pending';
+    lead.assignmentTime = new Date().toISOString();
+    notifyUser(nextEmp.id, 'new-lead', { leadId: lead.id, leadName: lead.name || lead.person_name || 'New Lead' });
+  } else {
+    lead.assignedEmployeeId = 'EMP-001';
+    lead.assignmentStatus = 'accepted';
+    lead.assignmentTime = null;
+  }
+
+  writeDb(db);
+  syncToSheets('leads');
+
+  res.json({ success: true, message: "Lead dropped and re-assigned.", lead });
+});
+
+// Automatic timeout check for pending leads
+function checkLeadAssignmentTimeouts() {
+  try {
+    const db = readDb();
+    const now = Date.now();
+    let updated = false;
+
+    if (db.leads) {
+      db.leads.forEach(lead => {
+        if (lead.assignmentStatus === 'pending' && lead.assignmentTime) {
+          const elapsedMs = now - new Date(lead.assignmentTime).getTime();
+          if (elapsedMs > 30000) { // 30 seconds timeout
+            console.log(`Lead ${lead.id} assignment timed out for ${lead.assignedEmployeeId}. Re-routing...`);
+            const oldAssignee = lead.assignedEmployeeId;
+            lead.droppedBy = lead.droppedBy || [];
+            if (!lead.droppedBy.includes(oldAssignee)) {
+              lead.droppedBy.push(oldAssignee);
+            }
+
+            const employees = db.employees || [];
+            let candidates = employees.filter(emp => 
+              emp.role !== 'Admin' && 
+              String(emp.id) !== String(oldAssignee) && 
+              !lead.droppedBy.includes(emp.id)
+            );
+
+            if (candidates.length === 0) {
+              lead.droppedBy = [oldAssignee];
+              candidates = employees.filter(emp => emp.role !== 'Admin' && String(emp.id) !== String(oldAssignee));
+            }
+
+            if (candidates.length > 0) {
+              const nextEmp = candidates[0];
+              lead.assignedEmployeeId = nextEmp.id;
+              lead.assignmentStatus = 'pending';
+              lead.assignmentTime = new Date().toISOString();
+              notifyUser(nextEmp.id, 'new-lead', { leadId: lead.id, leadName: lead.name || lead.person_name || 'New Lead' });
+            } else {
+              lead.assignedEmployeeId = 'EMP-001';
+              lead.assignmentStatus = 'accepted';
+              lead.assignmentTime = null;
+            }
+            updated = true;
+          }
+        }
+      });
+    }
+
+    if (updated) {
+      writeDb(db);
+      syncToSheets('leads');
+    }
+  } catch (err) {
+    console.error("Timeout checker error:", err);
+  }
+}
+
+setInterval(checkLeadAssignmentTimeouts, 5000);
 
 app.listen(PORT, () => {
   console.log(`Gagan Realtech ERP+CRM API Server running on port ${PORT}`);

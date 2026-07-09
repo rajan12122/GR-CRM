@@ -20,6 +20,7 @@ import LocationTracker from './pages/LocationTracker';
 import PullToRefresh from './components/PullToRefresh';
 import PublicIntake from './pages/PublicIntake';
 import QuickAdd from './pages/QuickAdd';
+import LeadNotificationListener from './components/LeadNotificationListener';
 import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
@@ -198,6 +199,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <AppProvider>
+        <LeadNotificationListener />
         <Router>
             <DomRoutes>
               <DomRoute path="/intake" element={<PublicIntake />} />

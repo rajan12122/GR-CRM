@@ -45,7 +45,7 @@ const formatCurrency = (val) => {
   return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
-export const DynamicIcon = ({ name, size = 20, color = 'currentColor', ...props }) => {
+const DynamicIcon = ({ name, size = 20, color = 'currentColor', ...props }) => {
   const IconComponent = Icons[name];
   if (!IconComponent) return <Icons.HelpCircle size={size} color={color} {...props} />;
   return <IconComponent size={size} color={color} {...props} />;
@@ -112,6 +112,12 @@ const EntityDetail = () => {
   const [activeMapShift, setActiveMapShift] = useState(null);
   const [activeSalarySlip, setActiveSalarySlip] = useState(null);
 
+  const travelLogs = useMemo(() => {
+    return (connections?.attendance || [])
+      .filter(a => a.odometerStart !== undefined || a.odometerEnd !== undefined)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [connections]);
+
   const tabs = useMemo(() => {
     const list = [];
     if (!connections) return list;
@@ -141,12 +147,6 @@ const EntityDetail = () => {
     }
     return list;
   }, [moduleName, connections, travelLogs]);
-
-  const travelLogs = useMemo(() => {
-    return (connections?.attendance || [])
-      .filter(a => a.odometerStart !== undefined || a.odometerEnd !== undefined)
-      .sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [connections]);
 
   const locationHistoryPastMonth = useMemo(() => {
     if (!record || !record.locationHistory) return [];

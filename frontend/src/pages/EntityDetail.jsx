@@ -45,6 +45,12 @@ const formatCurrency = (val) => {
   return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
+export const DynamicIcon = ({ name, size = 20, color = 'currentColor', ...props }) => {
+  const IconComponent = Icons[name];
+  if (!IconComponent) return <Icons.HelpCircle size={size} color={color} {...props} />;
+  return <IconComponent size={size} color={color} {...props} />;
+};
+
 const EntityDetail = () => {
   const { moduleName, id } = useParams();
   const navigate = useNavigate();
@@ -1333,165 +1339,28 @@ const EntityDetail = () => {
                 </Box>
               )}
 
-              {/* 3. DEALER TABS */}
+              {/* 3. DEALER PROFILE & ACTIVITY FEED */}
               {moduleName === 'dealers' && (
                 <Box>
-                  {/* Tab 0: Overview */}
-                  {activeTab === 0 && (
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Dealer Summary & Comments</Typography>
-                      {/* Remarks log */}
-                      <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 3 }}>
-                        <Grid container spacing={1.5}>
-                          <Grid item xs={12} sm={10}>
-                            <TextField 
-                              placeholder="Type dealer remarks or brokerage disputes..."
-                              fullWidth
-                              size="small"
-                              value={remarkInput}
-                              onChange={(e) => setRemarkInput(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={2}>
-                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
-                              Post Log
-                            </Button>
-                          </Grid>
-                        </Grid>
-                      </Box>
-                      {connections?.remarks?.length === 0 ? (
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No remarks posted yet.</Typography>
-                      ) : (
-                        connections.remarks.map((rem, idx) => (
-                          <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
-                            <Box display="flex" justifyContent="space-between" mb={0.5}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{rem.employeeName}</Typography>
-                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>{rem.dateTime}</Typography>
-                            </Box>
-                            <Typography variant="body2" sx={{ color: '#4B5563', fontStyle: 'italic' }}>"{rem.comment}"</Typography>
-                          </Paper>
-                        ))
-                      )}
+                  <Typography variant="h5" sx={{ fontWeight: 850, mb: 1.5, fontFamily: 'Poppins', color: '#0F172A' }}>
+                    Dealer Dashboard & Outreach Log
+                  </Typography>
+                  <Divider sx={{ mb: 3 }} />
 
-                      <Divider sx={{ my: 4 }} />
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Pitched Properties & Details</Typography>
+                  {/* 1. Quick Outreach Log Actions */}
+                  <Grid container spacing={3} sx={{ mb: 4 }}>
+                    <Grid item xs={12} sm={6}>
+                      <Paper sx={{ p: 3, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Icons.PhoneCall size={20} color="#2563EB" />
+                          Outreach Calling
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#64748B', mb: 2.5 }}>
+                          Log phone call outcomes, duration, and gather remarks from the dealer.
+                        </Typography>
                         <Button 
                           variant="contained" 
                           size="small" 
-                          startIcon={<Icons.Plus size={16} />}
-                          onClick={() => {
-                            setPitchPropertyId('');
-                            setPitchEmployeeId(record.assignedEmployeeId || '');
-                            setPitchPrice('');
-                            setPitchRemarks('');
-                            setPitchWarning('');
-                            setPitchDialogOpen(true);
-                          }}
-                        >
-                          Log New Pitch
-                        </Button>
-                      </Box>
-                      {connections.pitches?.length === 0 ? (
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No property pitches logged for this client yet.</Typography>
-                      ) : (
-                        connections.pitches.map(p => (
-                          <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                              <Box display="flex" alignItems="center" gap={1}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
-                                  Property: {p.propertyId}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
-                              </Box>
-                              <Chip 
-                                label={p.interestLevel} 
-                                color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
-                                size="small"
-                                sx={{ fontWeight: 700 }}
-                              />
-                            </Box>
-                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
-                              Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${p.employeeId || 'EMP-001'}`)}>{p.employeeName}</span>
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>Quoted Offer Price: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/property_pitch_history/${p.id}`)}>{p.id}</span> (Quoted: ₹{formatCurrency(p.quotedPrice)})</Typography>
-                            <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>Remarks: {p.remarks}</Typography>
-                          </Paper>
-                        ))
-                      )}
-                    </Box>
-                  )}
-
-                  {/* Tab 1: Outreach Prep & Logs */}
-                  {activeTab === 1 && (
-                    <Box>
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Dealer Meetings & Prepared Prep Sheets</Typography>
-                        <Button 
-                          variant="contained" 
-                          size="small"
-                          color="primary"
-                          startIcon={<Icons.Plus size={16} />}
-                          onClick={() => {
-                            if (connections.meetings?.some(m => m.status === 'Assigned')) {
-                              const assigned = connections.meetings.find(m => m.status === 'Assigned');
-                              setSelectedMeetingId(assigned.id);
-                              setMeetingOutcome('');
-                              setMeetingDocCollected('');
-                              setMeetingReportDialogOpen(true);
-                            } else {
-                              alert("No pending 'Assigned' meetings found. Admin must assign a meeting to this employee first.");
-                            }
-                          }}
-                        >
-                          Submit Meeting Report
-                        </Button>
-                      </Box>
-
-                      {/* Display meeting prep briefing checklist */}
-                      <Alert severity="info" sx={{ mb: 3, borderRadius: '8px' }}>
-                        <strong>Employee Prep Briefing:</strong> Review the dealer calls checklist, duration patterns, and budget caps before conducting a physical visit.
-                      </Alert>
-
-                      {connections.meetings?.length === 0 ? (
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No meetings assigned or completed for this dealer.</Typography>
-                      ) : (
-                        connections.meetings.map(m => (
-                          <Paper key={m.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
-                            <Box display="flex" justifyContent="space-between" mb={1}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Meeting: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/dealer_meetings/${m.id}`)}>{m.purpose || 'Dealer Intro'} ({m.id})</span></Typography>
-                              <Chip 
-                                label={m.status} 
-                                color={m.status === 'Completed' ? 'success' : m.status === 'Cancelled' ? 'error' : 'warning'} 
-                                size="small"
-                                sx={{ fontWeight: 700 }}
-                              />
-                            </Box>
-                            <Typography variant="body2">RM Assigned: <strong><span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${m.assignedEmployeeId}`)}>{m.assignedEmployeeName}</span></strong></Typography>
-                            <Typography variant="body2">Date Scheduled: <strong>{m.meetingDate}</strong> • Priority: {m.priority}</Typography>
-                            {m.outcome && (
-                              <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#F8FAFC', borderRadius: '8px', borderLeft: '3px solid #10B981' }}>
-                                <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block' }}>VISIT OUTCOME REPORT:</Typography>
-                                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>"{m.outcome}"</Typography>
-                                {m.documents_collected && (
-                                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>Documents Collected: {m.documents_collected}</Typography>
-                                )}
-                              </Box>
-                            )}
-                          </Paper>
-                        ))
-                      )}
-                    </Box>
-                  )}
-
-                  {/* Tab 2: Outreach Calls */}
-                  {activeTab === 2 && (
-                    <Box>
-                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Dealer Outreach Call Logs</Typography>
-                        <Button 
-                          variant="contained" 
-                          size="small"
                           startIcon={<Icons.Phone size={16} />}
                           onClick={() => {
                             setCallDuration('');
@@ -1501,76 +1370,138 @@ const EntityDetail = () => {
                             setCallOutcomeOption('Call Done');
                             setCallDialogOpen(true);
                           }}
+                          sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 700 }}
                         >
                           Log Outreach Call
                         </Button>
-                      </Box>
-                      {connections.calls?.length === 0 ? (
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No call logs registered for this dealer.</Typography>
-                      ) : (
-                        connections.calls.map(c => (
-                          <Paper key={c.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', cursor: 'pointer' }} onClick={() => navigate(`/module/dealer_calls/${c.id}`)}>
-                            <Box display="flex" justifyContent="space-between" mb={1}>
-                              <Box display="flex" alignItems="center" gap={1}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', textDecoration: 'underline' }}>Call Log: {c.id}</Typography>
-                                <Chip 
-                                  label={c.callOutcome || 'Call Done'} 
-                                  color={c.callOutcome === 'Call Done' ? 'success' : 'warning'} 
-                                  size="small" 
-                                  sx={{ fontWeight: 700, fontSize: '10px', height: 20 }}
-                                />
-                              </Box>
-                              <Typography variant="caption" sx={{ color: '#64748B' }}>Called on: {c.date} • By: <span style={{ textDecoration: 'underline', color: '#2563EB' }} onClick={(e) => { e.stopPropagation(); navigate(`/module/employees/${c.employeeId || 'EMP-001'}`); }}>{c.employeeName}</span></Typography>
-                            </Box>
-                            <Grid container spacing={2}>
-                              <Grid item xs={6} sm={4}>
-                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Call Duration:</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{c.duration || 'N/A'} mins</Typography>
-                              </Grid>
-                              <Grid item xs={6} sm={4}>
-                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Budget Cap:</Typography>
-                                <Typography variant="body2" sx={{ fontWeight: 600 }}>₹{formatCurrency(c.budget)}</Typography>
-                              </Grid>
-                              <Grid item xs={12}>
-                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Areas Discussed:</Typography>
-                                <Typography variant="body2">{c.areas || 'All Mohali Sector Block Zones'}</Typography>
-                              </Grid>
-                              <Grid item xs={12}>
-                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Remarks/Follow-Up:</Typography>
-                                <Typography variant="body2">{c.remarks} {c.followUpDate ? `• Next Call: ${c.followUpDate}` : ''}</Typography>
-                              </Grid>
-                            </Grid>
-                          </Paper>
-                        ))
-                      )}
-                    </Box>
-                  )}
+                      </Paper>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Paper sx={{ p: 3, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Icons.MapPin size={20} color="#16A34A" />
+                          Physical Visits & Meetings
+                        </Typography>
+                        <Typography variant="body2" sx={{ color: '#64748B', mb: 2.5 }}>
+                          Report details of physical site visits, document collections, and firm meetings.
+                        </Typography>
+                        <Button 
+                          variant="contained" 
+                          size="small" 
+                          color="success"
+                          startIcon={<Icons.Users size={16} />}
+                          onClick={() => {
+                            setMeetingOutcome('');
+                            setMeetingDocCollected('');
+                            setSelectedMeetingId((connections?.meetings || []).find(m => m.status === 'Assigned')?.id || '');
+                            setMeetingReportDialogOpen(true);
+                          }}
+                          disabled={!(connections?.meetings || []).some(m => m.status === 'Assigned')}
+                          sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 700 }}
+                        >
+                          Submit Visit Report
+                        </Button>
+                      </Paper>
+                    </Grid>
+                  </Grid>
 
-                  {/* Tab 3: Dealer activity timeline */}
-                  {activeTab === 3 && (
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Consolidated Dealer Activity Timeline</Typography>
-                      {connections.timeline?.length === 0 ? (
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No activity timeline logs recorded.</Typography>
-                      ) : (
-                        <Box sx={{ borderLeft: '2px solid #E2E8F0', pl: 3, ml: 1, position: 'relative' }}>
-                          {connections.timeline.map((evt, idx) => (
-                            <Box key={idx} sx={{ mb: 3, position: 'relative' }}>
-                              <Box sx={{ position: 'absolute', left: '-35px', top: '0px', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '2px solid #2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
-                                <DynamicIcon name={evt.icon || 'Circle'} size={12} />
-                              </Box>
-                              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>{evt.date}</Typography>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>{evt.event}</Typography>
-                              <Typography variant="body2" sx={{ color: '#475569', fontSize: '13px' }}>{evt.details}</Typography>
-                            </Box>
-                          ))}
-                        </Box>
-                      )}
+                  {/* 2. Admin Visit Assignments */}
+                  <Paper sx={{ p: 3, mb: 4, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Icons.UserCheck size={22} color="#F59E0B" />
+                      Assigned Site Visits & Physical Meetings
+                    </Typography>
+                    
+                    {(connections?.meetings || []).filter(m => m.status === 'Assigned').length === 0 ? (
+                      <Box sx={{ p: 3, textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px dashed #E2E8F0' }}>
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                          No active physical meeting assigned. Admin can assign meetings via the Meetings module.
+                        </Typography>
+                      </Box>
+                    ) : (
+                      (connections.meetings || []).filter(m => m.status === 'Assigned').map(m => (
+                        <Paper key={m.id} sx={{ p: 2.5, mb: 2, border: '1px solid #FEF3C7', backgroundColor: '#FFFBEB', borderRadius: '12px', boxShadow: 'none' }}>
+                          <Box display="flex" justifyContent="space-between" mb={1.5}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#D97706' }}>
+                              Meeting: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/dealer_meetings/${m.id}`)}>{m.purpose || 'Dealer Intro'} ({m.id})</span>
+                            </Typography>
+                            <Chip label="Visit Assigned" color="warning" size="small" sx={{ fontWeight: 800, fontSize: '10px', borderRadius: '6px' }} />
+                          </Box>
+                          <Typography variant="body2" sx={{ mb: 1 }}>
+                            RM Assigned: <strong><span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${m.assignedEmployeeId}`)}>{m.assignedEmployeeName}</span></strong>
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: '#475569' }}>
+                            <strong>Visit Prep Checklist / Remarks:</strong> {m.prepRemarks || 'Please review past calling remarks below.'}
+                          </Typography>
+                        </Paper>
+                      ))
+                    )}
+                  </Paper>
+
+                  {/* 3. General Remarks & Comments Log */}
+                  <Paper sx={{ p: 3, mb: 4, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>
+                      General Remarks & Comments
+                    </Typography>
+                    <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 3 }}>
+                      <Grid container spacing={1.5}>
+                        <Grid item xs={12} sm={10}>
+                          <TextField 
+                            placeholder="Type dealer remarks or brokerage disputes..."
+                            fullWidth
+                            size="small"
+                            value={remarkInput}
+                            onChange={(e) => setRemarkInput(e.target.value)}
+                          />
+                        </Grid>
+                        <Grid item xs={12} sm={2}>
+                          <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB', textTransform: 'none', fontWeight: 700, borderRadius: '8px' }}>
+                            Post Log
+                          </Button>
+                        </Grid>
+                      </Grid>
                     </Box>
-                  )}
+                    
+                    {connections?.remarks?.length === 0 ? (
+                      <Typography variant="body2" sx={{ color: '#94A3B8' }}>No remarks posted yet.</Typography>
+                    ) : (
+                      connections.remarks.map((rem, idx) => (
+                        <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC', borderRadius: '8px' }}>
+                          <Box display="flex" justifyContent="space-between" mb={0.5}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{rem.employeeName}</Typography>
+                            <Typography variant="caption" sx={{ color: '#94A3B8' }}>{rem.dateTime}</Typography>
+                          </Box>
+                          <Typography variant="body2" sx={{ color: '#4B5563', fontStyle: 'italic' }}>"{rem.comment}"</Typography>
+                        </Paper>
+                      ))
+                    )}
+                  </Paper>
+
+                  {/* 4. Complete Outreach Activity Timeline */}
+                  <Paper sx={{ p: 3, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 3, fontFamily: 'Poppins' }}>
+                      Complete Outreach Timeline (Calls, Visits & Meetings)
+                    </Typography>
+                    
+                    {connections.timeline?.length === 0 ? (
+                      <Typography variant="body2" sx={{ color: '#94A3B8', py: 2 }}>No activity timeline logs recorded.</Typography>
+                    ) : (
+                      <Box sx={{ borderLeft: '2px solid #E2E8F0', pl: 3, ml: 1, position: 'relative' }}>
+                        {connections.timeline.map((evt, idx) => (
+                          <Box key={idx} sx={{ mb: 3.5, position: 'relative' }}>
+                            <Box sx={{ position: 'absolute', left: '-35px', top: '0px', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '2px solid #2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                              <DynamicIcon name={evt.icon || 'Circle'} size={12} />
+                            </Box>
+                            <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>{evt.date}</Typography>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', mt: 0.2 }}>{evt.event}</Typography>
+                            <Typography variant="body2" sx={{ color: '#475569', fontSize: '13px', mt: 0.5 }}>{evt.details}</Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Paper>
                 </Box>
               )}
-
               {/* 4. OTHER GENERIC BACKWARD COMPATIBLE TABS */}
               {!(moduleName === 'customers' || moduleName === 'properties' || moduleName === 'dealers') && (
                 <Box>

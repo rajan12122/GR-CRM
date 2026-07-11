@@ -35,7 +35,7 @@ import {
 import * as Icons from 'lucide-react';
 import { Geolocation } from '@capacitor/geolocation';
 import { Capacitor } from '@capacitor/core';
-import { useApp } from '../context/AppContext';
+import { useApp, API_BASE_URL } from '../context/AppContext';
 
 const parseTimeStr = (timeStr) => {
   if (!timeStr || timeStr === '--' || timeStr === '') return null;
@@ -184,7 +184,7 @@ const Attendance = () => {
         });
       }
       
-      const res = await fetch('/api/upload', {
+      const res = await fetch(`${API_BASE_URL}/upload`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

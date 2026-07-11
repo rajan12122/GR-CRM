@@ -377,7 +377,7 @@ const Attendance = () => {
     const captureLocation = async () => {
       if (Capacitor.isNativePlatform()) {
         try {
-          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 });
+          const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
           if (pos) {
             setSharingError("");
             await logEmployeeLocation(pos.coords.latitude, pos.coords.longitude, 'sharing');
@@ -407,7 +407,7 @@ const Attendance = () => {
               setSharingError("Failed to lock location. Please enable GPS permissions.");
             }
           },
-          { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 }
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
       }
     };
@@ -429,7 +429,7 @@ const Attendance = () => {
 
         // Watch position updates for instant movement updates
         const watchId = await Geolocation.watchPosition(
-          { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
           async (pos, err) => {
             if (err) {
               const isPerm = err.code === 1 || (err.message && err.message.toLowerCase().includes('permission'));
@@ -486,7 +486,7 @@ const Attendance = () => {
             console.warn("GPS temporary lock delay:", err);
           }
         },
-        { enableHighAccuracy: true, timeout: 30000, maximumAge: 10000 }
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
       );
     }
 

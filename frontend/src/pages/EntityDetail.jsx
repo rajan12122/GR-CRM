@@ -24,7 +24,18 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  IconButton
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp, API_BASE_URL } from '../context/AppContext';
@@ -52,11 +63,81 @@ const EntityDetail = () => {
   const [connections, setConnections] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState(0);
+  
+  // Custom dialogs & form states for ERP features
+  const [queryDialogOpen, setQueryDialogOpen] = useState(false);
+  const [pitchDialogOpen, setPitchDialogOpen] = useState(false);
+  const [callDialogOpen, setCallDialogOpen] = useState(false);
+  const [meetingReportDialogOpen, setMeetingReportDialogOpen] = useState(false);
+  
+  const [selectedMeetingId, setSelectedMeetingId] = useState('');
+  const [meetingOutcome, setMeetingOutcome] = useState('');
+  const [meetingDocCollected, setMeetingDocCollected] = useState('');
+  
+  const [pitchPropertyId, setPitchPropertyId] = useState('');
+  const [pitchEmployeeId, setPitchEmployeeId] = useState('');
+  const [pitchMethod, setPitchMethod] = useState('Call');
+  const [pitchInterest, setPitchInterest] = useState('Interested');
+  const [pitchPrice, setPitchPrice] = useState('');
+  const [pitchFollowUp, setPitchFollowUp] = useState('');
+  const [pitchRemarks, setPitchRemarks] = useState('');
+  const [pitchWarning, setPitchWarning] = useState('');
+
+  const [queryEmployeeId, setQueryEmployeeId] = useState('');
+  const [queryType, setQueryType] = useState('Buy Property');
+  const [queryBudget, setQueryBudget] = useState('');
+  const [queryDemand, setQueryDemand] = useState('');
+  const [queryRCI, setQueryRCI] = useState('Residential');
+  const [queryPropType, setQueryPropType] = useState('Villa');
+  const [queryLocality, setQueryLocality] = useState('');
+  const [querySector, setQuerySector] = useState('');
+  const [querySize, setQuerySize] = useState('');
+  const [queryRemarks, setQueryRemarks] = useState('');
+
+  const [callDuration, setCallDuration] = useState('');
+  const [callBudget, setCallBudget] = useState('');
+  const [callAreas, setCallAreas] = useState('');
+  const [callFollowUp, setCallFollowUp] = useState('');
+  const [callRemarks, setCallRemarks] = useState('');
 
   // Map dialog state
   const [mapOpen, setMapOpen] = useState(false);
   const [activeMapShift, setActiveMapShift] = useState(null);
   const [activeSalarySlip, setActiveSalarySlip] = useState(null);
+
+  const tabs = useMemo(() => {
+    const list = [];
+    if (!connections) return list;
+    
+    if (moduleName === 'customers') {
+      list.push({ label: 'Overview', icon: 'User' });
+      list.push({ label: `Queries (${connections.queries?.length || 0})`, icon: 'HelpCircle' });
+      list.push({ label: `Deals (${connections.deals?.length || 0})`, icon: 'Handshake' });
+      list.push({ label: `Pitches (${connections.pitches?.length || 0})`, icon: 'Send' });
+      list.push({ label: 'Activity Timeline', icon: 'Clock' });
+      list.push({ label: `Docs & Files (${connections.documents?.length || 0})`, icon: 'FileText' });
+    } else if (moduleName === 'properties') {
+      list.push({ label: 'Overview', icon: 'Home' });
+      list.push({ label: `Pitches & Showings (${connections.pitches?.length || 0})`, icon: 'Eye' });
+      list.push({ label: 'Owner History', icon: 'UserCheck' });
+      list.push({ label: `Docs Vault (${connections.documents?.length || 0})`, icon: 'FolderOpen' });
+      list.push({ label: `Deals History (${connections.deals?.length || 0})`, icon: 'TrendingUp' });
+      list.push({ label: 'Activity Timeline', icon: 'Clock' });
+    } else if (moduleName === 'dealers') {
+      list.push({ label: 'Overview', icon: 'Building' });
+      list.push({ label: `Outreach Prep & Logs (${connections.meetings?.length || 0})`, icon: 'Briefcase' });
+      list.push({ label: `Outreach Calls (${connections.calls?.length || 0})`, icon: 'PhoneCall' });
+      list.push({ label: 'Activity Timeline', icon: 'Clock' });
+    } else {
+      list.push({ label: 'Salesforce 360° Connections', icon: 'Layers' });
+      list.push({ label: `Remarks History (${connections.remarks?.length || 0})`, icon: 'MessageSquare' });
+      list.push({ label: `Documents/Files (${connections.documents?.length || 0})`, icon: 'FileText' });
+      if (moduleName === 'employees') {
+        list.push({ label: `Odometer & Travel Logs (${travelLogs.length})`, icon: 'Compass' });
+      }
+    }
+    return list;
+  }, [moduleName, connections, travelLogs]);
 
   const travelLogs = useMemo(() => {
     return (connections?.attendance || [])
@@ -203,6 +284,25 @@ const EntityDetail = () => {
       loadData();
     }
   }, [moduleName, id, metadata]);
+
+  // Reset tab to 0 on route change
+  useEffect(() => {
+    setActiveTab(0);
+  }, [moduleName, id]);
+
+  useEffect(() => {
+    if (pitchPropertyId && connections?.pitches) {
+      const alreadyPitched = connections.pitches.find(p => String(p.propertyId) === String(pitchPropertyId));
+      if (alreadyPitched) {
+        setPitchWarning(`Warning: This property was already pitched to this client on ${alreadyPitched.pitchDate} by ${alreadyPitched.employeeName || 'another RM'}!`);
+      } else {
+        setPitchWarning('');
+      }
+    } else {
+      setPitchWarning('');
+    }
+  }, [pitchPropertyId, connections]);
+
 
   if (!metadata) return null;
 
@@ -584,508 +684,1021 @@ const EntityDetail = () => {
 
         {/* Right Side: Tabbed Salesforce 360 Linked Lists */}
         <Grid item xs={12} md={8}>
-          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', minHeight: '500px' }}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', minHeight: '560px', display: 'flex', flexDirection: 'column' }}>
             <Tabs 
               value={activeTab} 
               onChange={(e, val) => setActiveTab(val)}
               variant="scrollable"
-              sx={{ borderBottom: '1px solid #E2E8F0', px: 2, pt: 1 }}
+              scrollButtons="auto"
+              sx={{ borderBottom: '1px solid #E2E8F0', px: 2, pt: 1, backgroundColor: '#F8FAFC', borderTopLeftRadius: '16px', borderTopRightRadius: '16px' }}
             >
-              <Tab label="Salesforce 360° Connections" sx={{ fontWeight: 600 }} />
-              <Tab label={`Remarks History (${connections?.remarks?.length || 0})`} sx={{ fontWeight: 600 }} />
-              <Tab label={`Documents/Files (${connections?.documents?.length || 0})`} sx={{ fontWeight: 600 }} />
-              {moduleName === 'employees' && (
-                <Tab label={`Odometer & Travel Logs (${travelLogs.length})`} sx={{ fontWeight: 600 }} />
-              )}
+              {tabs.map((t, idx) => (
+                <Tab 
+                  key={idx} 
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <DynamicIcon name={t.icon} size={16} />
+                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '13px', textTransform: 'none' }}>
+                        {t.label}
+                      </Typography>
+                    </Box>
+                  } 
+                />
+              ))}
             </Tabs>
 
-            <Box sx={{ p: 3 }}>
-              {/* TAB 1: 360° Connected lists */}
-              {activeTab === 0 && (
+            <Box sx={{ p: 3, flexGrow: 1 }}>
+              {/* 1. CUSTOMER TABS */}
+              {moduleName === 'customers' && (
                 <Box>
-                  {connections ? (
+                  {/* Tab 0: Customer Overview & Remarks */}
+                  {activeTab === 0 && (
                     <Box>
-                      {/* CUSTOMER 360 VIEW */}
-                      {moduleName === 'customers' && (
-                        <Grid container spacing={3}>
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
-                              Sales Representative / RM Details
-                            </Typography>
-                            {connections.employee ? (
-                              <Paper sx={{ p: 2, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{connections.employee.name}</Typography>
-                                <Typography variant="caption" sx={{ color: '#64748B' }}>Email: {connections.employee.email} • Phone: {connections.employee.phone}</Typography>
-                              </Paper>
-                            ) : (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No RM Assigned.</Typography>
-                            )}
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Client Remarks & Feedback Logs</Typography>
+                      {/* Remark Post Form */}
+                      <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 3 }}>
+                        <Grid container spacing={1.5}>
+                          <Grid item xs={12} sm={10}>
+                            <TextField 
+                              placeholder="Enter call updates, meeting reports, or comments..."
+                              fullWidth
+                              size="small"
+                              value={remarkInput}
+                              onChange={(e) => setRemarkInput(e.target.value)}
+                            />
                           </Grid>
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
-                              Site Visits History ({connections.site_visits?.length || 0})
-                            </Typography>
-                            {connections.site_visits?.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No site visits logged for this customer.</Typography>
-                            ) : (
-                              connections.site_visits.map(sv => (
-                                <Paper key={sv.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>Property: {sv.property?.name || sv.propertyId}</Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Date: {sv.date} • Result Outcome: <strong>{sv.result}</strong></Typography>
-                                </Paper>
-                              ))
-                            )}
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
+                              Post Log
+                            </Button>
                           </Grid>
                         </Grid>
-                      )}
-
-                      {/* PROPERTY 360 VIEW */}
-                      {moduleName === 'properties' && (
-                        <Grid container spacing={3}>
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
-                              Listing Property View Counter
-                            </Typography>
-                            <Paper sx={{ p: 2.5, backgroundColor: 'rgba(37,99,235,0.05)', border: '1px solid rgba(37,99,235,0.2)', boxShadow: 'none', mb: 3 }}>
-                              <Typography variant="h3" sx={{ fontWeight: 800, color: '#2563EB', fontFamily: 'Poppins' }}>
-                                {connections.viewsCount} Customer Showings
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: '#64748B' }}>
-                                Auto-generated view count tracking site-visit logs.
-                              </Typography>
-                            </Paper>
-                          </Grid>
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
-                              Showing Customers History
-                            </Typography>
-                            {connections.viewsCount === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No showings registered.</Typography>
-                            ) : (
-                              connections.site_visits.map((sv, index) => (
-                                <Paper key={index} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: {sv.customer?.name || sv.customerId}</Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                                    Visit Date: {sv.date} • RM Showed: <EntityTooltip moduleName="employees" id={sv.employeeId}><strong style={{ borderBottom: '1px dotted #94A3B8', cursor: 'help' }}>{sv.employeeId}</strong></EntityTooltip> • Outcome: <strong>{sv.result}</strong>
-                                  </Typography>
-                                </Paper>
-                              ))
-                            )}
-                          </Grid>
-                        </Grid>
-                      )}
-
-                      {/* EMPLOYEE 360 VIEW */}
-                      {moduleName === 'employees' && (
-                        <Grid container spacing={3}>
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
-                              Assigned Customers ({connections.customers?.length || 0})
-                            </Typography>
-                            {connections.customers?.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No customers handled.</Typography>
-                            ) : (
-                              connections.customers.map(c => (
-                                <Paper key={c.id} sx={{ p: 1.5, mb: 1, border: '1px solid #E2E8F0', boxShadow: 'none', cursor: 'pointer' }} onClick={() => navigate(`/module/customers/${c.id}`)}>
-                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748B' }}>Stage: {c.stage} • Phone: {c.phone}</Typography>
-                                </Paper>
-                              ))
-                            )}
-                          </Grid>
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
-                              Outstanding Tasks ({connections.tasks?.length || 0})
-                            </Typography>
-                            {connections.tasks?.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pending tasks assigned.</Typography>
-                            ) : (
-                              connections.tasks.map(t => (
-                                <Paper key={t.id} sx={{ p: 1.5, mb: 1, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{t.title}</Typography>
-                                  <Typography variant="caption" sx={{ color: '#64748B' }}>Due: {t.dueDate} • Priority: {t.priority} • Status: {t.status}</Typography>
-                                </Paper>
-                              ))
-                            )}
-                          </Grid>
-
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Icons.Clock size={18} style={{ color: '#2563EB' }} />
-                              Attendance Timing Logs History ({connections.attendance?.length || 0})
-                            </Typography>
-                            {!connections.attendance || connections.attendance.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No attendance timing logs found.</Typography>
-                            ) : (
-                              <Grid container spacing={2}>
-                                {connections.attendance.map((att, idx) => (
-                                  <Grid item xs={12} sm={4} key={idx}>
-                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
-                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                                          {att.date}
-                                        </Typography>
-                                        <Chip 
-                                          label={att.status} 
-                                          size="small" 
-                                          sx={{ 
-                                            backgroundColor: att.status === 'Present' ? 'rgba(34,197,94,0.1)' : att.status === 'Late' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
-                                            color: att.status === 'Present' ? '#22C55E' : att.status === 'Late' ? '#F59E0B' : '#EF4444',
-                                            fontWeight: 700,
-                                            fontSize: '10px'
-                                          }} 
-                                        />
-                                      </Box>
-                                      <Typography variant="body2" sx={{ color: '#475569' }}>
-                                        In Time: <strong>{att.inTime}</strong>
-                                      </Typography>
-                                      <Typography variant="body2" sx={{ color: '#475569' }}>
-                                        Out Time: <strong>{att.outTime || '---'}</strong>
-                                      </Typography>
-                                    </Paper>
-                                  </Grid>
-                                ))}
-                              </Grid>
-                            )}
-                          </Grid>
-
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Icons.DollarSign size={18} style={{ color: '#16A34A' }} />
-                              Salary Settlement slips ({connections.salaries?.length || 0})
-                            </Typography>
-                            {!connections.salaries || connections.salaries.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No salary settlements found.</Typography>
-                            ) : (
-                              <Grid container spacing={2}>
-                                {connections.salaries.map((sal, idx) => (
-                                  <Grid item xs={12} sm={4} key={idx}>
-                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
-                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                                          Month: {sal.month}/{sal.year}
-                                        </Typography>
-                                        <Chip 
-                                          label={sal.status || 'Draft'} 
-                                          size="small" 
-                                          sx={{ 
-                                            backgroundColor: sal.status === 'Locked' ? 'rgba(15,23,42,0.1)' : sal.status === 'Approved' ? 'rgba(34,197,94,0.1)' : 'rgba(245,158,11,0.1)',
-                                            color: sal.status === 'Locked' ? '#0F172A' : sal.status === 'Approved' ? '#22C55E' : '#F59E0B',
-                                            fontWeight: 700,
-                                            fontSize: '10px'
-                                          }} 
-                                        />
-                                      </Box>
-                                      <Typography variant="body2" sx={{ color: '#475569', mb: 1.5 }}>
-                                        Net Payable: <strong>₹{formatCurrency(sal.netPay)}</strong>
-                                      </Typography>
-                                      <Button 
-                                        variant="outlined" 
-                                        size="small" 
-                                        fullWidth 
-                                        sx={{ textTransform: 'none', borderRadius: '8px', fontSize: '12px' }}
-                                        onClick={() => setActiveSalarySlip(sal)}
-                                      >
-                                        View & Print Slip
-                                      </Button>
-                                    </Paper>
-                                  </Grid>
-                                ))}
-                              </Grid>
-                            )}
-                          </Grid>
-
-                          <Grid item xs={12}>
-                            <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                              <Icons.MapPin size={18} style={{ color: '#EF4444' }} />
-                              Location Tracking Shift History
-                            </Typography>
-                            {!locationHistoryPastMonth || locationHistoryPastMonth.length === 0 ? (
-                              <Typography variant="body2" sx={{ color: '#94A3B8' }}>No completed location tracking shifts found in the past 30 days.</Typography>
-                            ) : (
-                              <Grid container spacing={2}>
-                                {locationHistoryPastMonth.map((hist, idx) => (
-                                  <Grid item xs={12} sm={6} key={idx}>
-                                    <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
-                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                                          Shift Date: {hist.date}
-                                        </Typography>
-                                        <Box display="flex" alignItems="center" gap={1}>
-                                          <Chip label={`${hist.totalKilometers || 0} km`} color="primary" size="small" sx={{ fontWeight: 700, fontSize: '10px' }} />
-                                          {hist.path && hist.path.length > 0 && (
-                                            <Button 
-                                              variant="outlined" 
-                                              size="small"
-                                              sx={{ fontSize: '10px', py: 0.2, px: 1, height: 24, textTransform: 'none' }}
-                                              onClick={() => {
-                                                setActiveMapShift(hist);
-                                                setMapOpen(true);
-                                              }}
-                                            >
-                                              View Map
-                                            </Button>
-                                          )}
-                                        </Box>
-                                      </Box>
-                                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
-                                        Registered coordinates: {hist.path?.length || 0} points
-                                      </Typography>
-                                      {hist.path && hist.path.length > 0 && (
-                                        <Box>
-                                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#0F172A', display: 'block', mb: 0.5 }}>
-                                            Route Points (Chronological):
-                                          </Typography>
-                                          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, maxHeight: 80, overflowY: 'auto' }}>
-                                            {hist.path.map((p, pIdx) => (
-                                              <Chip 
-                                                key={pIdx} 
-                                                label={`${p.lat.toFixed(4)}, ${p.lng.toFixed(4)}`} 
-                                                size="small" 
-                                                variant="outlined"
-                                                sx={{ fontSize: '8px', height: 16 }} 
-                                              />
-                                            ))}
-                                          </Box>
-                                        </Box>
-                                      )}
-                                    </Paper>
-                                  </Grid>
-                                ))}
-                              </Grid>
-                            )}
-                          </Grid>
-                        </Grid>
-                      )}
-                    </Box>
-                  ) : (
-                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>This module does not support complex 360 relationship resolution.</Typography>
-                  )}
-                </Box>
-              )}
-
-              {/* TAB 2: Remarks System */}
-              {activeTab === 1 && (
-                <Box>
-                  {/* Create Remark Form */}
-                  <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 4 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Write Remark Comment</Typography>
-                    <Grid container spacing={1.5}>
-                      <Grid item xs={12} sm={10}>
-                        <TextField 
-                          placeholder="Type customer call updates, meeting feedback, builder registry issues, etc. (Remarks cannot be modified after posting)"
-                          fullWidth
-                          size="small"
-                          value={remarkInput}
-                          onChange={(e) => setRemarkInput(e.target.value)}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
-                          Post
-                        </Button>
-                      </Grid>
-                    </Grid>
-                  </Box>
-
-                  {/* Remarks History */}
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Remarks History Log</Typography>
-                  {connections?.remarks?.length === 0 ? (
-                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>No remarks posted yet.</Typography>
-                  ) : (
-                    <List disablePadding>
-                      {connections?.remarks?.map((rem, index) => (
-                        <Paper key={index} sx={{ p: 2, mb: 2, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
-                          <Box display="flex" justifyContent="space-between" mb={0.5}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>{rem.employeeName}</Typography>
-                            <Typography variant="caption" sx={{ color: '#94A3B8' }}>{rem.dateTime}</Typography>
-                          </Box>
-                          <Typography variant="body2" sx={{ color: '#4B5563', fontStyle: 'italic' }}>
-                            "{rem.comment}"
-                          </Typography>
-                        </Paper>
-                      ))}
-                    </List>
-                  )}
-                </Box>
-              )}
-
-              {/* TAB 3: Documents and Files */}
-              {activeTab === 2 && (
-                <Box>
-                  {/* Upload Simulator */}
-                  <Box component="form" onSubmit={handleUploadDoc} sx={{ mb: 4, p: 2, border: '1px dashed #CBD5E1', borderRadius: '12px' }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Attach PDF / Document Details</Typography>
-                    
-                    <Box display="flex" alignItems="center" gap={1.5} mb={2}>
-                      <input 
-                        type="file" 
-                        id="direct-file-input" 
-                        style={{ display: 'none' }} 
-                        onChange={handleFileChange} 
-                      />
-                      <label htmlFor="direct-file-input">
-                        <Button 
-                          variant="outlined" 
-                          component="span" 
-                          startIcon={<Icons.Upload size={16} />} 
-                          sx={{ textTransform: 'none', fontWeight: 600 }}
-                        >
-                          Choose Local File / Photo
-                        </Button>
-                      </label>
-                      {selectedFile && (
-                        <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                          Selected: {selectedFile.name}
-                        </Typography>
-                      )}
-                      {uploadingFile && <CircularProgress size={20} />}
-                    </Box>
-
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={5}>
-                        <TextField 
-                          placeholder="Document Title (e.g. NOC Certificate)"
-                          size="small"
-                          fullWidth
-                          value={docName}
-                          onChange={(e) => setDocName(e.target.value)}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={5}>
-                        <TextField 
-                          placeholder="File URL or Link"
-                          size="small"
-                          fullWidth
-                          value={docUrl}
-                          onChange={(e) => setDocUrl(e.target.value)}
-                        />
-                      </Grid>
-                      <Grid item xs={12} sm={2}>
-                        <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
-                          Link File
-                        </Button>
-                      </Grid>
-                    </Grid>
-                  </Box>
-
-                  {/* Documents List */}
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Linked Documents Database</Typography>
-                  {connections?.documents?.length === 0 ? (
-                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>No files attached yet.</Typography>
-                  ) : (
-                    connections.documents.map((doc, index) => (
-                      <Paper key={index} sx={{ p: 2, mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                          <Icons.FileText size={24} color="#2563EB" />
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{doc.name}</Typography>
-                            <Typography variant="caption" sx={{ color: '#64748B' }}>Uploaded: {doc.dateAdded} • By: {doc.uploadedBy}</Typography>
-                          </Box>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <Button variant="outlined" size="small" component="a" href={doc.fileUrl} download sx={{ textTransform: 'none' }}>
-                            Download
-                          </Button>
-                          <IconButton size="small" color="error" onClick={() => handleDeleteDoc(doc.id)}>
-                            <Icons.Trash2 size={16} />
-                          </IconButton>
-                        </Box>
-                      </Paper>
-                    ))
-                  )}
-                </Box>
-              )}
-
-              {/* TAB 4: Odometer & Travel Logs */}
-              {activeTab === 3 && moduleName === 'employees' && (
-                <Box>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Bike Odometer & Travel History Log</Typography>
-                  {travelLogs.length === 0 ? (
-                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>No odometer readings captured for this employee.</Typography>
-                  ) : (
-                    <Box display="flex" flexDirection="column" gap={2}>
-                      {travelLogs.map((log, index) => {
-                        const netKm = Math.max(0, (Number(log.odometerEnd) || 0) - (Number(log.odometerStart) || 0) - (Number(log.personalUseKm) || 0));
-                        const dailyAllowance = netKm * 3; // Default ₹3/KM allowance
-                        
-                        return (
-                          <Paper key={index} sx={{ p: 3, border: '1px solid #E2E8F0', boxShadow: 'none', borderRadius: '12px' }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" borderBottom="1px solid #F1F5F9" pb={1.5} mb={2}>
-                              <Box display="flex" alignItems="center" gap={1}>
-                                <Icons.Calendar size={16} style={{ color: '#2563EB' }} />
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{log.date}</Typography>
-                              </Box>
-                              <Chip 
-                                label={`${netKm} KM Driven`} 
-                                color="primary" 
-                                size="small" 
-                                sx={{ fontWeight: 700, backgroundColor: '#2563EB' }} 
-                              />
+                      </Box>
+                      {/* Remarks List */}
+                      {connections?.remarks?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No remarks posted yet.</Typography>
+                      ) : (
+                        connections.remarks.map((rem, idx) => (
+                          <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                            <Box display="flex" justifyContent="space-between" mb={0.5}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{rem.employeeName}</Typography>
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>{rem.dateTime}</Typography>
                             </Box>
+                            <Typography variant="body2" sx={{ color: '#4B5563', fontStyle: 'italic' }}>"{rem.comment}"</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
 
-                            <Grid container spacing={3}>
-                              {/* Punch In Details */}
-                              <Grid item xs={12} sm={4}>
-                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600, mb: 1 }}>PUNCH IN START</Typography>
-                                <Typography variant="body2" sx={{ mb: 0.5 }}>Time: <strong>{log.inTime}</strong></Typography>
-                                <Typography variant="body2" sx={{ mb: 1 }}>Reading: <strong>{log.odometerStart || 0} KM</strong></Typography>
-                                {log.odometerStartPhoto ? (
-                                  <Box sx={{ mt: 1 }}>
-                                    <a href={log.odometerStartPhoto} target="_blank" rel="noreferrer">
-                                      <img 
-                                        src={log.odometerStartPhoto} 
-                                        alt="Start Odometer" 
-                                        style={{ width: '100%', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E2E8F0' }} 
-                                      />
-                                    </a>
-                                  </Box>
-                                ) : (
-                                  <Typography variant="caption" sx={{ color: '#94A3B8', fontStyle: 'italic' }}>No start photo captured</Typography>
-                                )}
+                  {/* Tab 1: Queries */}
+                  {activeTab === 1 && (
+                    <Box>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Active Property Queries</Typography>
+                        <Button 
+                          variant="contained" 
+                          size="small" 
+                          startIcon={<Icons.Plus size={16} />}
+                          onClick={() => {
+                            setQueryEmployeeId(record.assignedEmployeeId || '');
+                            setQueryDialogOpen(true);
+                          }}
+                        >
+                          Quick Log Query
+                        </Button>
+                      </Box>
+                      {connections.queries?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No property queries registered for this client.</Typography>
+                      ) : (
+                        connections.queries.map(q => (
+                          <Paper key={q.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Chip 
+                                  label={q.queryType} 
+                                  color={q.queryType === 'Sell Property' ? 'success' : 'primary'} 
+                                  size="small"
+                                  sx={{ fontWeight: 700 }}
+                                />
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Query ID: {q.id}</Typography>
+                              </Box>
+                              <Box display="flex" gap={1}>
+                                <Chip 
+                                  label={q.status} 
+                                  color={q.status === 'Approved' ? 'success' : q.status === 'Rejected' ? 'error' : 'warning'}
+                                  size="small"
+                                  sx={{ fontWeight: 700 }}
+                                />
+                                <Chip 
+                                  label={q.stage} 
+                                  variant="outlined"
+                                  color="secondary"
+                                  size="small"
+                                  sx={{ fontWeight: 700 }}
+                                />
+                              </Box>
+                            </Box>
+                            <Grid container spacing={2}>
+                              <Grid item xs={6} sm={4}>
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>R/C/I:</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{q.r_c_i || 'Any'}</Typography>
                               </Grid>
-
-                              {/* Punch Out Details */}
-                              <Grid item xs={12} sm={4}>
-                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600, mb: 1 }}>PUNCH OUT END</Typography>
-                                <Typography variant="body2" sx={{ mb: 0.5 }}>Time: <strong>{log.outTime || '--'}</strong></Typography>
-                                <Typography variant="body2" sx={{ mb: 1 }}>Reading: <strong>{log.odometerEnd ? `${log.odometerEnd} KM` : '--'}</strong></Typography>
-                                {log.odometerEndPhoto ? (
-                                  <Box sx={{ mt: 1 }}>
-                                    <a href={log.odometerEndPhoto} target="_blank" rel="noreferrer">
-                                      <img 
-                                        src={log.odometerEndPhoto} 
-                                        alt="End Odometer" 
-                                        style={{ width: '100%', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E2E8F0' }} 
-                                      />
-                                    </a>
-                                  </Box>
-                                ) : (
-                                  <Typography variant="caption" sx={{ color: '#94A3B8', fontStyle: 'italic' }}>No end photo captured</Typography>
-                                )}
+                              <Grid item xs={6} sm={4}>
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Property Type:</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{q.propertyType || 'Any'}</Typography>
                               </Grid>
-
-                              {/* Calculation Summary */}
-                              <Grid item xs={12} sm={4}>
-                                <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', backgroundColor: '#F8FAFC', borderRadius: '8px', p: 2, height: '100%', boxSizing: 'border-box' }}>
-                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600, mb: 1 }}>CALCULATION LOG</Typography>
-                                  <Typography variant="body2" sx={{ mb: 0.5 }}>Odometer Start: <strong>{log.odometerStart || 0} KM</strong></Typography>
-                                  <Typography variant="body2" sx={{ mb: 0.5 }}>Odometer End: <strong>{log.odometerEnd || 0} KM</strong></Typography>
-                                  <Typography variant="body2" sx={{ mb: 0.5, color: '#EF4444' }}>Personal Use: <strong>-{log.personalUseKm || 0} KM</strong></Typography>
-                                  <Divider sx={{ my: 1 }} />
-                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#16A34A', mb: 0.5 }}>Net Distance: {netKm} KM</Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#2563EB' }}>Allowance: ₹{dailyAllowance.toLocaleString('en-IN')} (at ₹3/KM)</Typography>
-                                </Box>
+                              {q.budget && q.budget > 0 ? (
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Budget limit:</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#2563EB' }}>₹{formatCurrency(q.budget)}</Typography>
+                                </Grid>
+                              ) : null}
+                              {q.demand && q.demand > 0 ? (
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Expected Price:</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#16A34A' }}>₹{formatCurrency(q.demand)}</Typography>
+                                </Grid>
+                              ) : null}
+                              <Grid item xs={12}>
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Requirements & Locality:</Typography>
+                                <Typography variant="body2">{q.locality} {q.sector_block ? `(Block ${q.sector_block})` : ''} • Size: {q.size || 'Any'} • Remarks: {q.remarks}</Typography>
                               </Grid>
                             </Grid>
                           </Paper>
-                        );
-                      })}
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 2: Deals */}
+                  {activeTab === 2 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Deals & Transaction History</Typography>
+                      {connections.deals?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No real estate bookings/deals recorded for this client.</Typography>
+                      ) : (
+                        connections.deals.map(d => {
+                          const isBuyer = String(d.customerId) === String(id);
+                          return (
+                            <Paper key={d.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Deal: {d.id}</Typography>
+                                <Box display="flex" gap={1}>
+                                  <Chip 
+                                    label={isBuyer ? 'Buyer Client' : 'Seller Client'} 
+                                    color={isBuyer ? 'primary' : 'success'} 
+                                    size="small"
+                                    sx={{ fontWeight: 700 }}
+                                  />
+                                  <Chip 
+                                    label={d.status} 
+                                    color={d.status === 'Closed' ? 'success' : d.status === 'Cancelled' ? 'error' : 'warning'}
+                                    size="small"
+                                    sx={{ fontWeight: 700 }}
+                                  />
+                                </Box>
+                              </Box>
+                              <Grid container spacing={2}>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Property ID:</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${d.propertyId}`)}>
+                                    {d.propertyId}
+                                  </Typography>
+                                </Grid>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Sale Value:</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(d.salePrice)}</Typography>
+                                </Grid>
+                                <Grid item xs={6} sm={4}>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Commission/Brokerage:</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#16A34A' }}>₹{formatCurrency(d.commissionAmount)} ({d.brokeragePercent || 0}%)</Typography>
+                                </Grid>
+                                <Grid item xs={12}>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Registry Details:</Typography>
+                                  <Typography variant="body2">Date Registered: {d.registrationDate || 'Pending'} • Executed By: {d.employeeId} • Docs Attached: {d.documents || 'None'}</Typography>
+                                </Grid>
+                              </Grid>
+                            </Paper>
+                          );
+                        })
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 3: Pitches */}
+                  {activeTab === 3 && (
+                    <Box>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Pitched Properties Logs</Typography>
+                        <Button 
+                          variant="contained" 
+                          size="small" 
+                          startIcon={<Icons.Plus size={16} />}
+                          onClick={() => {
+                            setPitchPropertyId('');
+                            setPitchEmployeeId(record.assignedEmployeeId || '');
+                            setPitchPrice('');
+                            setPitchRemarks('');
+                            setPitchWarning('');
+                            setPitchDialogOpen(true);
+                          }}
+                        >
+                          Log New Pitch
+                        </Button>
+                      </Box>
+                      {connections.pitches?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No property pitches logged for this client yet.</Typography>
+                      ) : (
+                        connections.pitches.map(p => (
+                          <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
+                                  Property: {p.propertyId}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
+                              </Box>
+                              <Chip 
+                                label={p.interestLevel} 
+                                color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
+                                size="small"
+                                sx={{ fontWeight: 700 }}
+                              />
+                            </Box>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                              Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: {p.employeeName}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>Quoted Offer Price: ₹{formatCurrency(p.quotedPrice)}</Typography>
+                            <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>Remarks: {p.remarks}</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 4: Consolidated Timeline */}
+                  {activeTab === 4 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Consolidated Activity Timeline</Typography>
+                      {connections.timeline?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No activity timeline logs recorded.</Typography>
+                      ) : (
+                        <Box sx={{ borderLeft: '2px solid #E2E8F0', pl: 3, ml: 1, position: 'relative' }}>
+                          {connections.timeline.map((evt, idx) => (
+                            <Box key={idx} sx={{ mb: 3, position: 'relative' }}>
+                              <Box sx={{ 
+                                position: 'absolute', 
+                                left: '-35px', 
+                                top: '0px', 
+                                width: '22px', 
+                                height: '22px', 
+                                borderRadius: '50%', 
+                                backgroundColor: '#FFFFFF', 
+                                border: '2px solid #2563EB', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'center',
+                                color: '#2563EB'
+                              }}>
+                                <DynamicIcon name={evt.icon || 'Circle'} size={12} />
+                              </Box>
+                              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>{evt.date}</Typography>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>{evt.event}</Typography>
+                              <Typography variant="body2" sx={{ color: '#475569', fontSize: '13px' }}>{evt.details}</Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 5: Docs & Files */}
+                  {activeTab === 5 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Documents Vault</Typography>
+                      {/* Upload Simulator */}
+                      <Box component="form" onSubmit={handleUploadDoc} sx={{ mb: 4, p: 2.5, border: '1px dashed #CBD5E1', borderRadius: '12px' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Upload/Attach Document to Client Profile</Typography>
+                        
+                        <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                          <input type="file" id="direct-file-input" style={{ display: 'none' }} onChange={handleFileChange} />
+                          <label htmlFor="direct-file-input">
+                            <Button variant="outlined" component="span" startIcon={<Icons.Upload size={16} />} sx={{ textTransform: 'none', fontWeight: 600 }}>
+                              Choose Local Document / PDF
+                            </Button>
+                          </label>
+                          {selectedFile && (
+                            <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 500 }}>
+                              Selected: {selectedFile.name}
+                            </Typography>
+                          )}
+                          {uploadingFile && <CircularProgress size={20} />}
+                        </Box>
+
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={5}>
+                            <TextField 
+                              placeholder="Document Title (e.g. Identity Proof, PAN Card)"
+                              size="small"
+                              fullWidth
+                              value={docName}
+                              onChange={(e) => setDocName(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={5}>
+                            <TextField 
+                              placeholder="Direct File URL link"
+                              size="small"
+                              fullWidth
+                              value={docUrl}
+                              onChange={(e) => setDocUrl(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
+                              Link File
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+
+                      {/* Linked Docs List */}
+                      {connections.documents?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No files attached yet.</Typography>
+                      ) : (
+                        connections.documents.map((doc, index) => (
+                          <Paper key={index} sx={{ p: 2, mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Icons.FileText size={24} color="#2563EB" />
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{doc.name}</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748B' }}>Uploaded: {doc.dateAdded} • By: {doc.uploadedBy}</Typography>
+                              </Box>
+                            </Box>
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Button variant="outlined" size="small" component="a" href={doc.fileUrl} download sx={{ textTransform: 'none' }}>
+                                Download
+                              </Button>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteDoc(doc.id)}>
+                                <Icons.Trash2 size={16} />
+                              </IconButton>
+                            </Box>
+                          </Paper>
+                        ))
+                      )}
                     </Box>
                   )}
                 </Box>
               )}
 
+              {/* 2. PROPERTY TABS */}
+              {moduleName === 'properties' && (
+                <Box>
+                  {/* Tab 0: Overview */}
+                  {activeTab === 0 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Property Summary & Remarks</Typography>
+                      {/* Remarks Log Section */}
+                      <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 3 }}>
+                        <Grid container spacing={1.5}>
+                          <Grid item xs={12} sm={10}>
+                            <TextField 
+                              placeholder="Type property comments or showing updates here..."
+                              fullWidth
+                              size="small"
+                              value={remarkInput}
+                              onChange={(e) => setRemarkInput(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
+                              Post Log
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                      {connections?.remarks?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No remarks posted yet.</Typography>
+                      ) : (
+                        connections.remarks.map((rem, idx) => (
+                          <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                            <Box display="flex" justifyContent="space-between" mb={0.5}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{rem.employeeName}</Typography>
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>{rem.dateTime}</Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ color: '#4B5563', fontStyle: 'italic' }}>"{rem.comment}"</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 1: Pitches & Showings */}
+                  {activeTab === 1 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Customer Showing Visits & Pitch Logs</Typography>
+                      <Grid container spacing={3}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Showings / Site Visits ({connections.site_visits?.length || 0})</Typography>
+                          {connections.site_visits?.length === 0 ? (
+                            <Typography variant="body2" sx={{ color: '#94A3B8' }}>No site visits registered for this property listing.</Typography>
+                          ) : (
+                            connections.site_visits.map((sv, idx) => (
+                              <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: {sv.customer?.name || sv.customerId}</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                                  Showed on: {sv.date} • Showed by: {sv.employeeId} • Outcome: <strong>{sv.result}</strong>
+                                </Typography>
+                              </Paper>
+                            ))
+                          )}
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Agent Pitches Log ({connections.pitches?.length || 0})</Typography>
+                          {connections.pitches?.length === 0 ? (
+                            <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pitch logs registered for this property listing.</Typography>
+                          ) : (
+                            connections.pitches.map(p => (
+                              <Paper key={p.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: {p.customerName || p.customerId}</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                                  Pitched on: {p.pitchDate} • Method: {p.pitchMethod} • Offered: <strong>₹{formatCurrency(p.quotedPrice)}</strong>
+                                </Typography>
+                              </Paper>
+                            ))
+                          )}
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  )}
+
+                  {/* Tab 2: Owner History */}
+                  {activeTab === 2 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Permanent Ownership Registry History</Typography>
+                      {connections.ownerHistory?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No previous owners registered in registry logs. This listing is under its first owner.</Typography>
+                      ) : (
+                        <Box sx={{ borderLeft: '2px solid #E2E8F0', pl: 3, ml: 1 }}>
+                          {connections.ownerHistory.map((h, idx) => (
+                            <Box key={idx} sx={{ mb: 3, position: 'relative' }}>
+                              <Box sx={{ position: 'absolute', left: '-35px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10B981' }} />
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Owner: {h.ownerName} ({h.ownerId})</Typography>
+                              <Typography variant="body2" sx={{ color: '#475569' }}>
+                                Purchase Date: {h.purchaseDate || 'N/A'} • Bought for: ₹{formatCurrency(h.purchasePrice || 0)}
+                              </Typography>
+                              <Typography variant="body2" sx={{ color: '#EF4444', fontWeight: 600 }}>
+                                Sold on: {h.saleDate} for: ₹{formatCurrency(h.salePrice)}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 3: Docs Vault */}
+                  {activeTab === 3 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Docs Vault (Property Deeds & NOCs)</Typography>
+                      <Box component="form" onSubmit={handleUploadDoc} sx={{ mb: 4, p: 2.5, border: '1px dashed #CBD5E1', borderRadius: '12px' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Upload/Attach Documents to Property Vault</Typography>
+                        
+                        <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                          <input type="file" id="direct-file-input" style={{ display: 'none' }} onChange={handleFileChange} />
+                          <label htmlFor="direct-file-input">
+                            <Button variant="outlined" component="span" startIcon={<Icons.Upload size={16} />} sx={{ textTransform: 'none', fontWeight: 600 }}>
+                              Choose Local Registry / Layout PDF
+                            </Button>
+                          </label>
+                          {selectedFile && (
+                            <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 500 }}>
+                              Selected: {selectedFile.name}
+                            </Typography>
+                          )}
+                          {uploadingFile && <CircularProgress size={20} />}
+                        </Box>
+
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={5}>
+                            <TextField 
+                              placeholder="Title (e.g. NOC Certificate, Registry Deed)"
+                              size="small"
+                              fullWidth
+                              value={docName}
+                              onChange={(e) => setDocName(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={5}>
+                            <TextField 
+                              placeholder="Direct File URL link"
+                              size="small"
+                              fullWidth
+                              value={docUrl}
+                              onChange={(e) => setDocUrl(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
+                              Link File
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+
+                      <Grid container spacing={2.5}>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#10B981' }}>Active Owner Documents</Typography>
+                          {connections.documents?.filter(d => !d.id.startsWith('DOC-OLD-'))?.length === 0 ? (
+                            <Typography variant="body2" sx={{ color: '#94A3B8' }}>No active files attached.</Typography>
+                          ) : (
+                            connections.documents.filter(d => !d.id.startsWith('DOC-OLD-')).map((doc, index) => (
+                              <Paper key={index} sx={{ p: 2, mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{doc.name}</Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B' }}>Uploaded: {doc.dateAdded} • By: {doc.uploadedBy}</Typography>
+                                </Box>
+                                <Button variant="outlined" size="small" component="a" href={doc.fileUrl} download sx={{ textTransform: 'none' }}>Get</Button>
+                              </Paper>
+                            ))
+                          )}
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: '#EF4444' }}>Previous Owners Document Archives</Typography>
+                          {connections.documents?.filter(d => d.id.startsWith('DOC-OLD-'))?.length === 0 ? (
+                            <Typography variant="body2" sx={{ color: '#94A3B8' }}>No archived files found.</Typography>
+                          ) : (
+                            connections.documents.filter(d => d.id.startsWith('DOC-OLD-')).map((doc, index) => (
+                              <Paper key={index} sx={{ p: 2, mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                                <Box>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#64748B' }}>{doc.name}</Typography>
+                                  <Typography variant="caption" sx={{ color: '#94A3B8' }}>Deed File Archive (Transferred)</Typography>
+                                </Box>
+                                <Button variant="outlined" size="small" component="a" href={doc.fileUrl} download sx={{ textTransform: 'none' }}>Get</Button>
+                              </Paper>
+                            ))
+                          )}
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  )}
+
+                  {/* Tab 4: Deals History */}
+                  {activeTab === 4 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Deals & Transaction History</Typography>
+                      {connections.deals?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No closed/pending deals found for this property.</Typography>
+                      ) : (
+                        connections.deals.map(d => (
+                          <Paper key={d.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                            <Box display="flex" justifyContent="space-between" mb={1}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Deal: {d.id}</Typography>
+                              <Chip label={d.status} color={d.status === 'Closed' ? 'success' : 'warning'} size="small" sx={{ fontWeight: 700 }} />
+                            </Box>
+                            <Typography variant="body2">Seller Customer: <strong style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate(`/module/customers/${d.sellerCustomerId}`)}>{d.sellerCustomerId}</strong></Typography>
+                            <Typography variant="body2">Buyer Customer: <strong style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate(`/module/customers/${d.customerId}`)}>{d.customerId}</strong></Typography>
+                            <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>Price Sold: ₹{formatCurrency(d.salePrice)}</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 5: Property Activity Timeline */}
+                  {activeTab === 5 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Consolidated Property Activity Timeline</Typography>
+                      {connections.timeline?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No activity timeline logs recorded.</Typography>
+                      ) : (
+                        <Box sx={{ borderLeft: '2px solid #E2E8F0', pl: 3, ml: 1, position: 'relative' }}>
+                          {connections.timeline.map((evt, idx) => (
+                            <Box key={idx} sx={{ mb: 3, position: 'relative' }}>
+                              <Box sx={{ position: 'absolute', left: '-35px', top: '0px', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '2px solid #2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                                <DynamicIcon name={evt.icon || 'Circle'} size={12} />
+                              </Box>
+                              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>{evt.date}</Typography>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>{evt.event}</Typography>
+                              <Typography variant="body2" sx={{ color: '#475569', fontSize: '13px' }}>{evt.details}</Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* 3. DEALER TABS */}
+              {moduleName === 'dealers' && (
+                <Box>
+                  {/* Tab 0: Overview */}
+                  {activeTab === 0 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Dealer Summary & Comments</Typography>
+                      {/* Remarks log */}
+                      <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 3 }}>
+                        <Grid container spacing={1.5}>
+                          <Grid item xs={12} sm={10}>
+                            <TextField 
+                              placeholder="Type dealer remarks or brokerage disputes..."
+                              fullWidth
+                              size="small"
+                              value={remarkInput}
+                              onChange={(e) => setRemarkInput(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
+                              Post Log
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                      {connections?.remarks?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No remarks posted yet.</Typography>
+                      ) : (
+                        connections.remarks.map((rem, idx) => (
+                          <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                            <Box display="flex" justifyContent="space-between" mb={0.5}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{rem.employeeName}</Typography>
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>{rem.dateTime}</Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ color: '#4B5563', fontStyle: 'italic' }}>"{rem.comment}"</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 1: Outreach Prep & Logs */}
+                  {activeTab === 1 && (
+                    <Box>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Dealer Meetings & Prepared Prep Sheets</Typography>
+                        <Button 
+                          variant="contained" 
+                          size="small"
+                          color="primary"
+                          startIcon={<Icons.Plus size={16} />}
+                          onClick={() => {
+                            if (connections.meetings?.some(m => m.status === 'Assigned')) {
+                              const assigned = connections.meetings.find(m => m.status === 'Assigned');
+                              setSelectedMeetingId(assigned.id);
+                              setMeetingOutcome('');
+                              setMeetingDocCollected('');
+                              setMeetingReportDialogOpen(true);
+                            } else {
+                              alert("No pending 'Assigned' meetings found. Admin must assign a meeting to this employee first.");
+                            }
+                          }}
+                        >
+                          Submit Meeting Report
+                        </Button>
+                      </Box>
+
+                      {/* Display meeting prep briefing checklist */}
+                      <Alert severity="info" sx={{ mb: 3, borderRadius: '8px' }}>
+                        <strong>Employee Prep Briefing:</strong> Review the dealer calls checklist, duration patterns, and budget caps before conducting a physical visit.
+                      </Alert>
+
+                      {connections.meetings?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No meetings assigned or completed for this dealer.</Typography>
+                      ) : (
+                        connections.meetings.map(m => (
+                          <Paper key={m.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                            <Box display="flex" justifyContent="space-between" mb={1}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Meeting: {m.purpose || 'Dealer Intro'} ({m.id})</Typography>
+                              <Chip 
+                                label={m.status} 
+                                color={m.status === 'Completed' ? 'success' : m.status === 'Cancelled' ? 'error' : 'warning'} 
+                                size="small"
+                                sx={{ fontWeight: 700 }}
+                              />
+                            </Box>
+                            <Typography variant="body2">RM Assigned: <strong>{m.assignedEmployeeName}</strong></Typography>
+                            <Typography variant="body2">Date Scheduled: <strong>{m.meetingDate}</strong> • Priority: {m.priority}</Typography>
+                            {m.outcome && (
+                              <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#F8FAFC', borderRadius: '8px', borderLeft: '3px solid #10B981' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block' }}>VISIT OUTCOME REPORT:</Typography>
+                                <Typography variant="body2" sx={{ fontStyle: 'italic' }}>"{m.outcome}"</Typography>
+                                {m.documents_collected && (
+                                  <Typography variant="caption" sx={{ display: 'block', mt: 0.5 }}>Documents Collected: {m.documents_collected}</Typography>
+                                )}
+                              </Box>
+                            )}
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 2: Outreach Calls */}
+                  {activeTab === 2 && (
+                    <Box>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Dealer Outreach Call Logs</Typography>
+                        <Button 
+                          variant="contained" 
+                          size="small"
+                          startIcon={<Icons.Phone size={16} />}
+                          onClick={() => {
+                            setCallDuration('');
+                            setCallBudget('');
+                            setCallAreas('');
+                            setCallRemarks('');
+                            setCallDialogOpen(true);
+                          }}
+                        >
+                          Log Outreach Call
+                        </Button>
+                      </Box>
+                      {connections.calls?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No call logs registered for this dealer.</Typography>
+                      ) : (
+                        connections.calls.map(c => (
+                          <Paper key={c.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                            <Box display="flex" justifyContent="space-between" mb={1}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Call Log: {c.id}</Typography>
+                              <Typography variant="caption" sx={{ color: '#64748B' }}>Called on: {c.date} • By: {c.employeeName}</Typography>
+                            </Box>
+                            <Grid container spacing={2}>
+                              <Grid item xs={6} sm={4}>
+                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Call Duration:</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>{c.duration || 'N/A'} mins</Typography>
+                              </Grid>
+                              <Grid item xs={6} sm={4}>
+                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Budget Cap:</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600 }}>₹{formatCurrency(c.budget)}</Typography>
+                              </Grid>
+                              <Grid item xs={12}>
+                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Areas Discussed:</Typography>
+                                <Typography variant="body2">{c.areas || 'All Mohali Sector Block Zones'}</Typography>
+                              </Grid>
+                              <Grid item xs={12}>
+                                <Typography variant="caption" sx={{ display: 'block', color: '#64748B' }}>Remarks/Follow-Up:</Typography>
+                                <Typography variant="body2">{c.remarks} {c.followUpDate ? `• Next Call: ${c.followUpDate}` : ''}</Typography>
+                              </Grid>
+                            </Grid>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 3: Dealer activity timeline */}
+                  {activeTab === 3 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Consolidated Dealer Activity Timeline</Typography>
+                      {connections.timeline?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No activity timeline logs recorded.</Typography>
+                      ) : (
+                        <Box sx={{ borderLeft: '2px solid #E2E8F0', pl: 3, ml: 1, position: 'relative' }}>
+                          {connections.timeline.map((evt, idx) => (
+                            <Box key={idx} sx={{ mb: 3, position: 'relative' }}>
+                              <Box sx={{ position: 'absolute', left: '-35px', top: '0px', width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#FFFFFF', border: '2px solid #2563EB', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2563EB' }}>
+                                <DynamicIcon name={evt.icon || 'Circle'} size={12} />
+                              </Box>
+                              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>{evt.date}</Typography>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A', mt: 0.2 }}>{evt.event}</Typography>
+                              <Typography variant="body2" sx={{ color: '#475569', fontSize: '13px' }}>{evt.details}</Typography>
+                            </Box>
+                          ))}
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* 4. OTHER GENERIC BACKWARD COMPATIBLE TABS */}
+              {!(moduleName === 'customers' || moduleName === 'properties' || moduleName === 'dealers') && (
+                <Box>
+                  {/* Tab 0: 360 Connections */}
+                  {activeTab === 0 && (
+                    <Box>
+                      {connections ? (
+                        <Grid container spacing={3}>
+                          {moduleName === 'employees' && (
+                            <>
+                              <Grid item xs={12} sm={6}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
+                                  Assigned Customers ({connections.customers?.length || 0})
+                                </Typography>
+                                {connections.customers?.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>No customers handled.</Typography>
+                                ) : (
+                                  connections.customers.map(c => (
+                                    <Paper key={c.id} sx={{ p: 1.5, mb: 1, border: '1px solid #E2E8F0', boxShadow: 'none', cursor: 'pointer' }} onClick={() => navigate(`/module/customers/${c.id}`)}>
+                                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748B' }}>Stage: {c.stage} • Phone: {c.phone}</Typography>
+                                    </Paper>
+                                  ))
+                                )}
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, fontFamily: 'Poppins' }}>
+                                  Outstanding Tasks ({connections.tasks?.length || 0})
+                                </Typography>
+                                {connections.tasks?.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pending tasks assigned.</Typography>
+                                ) : (
+                                  connections.tasks.map(t => (
+                                    <Paper key={t.id} sx={{ p: 1.5, mb: 1, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{t.title}</Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748B' }}>Due: {t.dueDate} • Priority: {t.priority} • Status: {t.status}</Typography>
+                                    </Paper>
+                                  ))
+                                )}
+                              </Grid>
+                              <Grid item xs={12}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Icons.Clock size={18} style={{ color: '#2563EB' }} />
+                                  Attendance timing logs ({connections.attendance?.length || 0})
+                                </Typography>
+                                {!connections.attendance || connections.attendance.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>No attendance timing logs found.</Typography>
+                                ) : (
+                                  <Grid container spacing={2}>
+                                    {connections.attendance.map((att, idx) => (
+                                      <Grid item xs={12} sm={4} key={idx}>
+                                        <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                                          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#0F172A' }}>{att.date}</Typography>
+                                            <Chip label={att.status} size="small" sx={{ backgroundColor: att.status === 'Present' ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)', color: att.status === 'Present' ? '#22C55E' : '#EF4444', fontWeight: 700, fontSize: '10px' }} />
+                                          </Box>
+                                          <Typography variant="body2">In: <strong>{att.inTime}</strong></Typography>
+                                          <Typography variant="body2">Out: <strong>{att.outTime || '---'}</strong></Typography>
+                                        </Paper>
+                                      </Grid>
+                                    ))}
+                                  </Grid>
+                                )}
+                              </Grid>
+                              <Grid item xs={12}>
+                                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '16px', mb: 2, mt: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                  <Icons.DollarSign size={18} style={{ color: '#16A34A' }} />
+                                  Salary Settlement Slips ({connections.salaries?.length || 0})
+                                </Typography>
+                                {!connections.salaries || connections.salaries.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>No salaries settled.</Typography>
+                                ) : (
+                                  <Grid container spacing={2}>
+                                    {connections.salaries.map((sal, idx) => (
+                                      <Grid item xs={12} sm={4} key={idx}>
+                                        <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{sal.month}/{sal.year}</Typography>
+                                          <Typography variant="body2" sx={{ mb: 1 }}>Net Pay: ₹{formatCurrency(sal.netPay)}</Typography>
+                                          <Button variant="outlined" size="small" fullWidth onClick={() => setActiveSalarySlip(sal)}>View Slip</Button>
+                                        </Paper>
+                                      </Grid>
+                                    ))}
+                                  </Grid>
+                                )}
+                              </Grid>
+                            </>
+                          )}
+                        </Grid>
+                      ) : (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>Loading...</Typography>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 1: Remarks */}
+                  {activeTab === 1 && (
+                    <Box>
+                      <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 4 }}>
+                        <Grid container spacing={1.5}>
+                          <Grid item xs={12} sm={10}>
+                            <TextField 
+                              placeholder="Type comment remarks here..."
+                              fullWidth
+                              size="small"
+                              value={remarkInput}
+                              onChange={(e) => setRemarkInput(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
+                              Post Log
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                      {connections?.remarks?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No remarks posted yet.</Typography>
+                      ) : (
+                        connections.remarks.map((rem, idx) => (
+                          <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{rem.employeeName}</Typography>
+                            <Typography variant="body2" sx={{ color: '#4B5563', fontStyle: 'italic' }}>"{rem.comment}"</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 2: Docs */}
+                  {activeTab === 2 && (
+                    <Box>
+                      <Box component="form" onSubmit={handleUploadDoc} sx={{ mb: 4, p: 2, border: '1px dashed #CBD5E1', borderRadius: '12px' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Attach PDF / Document Details</Typography>
+                        
+                        <Box display="flex" alignItems="center" gap={1.5} mb={2}>
+                          <input type="file" id="direct-file-input" style={{ display: 'none' }} onChange={handleFileChange} />
+                          <label htmlFor="direct-file-input">
+                            <Button variant="outlined" component="span" startIcon={<Icons.Upload size={16} />} sx={{ textTransform: 'none', fontWeight: 600 }}>
+                              Choose Local File
+                            </Button>
+                          </label>
+                          {selectedFile && (
+                            <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 500 }}>
+                              Selected: {selectedFile.name}
+                            </Typography>
+                          )}
+                          {uploadingFile && <CircularProgress size={20} />}
+                        </Box>
+
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={5}>
+                            <TextField 
+                              placeholder="Document Title"
+                              size="small"
+                              fullWidth
+                              value={docName}
+                              onChange={(e) => setDocName(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={5}>
+                            <TextField 
+                              placeholder="File URL or Link"
+                              size="small"
+                              fullWidth
+                              value={docUrl}
+                              onChange={(e) => setDocUrl(e.target.value)}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
+                              Link File
+                            </Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+
+                      {connections.documents?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No files attached yet.</Typography>
+                      ) : (
+                        connections.documents.map((doc, index) => (
+                          <Paper key={index} sx={{ p: 2, mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                              <Icons.FileText size={24} color="#2563EB" />
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{doc.name}</Typography>
+                                <Typography variant="caption" sx={{ color: '#64748B' }}>Uploaded: {doc.dateAdded} • By: {doc.uploadedBy}</Typography>
+                              </Box>
+                            </Box>
+                            <Box display="flex" alignItems="center" gap={1}>
+                              <Button variant="outlined" size="small" component="a" href={doc.fileUrl} download sx={{ textTransform: 'none' }}>Download</Button>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteDoc(doc.id)}>
+                                <Icons.Trash2 size={16} />
+                              </IconButton>
+                            </Box>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 3: Odometer */}
+                  {activeTab === 3 && moduleName === 'employees' && (
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Bike Odometer & Travel History Log</Typography>
+                      {travelLogs.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No odometer readings captured.</Typography>
+                      ) : (
+                        <Box display="flex" flexDirection="column" gap={2}>
+                          {travelLogs.map((log, index) => {
+                            const netKm = Math.max(0, (Number(log.odometerEnd) || 0) - (Number(log.odometerStart) || 0) - (Number(log.personalUseKm) || 0));
+                            const dailyAllowance = netKm * 3;
+                            return (
+                              <Paper key={index} sx={{ p: 3, border: '1px solid #E2E8F0', boxShadow: 'none', borderRadius: '12px' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>{log.date} ({netKm} KM Driven)</Typography>
+                                <Typography variant="body2">Punch In: <strong>{log.inTime}</strong> (Start: {log.odometerStart} KM)</Typography>
+                                <Typography variant="body2">Punch Out: <strong>{log.outTime || '---'}</strong> (End: {log.odometerEnd || '---'} KM)</Typography>
+                                <Typography variant="body2" sx={{ color: '#16A34A', mt: 1 }}>Daily Travel Allowance: ₹{dailyAllowance.toLocaleString('en-IN')} (at ₹3/KM)</Typography>
+                              </Paper>
+                            );
+                          })}
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              )}
             </Box>
           </Card>
         </Grid>
@@ -1402,6 +2015,247 @@ const EntityDetail = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 5. ERP POPUP DIALOGS */}
+
+      {/* Quick Log Query Dialog */}
+      <Dialog open={queryDialogOpen} onClose={() => setQueryDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>Quick Log Property Query</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1.5 }}>
+            <FormControl fullWidth>
+              <InputLabel>RM Assigned</InputLabel>
+              <Select value={queryEmployeeId} onChange={(e) => setQueryEmployeeId(e.target.value)} label="RM Assigned">
+                {(moduleData.employees || []).map(emp => (
+                  <MenuItem key={emp.id} value={emp.id}>{emp.name} ({emp.id})</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Query Action Type</InputLabel>
+              <Select value={queryType} onChange={(e) => setQueryType(e.target.value)} label="Query Action Type">
+                <MenuItem value="Buy Property">Buy Property (Demand Request)</MenuItem>
+                <MenuItem value="Sell Property">Sell Property (Inventory Supply)</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>R/C/I Segment</InputLabel>
+              <Select value={queryRCI} onChange={(e) => setQueryRCI(e.target.value)} label="R/C/I Segment">
+                <MenuItem value="Residential">Residential</MenuItem>
+                <MenuItem value="Commercial">Commercial</MenuItem>
+                <MenuItem value="Industrial">Industrial</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Property Type Category</InputLabel>
+              <Select value={queryPropType} onChange={(e) => setQueryPropType(e.target.value)} label="Property Type Category">
+                <MenuItem value="Villa">Villa Listing</MenuItem>
+                <MenuItem value="Plot">Residential Plot</MenuItem>
+                <MenuItem value="Apartment">Apartment Flat</MenuItem>
+                <MenuItem value="Commercial">Retail Office Space</MenuItem>
+              </Select>
+            </FormControl>
+            {queryType === 'Buy Property' ? (
+              <TextField label="Client Budget Cap (INR)" type="number" fullWidth value={queryBudget} onChange={(e) => setQueryBudget(e.target.value)} />
+            ) : (
+              <TextField label="Seller Demanded Price (INR)" type="number" fullWidth value={queryDemand} onChange={(e) => setQueryDemand(e.target.value)} />
+            )}
+            <TextField label="Target Size/Dimensions (e.g. 250 Sq.Yds)" fullWidth value={querySize} onChange={(e) => setQuerySize(e.target.value)} />
+            <TextField label="Preferred Localities" fullWidth value={queryLocality} onChange={(e) => setQueryLocality(e.target.value)} />
+            <TextField label="Sector/Block Details" fullWidth value={querySector} onChange={(e) => setQuerySector(e.target.value)} />
+            <TextField label="Requirements Remarks" multiline rows={3} fullWidth value={queryRemarks} onChange={(e) => setQueryRemarks(e.target.value)} />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setQueryDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
+          <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
+            const payload = {
+              customerId: id,
+              assignedEmployeeId: queryEmployeeId || 'EMP-001',
+              date: new Date().toLocaleDateString('en-IN'),
+              status: 'Pending Approval',
+              queryType,
+              stage: 'New Query',
+              budget: queryType === 'Buy Property' ? Number(queryBudget) : 0,
+              demand: queryType === 'Sell Property' ? Number(queryDemand) : 0,
+              r_c_i: queryRCI,
+              propertyType: queryPropType,
+              locality: queryLocality,
+              sector_block: querySector,
+              size: querySize,
+              remarks: queryRemarks
+            };
+            const res = await createRecord('queries', payload);
+            if (res.success) {
+              setQueryDialogOpen(false);
+              loadData();
+            } else {
+              alert(res.message || "Failed to create query");
+            }
+          }}>Submit Query</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Log Pitch Dialog */}
+      <Dialog open={pitchDialogOpen} onClose={() => setPitchDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>Log Agent Pitch Presentation</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1.5 }}>
+            {pitchWarning && (
+              <Alert severity="warning" sx={{ borderRadius: '8px', fontWeight: 600 }}>
+                {pitchWarning}
+              </Alert>
+            )}
+            <FormControl fullWidth>
+              <InputLabel>Select Property</InputLabel>
+              <Select value={pitchPropertyId} onChange={(e) => setPitchPropertyId(e.target.value)} label="Select Property">
+                {(moduleData.properties || []).map(p => (
+                  <MenuItem key={p.id} value={p.id}>{p.propertyType} - {p.locality} Sector {p.sector_block} ({p.id})</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Pitching Employee/RM</InputLabel>
+              <Select value={pitchEmployeeId} onChange={(e) => setPitchEmployeeId(e.target.value)} label="Pitching Employee/RM">
+                {(moduleData.employees || []).map(emp => (
+                  <MenuItem key={emp.id} value={emp.id}>{emp.name} ({emp.id})</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Outreach Pitch Method</InputLabel>
+              <Select value={pitchMethod} onChange={(e) => setPitchMethod(e.target.value)} label="Outreach Pitch Method">
+                <MenuItem value="Call">Phone Call</MenuItem>
+                <MenuItem value="WhatsApp">WhatsApp Message</MenuItem>
+                <MenuItem value="Office Visit">Office Meeting</MenuItem>
+                <MenuItem value="Site Visit">Physical Site Visit</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Interest Level Outcome</InputLabel>
+              <Select value={pitchInterest} onChange={(e) => setPitchInterest(e.target.value)} label="Interest Level Outcome">
+                <MenuItem value="Interested">Highly Interested</MenuItem>
+                <MenuItem value="Follow-up Required">Follow-up Needed</MenuItem>
+                <MenuItem value="Hold">On Hold</MenuItem>
+                <MenuItem value="Not Interested">Not Interested</MenuItem>
+              </Select>
+            </FormControl>
+            <TextField label="Quoted Pitch Price Offer" type="number" fullWidth value={pitchPrice} onChange={(e) => setPitchPrice(e.target.value)} />
+            <TextField label="Next Followup Date" type="date" InputLabelProps={{ shrink: true }} fullWidth value={pitchFollowUp} onChange={(e) => setPitchFollowUp(e.target.value)} />
+            <TextField label="Meeting Remarks" multiline rows={3} fullWidth value={pitchRemarks} onChange={(e) => setPitchRemarks(e.target.value)} />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setPitchDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
+          <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
+            const payload = {
+              customerId: id,
+              customerName: record.name,
+              propertyId: pitchPropertyId,
+              employeeId: pitchEmployeeId,
+              employeeName: (moduleData.employees || []).find(e => e.id === pitchEmployeeId)?.name || pitchEmployeeId,
+              pitchMethod,
+              interestLevel: pitchInterest,
+              quotedPrice: Number(pitchPrice || 0),
+              followUpDate: pitchFollowUp,
+              remarks: pitchRemarks,
+              pitchDate: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN')
+            };
+            const res = await createRecord('property_pitch_history', payload);
+            if (res.success) {
+              setPitchDialogOpen(false);
+              loadData();
+            } else {
+              alert(res.message || "Failed to log pitch");
+            }
+          }}>Log Pitch</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Log Outreach Call Dialog */}
+      <Dialog open={callDialogOpen} onClose={() => setCallDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>Log Outreach Phone Call</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1.5 }}>
+            <TextField label="Call Duration (minutes)" type="number" fullWidth value={callDuration} onChange={(e) => setCallDuration(e.target.value)} />
+            <TextField label="Discussed Budget expectation" type="number" fullWidth value={callBudget} onChange={(e) => setCallBudget(e.target.value)} />
+            <TextField label="Discussed Sectors/Areas" fullWidth value={callAreas} onChange={(e) => setCallAreas(e.target.value)} />
+            <TextField label="Next Followup Date" type="date" InputLabelProps={{ shrink: true }} fullWidth value={callFollowUp} onChange={(e) => setCallFollowUp(e.target.value)} />
+            <TextField label="Call Notes/Remarks" multiline rows={3} fullWidth value={callRemarks} onChange={(e) => setCallRemarks(e.target.value)} />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setCallDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
+          <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
+            const payload = {
+              dealerId: id,
+              employeeName: localStorage.getItem('gr_crm_user_name') || 'Sales Representative',
+              date: new Date().toLocaleDateString('en-IN'),
+              duration: callDuration,
+              budget: Number(callBudget || 0),
+              areas: callAreas,
+              followUpDate: callFollowUp,
+              remarks: callRemarks
+            };
+            const res = await createRecord('dealer_calls', payload);
+            if (res.success) {
+              setCallDialogOpen(false);
+              loadData();
+            } else {
+              alert(res.message || "Failed to log outreach call");
+            }
+          }}>Log Call</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Submit Meeting Report Dialog */}
+      <Dialog open={meetingReportDialogOpen} onClose={() => setMeetingReportDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
+        <DialogTitle sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>Log Meeting Visit Report</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1.5 }}>
+            <FormControl fullWidth>
+              <InputLabel>Select Meeting</InputLabel>
+              <Select value={selectedMeetingId} onChange={(e) => setSelectedMeetingId(e.target.value)} label="Select Meeting">
+                {(connections?.meetings || []).filter(m => m.status === 'Assigned').map(m => (
+                  <MenuItem key={m.id} value={m.id}>{m.purpose || 'Intro Meeting'} ({m.id})</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+            <TextField label="Visit Outcomes & Notes" multiline rows={3} fullWidth value={meetingOutcome} onChange={(e) => setMeetingOutcome(e.target.value)} />
+            <TextField label="Documents Collected from Dealer" fullWidth value={meetingDocCollected} onChange={(e) => setMeetingDocCollected(e.target.value)} />
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5 }}>
+          <Button onClick={() => setMeetingReportDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
+          <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
+            if (!selectedMeetingId) {
+              alert("Please select a meeting to report on");
+              return;
+            }
+            const meetingRec = connections.meetings.find(m => m.id === selectedMeetingId);
+            if (!meetingRec) return;
+
+            const payload = {
+              ...meetingRec,
+              status: 'Completed',
+              outcome: meetingOutcome,
+              documents_collected: meetingDocCollected,
+              last_updated: new Date().toLocaleString('en-IN')
+            };
+            
+            const res = await axios.put(`${API_BASE_URL}/data/dealer_meetings/${selectedMeetingId}`, payload, {
+              headers: { Authorization: `Bearer ${localStorage.getItem('gr_crm_token')}` }
+            });
+            if (res.data) {
+              setMeetingReportDialogOpen(false);
+              loadData();
+            } else {
+              alert("Failed to submit meeting report");
+            }
+          }}>Submit Visit Report</Button>
+        </DialogActions>
+      </Dialog>
+
     </Box>
   );
 };

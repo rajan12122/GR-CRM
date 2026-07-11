@@ -311,6 +311,31 @@
           "editable": true
         },
         {
+          "name": "leadType",
+          "label": "Lead Type",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "leadTypes"
+        },
+        {
+          "name": "demand",
+          "label": "Quoted Price / Demand (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "size",
+          "label": "Property Size",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "dateAdded",
           "label": "Date Captured",
           "type": "date",
@@ -1508,6 +1533,706 @@
           "editable": true
         }
       ]
+    },
+    "queries": {
+      "id": "queries",
+      "label": "Queries",
+      "icon": "HelpCircle",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Query ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "customerId",
+          "label": "Customer",
+          "type": "ref",
+          "refModule": "customers",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "assignedEmployeeId",
+          "label": "Assigned RM",
+          "type": "ref",
+          "refModule": "employees",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "date",
+          "label": "Query Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "queryType",
+          "label": "Query Type",
+          "type": "select",
+          "chipGroup": "queryTypes",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Approval Status",
+          "type": "select",
+          "chipGroup": "queryStatus",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "stage",
+          "label": "Pipeline Stage",
+          "type": "select",
+          "chipGroup": "buyerQueryStages",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "budget",
+          "label": "Budget (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "demand",
+          "label": "Quoted Price / Demand (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "r_c_i",
+          "label": "R/C/I",
+          "type": "select",
+          "chipGroup": "rci",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "propertyType",
+          "label": "Property Type",
+          "type": "select",
+          "chipGroup": "propertyTypes",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "locality",
+          "label": "Locality",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sector_block",
+          "label": "Sector/Block",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "size",
+          "label": "Size",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "remarks",
+          "label": "Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        }
+      ]
+    },
+    "deals": {
+      "id": "deals",
+      "label": "Deals",
+      "icon": "Handshake",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Deal ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "customerId",
+          "label": "Buyer Customer",
+          "type": "ref",
+          "refModule": "customers",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "sellerCustomerId",
+          "label": "Seller Customer / Owner",
+          "type": "ref",
+          "refModule": "customers",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "propertyId",
+          "label": "Property",
+          "type": "ref",
+          "refModule": "properties",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "employeeId",
+          "label": "Assigned RM",
+          "type": "ref",
+          "refModule": "employees",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "registrationDate",
+          "label": "Registration Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "salePrice",
+          "label": "Sale Price (INR)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "purchasePrice",
+          "label": "Purchase Price (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "brokerage",
+          "label": "Brokerage Earned (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "commission",
+          "label": "Employee Commission (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Deal Status",
+          "type": "select",
+          "chipGroup": "dealStatus",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "documents",
+          "label": "Documents/Deed File URL",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        }
+      ]
+    },
+    "property_pitch_history": {
+      "id": "property_pitch_history",
+      "label": "Property Pitches",
+      "icon": "Send",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Pitch ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "customerId",
+          "label": "Customer",
+          "type": "ref",
+          "refModule": "customers",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "customerName",
+          "label": "Customer Name",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "propertyId",
+          "label": "Property",
+          "type": "ref",
+          "refModule": "properties",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "propertyName",
+          "label": "Property Name / Plot",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "employeeName",
+          "label": "Employee Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "pitchDate",
+          "label": "Pitch Date & Time",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "pitchMethod",
+          "label": "Pitch Method",
+          "type": "select",
+          "chipGroup": "pitchMethods",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "quotedPrice",
+          "label": "Quoted Price (INR)",
+          "type": "number",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "minNegotiablePrice",
+          "label": "Min Negotiable (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "expectedClosingPrice",
+          "label": "Expected Closing (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "brokerageOffered",
+          "label": "Brokerage Offered (%)",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "paymentTerms",
+          "label": "Payment Terms",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Interest/Pitch Status",
+          "type": "select",
+          "chipGroup": "pitchStatus",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "interestLevel",
+          "label": "Customer Interest Level",
+          "type": "select",
+          "chipGroup": "priorities",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "followUpDate",
+          "label": "Follow Up Date",
+          "type": "date",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "remarks",
+          "label": "Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        }
+      ]
+    },
+    "dealer_calls": {
+      "id": "dealer_calls",
+      "label": "Dealer Calls",
+      "icon": "PhoneCall",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Call ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "dealerId",
+          "label": "Dealer",
+          "type": "ref",
+          "refModule": "dealers",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "date",
+          "label": "Call Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "duration",
+          "label": "Duration (sec)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "interest",
+          "label": "Dealer Interest",
+          "type": "select",
+          "chipGroup": "priorities",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "propertiesDiscussed",
+          "label": "Properties Discussed",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "buyerRequirements",
+          "label": "Buyer Requirements",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "sellerRequirements",
+          "label": "Seller Requirements",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "areasOfInterest",
+          "label": "Areas of Interest",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "budgetRange",
+          "label": "Budget Range",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "expectedInventory",
+          "label": "Expected Inventory",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "preferredPropertyType",
+          "label": "Preferred Prop Type",
+          "type": "select",
+          "chipGroup": "propertyTypes",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "meetingRequired",
+          "label": "Meeting Required?",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "followUpDate",
+          "label": "Next Follow-up Date",
+          "type": "date",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "remarks",
+          "label": "Detailed Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "employeeName",
+          "label": "Executive Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        }
+      ]
+    },
+    "dealer_meetings": {
+      "id": "dealer_meetings",
+      "label": "Dealer Meetings",
+      "icon": "Calendar",
+      "fields": [
+        {
+          "name": "id",
+          "label": "Meeting ID",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": false
+        },
+        {
+          "name": "dealerId",
+          "label": "Dealer",
+          "type": "ref",
+          "refModule": "dealers",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "assignedEmployeeId",
+          "label": "Assigned Exec",
+          "type": "ref",
+          "refModule": "employees",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "meetingDate",
+          "label": "Meeting Date",
+          "type": "date",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "meetingTime",
+          "label": "Meeting Time",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "priority",
+          "label": "Priority",
+          "type": "select",
+          "chipGroup": "meetingPriorities",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "purpose",
+          "label": "Purpose",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "instructions",
+          "label": "Admin Instructions",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "status",
+          "label": "Meeting Status",
+          "type": "select",
+          "chipGroup": "meetingStatus",
+          "required": true,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "start_time",
+          "label": "Actual Start Time",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "end_time",
+          "label": "Actual End Time",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "outcome",
+          "label": "Meeting Outcome",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "interest_level",
+          "label": "Interest Level",
+          "type": "select",
+          "chipGroup": "priorities",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "properties_discussed",
+          "label": "Properties Discussed",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "new_buyer_leads",
+          "label": "New Buyer Leads Obtained",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "new_seller_leads",
+          "label": "New Seller Leads Obtained",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "documents_collected",
+          "label": "Documents Collected",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "next_action",
+          "label": "Next Action Plan",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "followUpDate",
+          "label": "Next Follow-up Date",
+          "type": "date",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "remarks",
+          "label": "Detailed Meeting Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        }
+      ]
     }
   },
   "chips": {
@@ -1729,6 +2454,21 @@
         "value": "Blocked",
         "label": "Blocked by Builder",
         "color": "#EF4444"
+      },
+      {
+        "value": "Agreement Done",
+        "label": "Agreement Done",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Registry Done",
+        "label": "Registry Done",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Inactive",
+        "label": "Inactive Listing",
+        "color": "#6B7280"
       }
     ],
     "builders": [
@@ -2049,6 +2789,271 @@
         "label": "Locked 🔒",
         "color": "#0F172A"
       }
+    ],
+    "leadTypes": [
+      {
+        "value": "Buyer",
+        "label": "Buyer Client",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Seller",
+        "label": "Seller Client",
+        "color": "#10B981"
+      }
+    ],
+    "queryTypes": [
+      {
+        "value": "Buy Property",
+        "label": "Buy Property",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Sell Property",
+        "label": "Sell Property",
+        "color": "#10B981"
+      }
+    ],
+    "queryStatus": [
+      {
+        "value": "Pending Approval",
+        "label": "Pending Approval",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Approved",
+        "label": "Approved",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Rejected",
+        "label": "Rejected",
+        "color": "#EF4444"
+      }
+    ],
+    "buyerQueryStages": [
+      {
+        "value": "New Query",
+        "label": "New Query",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Contacted",
+        "label": "Contacted",
+        "color": "#6366F1"
+      },
+      {
+        "value": "Requirement Verified",
+        "label": "Requirement Verified",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Property Matching",
+        "label": "Property Matching",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Site Visit",
+        "label": "Site Visit",
+        "color": "#F43F5E"
+      },
+      {
+        "value": "Negotiation",
+        "label": "Negotiation",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Token",
+        "label": "Token Received",
+        "color": "#10B981"
+      },
+      {
+        "value": "Agreement",
+        "label": "Agreement Signed",
+        "color": "#14B8A6"
+      },
+      {
+        "value": "Documentation",
+        "label": "Documentation",
+        "color": "#06B6D4"
+      },
+      {
+        "value": "Registration",
+        "label": "Registration",
+        "color": "#0EA5E9"
+      },
+      {
+        "value": "Closed",
+        "label": "Closed",
+        "color": "#1E293B"
+      }
+    ],
+    "sellerQueryStages": [
+      {
+        "value": "New Query",
+        "label": "New Query",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Property Inspection",
+        "label": "Property Inspection",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Documents Verification",
+        "label": "Documents Verification",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Approval",
+        "label": "Admin Approval",
+        "color": "#10B981"
+      },
+      {
+        "value": "Inventory Added",
+        "label": "Inventory Added",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Available For Sale",
+        "label": "Available For Sale",
+        "color": "#22C55E"
+      }
+    ],
+    "dealStatus": [
+      {
+        "value": "Pending",
+        "label": "Under Process",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Closed",
+        "label": "Closed & Registered",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Cancelled",
+        "label": "Cancelled / Void",
+        "color": "#EF4444"
+      }
+    ],
+    "pitchStatus": [
+      {
+        "value": "Pitched",
+        "label": "Pitched",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Interested",
+        "label": "Interested",
+        "color": "#10B981"
+      },
+      {
+        "value": "Not Interested",
+        "label": "Not Interested",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Site Visit Scheduled",
+        "label": "Site Visit Scheduled",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Site Visit Completed",
+        "label": "Site Visit Completed",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Negotiation",
+        "label": "Negotiation",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Token Received",
+        "label": "Token Received",
+        "color": "#14B8A6"
+      },
+      {
+        "value": "Deal Closed",
+        "label": "Deal Closed",
+        "color": "#1E293B"
+      },
+      {
+        "value": "Rejected",
+        "label": "Rejected",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Hold",
+        "label": "On Hold",
+        "color": "#6B7280"
+      },
+      {
+        "value": "Follow-up Required",
+        "label": "Follow-up Required",
+        "color": "#EAB308"
+      }
+    ],
+    "pitchMethods": [
+      {
+        "value": "Call",
+        "label": "Phone Call",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "WhatsApp",
+        "label": "WhatsApp Message",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Office Visit",
+        "label": "Office Visit",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Site Visit",
+        "label": "Site Visit",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Email",
+        "label": "Email",
+        "color": "#6B7280"
+      }
+    ],
+    "meetingPriorities": [
+      {
+        "value": "High",
+        "label": "High Priority",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Medium",
+        "label": "Medium Priority",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Low",
+        "label": "Low Priority",
+        "color": "#3B82F6"
+      }
+    ],
+    "meetingStatus": [
+      {
+        "value": "Assigned",
+        "label": "Assigned / Pending",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Completed",
+        "label": "Completed",
+        "color": "#22C55E"
+      },
+      {
+        "value": "Cancelled",
+        "label": "Cancelled",
+        "color": "#EF4444"
+      }
     ]
   },
   "rolesPermissions": {
@@ -2167,6 +3172,46 @@
         "delete",
         "export",
         "print"
+      ],
+      "queries": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "deals": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "property_pitch_history": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "dealer_calls": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
+      ],
+      "dealer_meetings": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export",
+        "print"
       ]
     },
     "Manager": {
@@ -2265,6 +3310,41 @@
         "delete",
         "export",
         "print"
+      ],
+      "queries": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
+      ],
+      "deals": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
+      ],
+      "property_pitch_history": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
+      ],
+      "dealer_calls": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
+      ],
+      "dealer_meetings": [
+        "view",
+        "create",
+        "edit",
+        "delete",
+        "export"
       ]
     },
     "Sales": {
@@ -2331,6 +3411,28 @@
       ],
       "salaries": [
         "view"
+      ],
+      "queries": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "deals": [
+        "view"
+      ],
+      "property_pitch_history": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "dealer_calls": [
+        "view",
+        "create",
+        "edit"
+      ],
+      "dealer_meetings": [
+        "view",
+        "edit"
       ]
     },
     "Employee": {
@@ -2366,6 +3468,19 @@
       ],
       "salaries": [
         "view"
+      ],
+      "queries": [
+        "view"
+      ],
+      "property_pitch_history": [
+        "view"
+      ],
+      "dealer_calls": [
+        "view"
+      ],
+      "dealer_meetings": [
+        "view",
+        "edit"
       ]
     }
   },

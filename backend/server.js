@@ -68,7 +68,12 @@ function resequenceAllModules() {
     documents: 'DOC',
     attendance: 'ATT',
     daily_prices: 'PRICE',
-    salaries: 'SAL'
+    salaries: 'SAL',
+    queries: 'QRY',
+    deals: 'DEAL',
+    property_pitch_history: 'PITCH',
+    dealer_calls: 'CALL',
+    dealer_meetings: 'MEET'
   };
 
   Object.keys(prefixMap).forEach(module => {
@@ -252,6 +257,430 @@ app.post('/api/metadata', authenticateToken, checkPermission('settings', 'edit')
   }
 });
 
+// --- AUTOMATION TRIGGERS ---
+
+function handleQueryStageChange(q, db, req) {
+  if (!q.id) return;
+  const isInventoryAdded = q.queryType === 'Sell Property' && (q.stage === 'Inventory Added' || q.stage === 'Available For Sale');
+  if (isInventoryAdded) {
+    db.properties = db.properties || [];
+    const propExists = db.properties.some(p => p.linkedQueryId === q.id);
+    if (!propExists) {
+      const propId = `PROP-${String(db.properties.length + 1).padStart(3, '0')}`;
+      const cust = (db.customers || []).find(c => String(c.id) === String(q.customerId));
+      const ownerName = cust ? cust.name : 'Unknown Owner';
+      const ownerPhone = cust ? cust.phone : '';
+      
+      const newProperty = {
+        id: propId,
+        status: 'Available',
+        date: new Date().toISOString().split('T')[0],
+        contact_person_name: ownerName,
+        contact_number: ownerPhone,
+        dealer_owner_booked: 'Owner',
+        r_c_i: q.r_c_i || 'Residential',
+        propertyType: q.propertyType || 'Villa',
+        locality: q.locality || '',
+        sector_block: q.sector_block || '',
+        address_number: '',
+        size: q.size || '',
+        demand: q.demand || '',
+        linkedQueryId: q.id,
+        current_owner_id: q.customerId,
+        owner_history: [],
+        timeline: [
+          {
+            date: new Date().toLocaleDateString('en-IN'),
+            event: 'Property Added to Inventory',
+            details: `Automatically created from Sell Property Query ${q.id} by ${ownerName}`
+          }
+        ]
+      };
+      db.properties.push(newProperty);
+      
+      if (q.assignedEmployeeId) {
+        setTimeout(() => {
+          notifyUser(q.assignedEmployeeId, 'new-property-matched', {
+            propertyId: propId,
+            message: `Property ${propId} added automatically from Sell Query ${q.id}`
+          });
+        }, 500);
+      }
+      
+      db.activity_logs = db.activity_logs || [];
+      db.activity_logs.unshift({
+        id: `LOG-${Date.now()}`,
+        employeeName: req.user ? req.user.name : 'System',
+        action: `Automatically created Property ${propId} in inventory from Query ${q.id}`,
+        dateTime: new Date().toLocaleString()
+      });
+      
+      writeDb(db);
+      try { syncToSheets('properties'); } catch(e) {}
+    }
+  }
+}
+
+function handleDealStatusChange(d, db, req) {
+  if (!d.id || d.status !== 'Closed') return;
+  
+  db.properties = db.properties || [];
+  const propIndex = db.properties.findIndex(p => String(p.id) === String(d.propertyId));
+  if (propIndex !== -1) {
+    const prop = db.properties[propIndex];
+    
+    const prevOwnerId = prop.current_owner_id || d.sellerCustomerId || '';
+    const prevOwnerName = prop.contact_person_name || '';
+    
+    const buyerCust = (db.customers || []).find(c => String(c.id) === String(d.customerId));
+    const buyerName = buyerCust ? buyerCust.name : (d.customerId || 'Unknown');
+    
+    prop.owner_history = prop.owner_history || [];
+    if (prevOwnerId) {
+      prop.owner_history.push({
+        ownerId: prevOwnerId,
+        ownerName: prevOwnerName,
+        purchaseDate: prop.date || '',
+        purchasePrice: prop.demand || '',
+        saleDate: d.registrationDate || new Date().toISOString().split('T')[0],
+        salePrice: d.salePrice || ''
+      });
+    }
+    
+    prop.current_owner_id = d.customerId;
+    prop.contact_person_name = buyerName;
+    prop.contact_number = buyerCust ? buyerCust.phone : (prop.contact_number || '');
+    prop.status = 'Sold';
+    
+    prop.ownership_documents = prop.ownership_documents || { old_owner: [], new_owner: [] };
+    if (prop.ownership_documents.new_owner && prop.ownership_documents.new_owner.length > 0) {
+      prop.ownership_documents.old_owner = [
+        ...(prop.ownership_documents.old_owner || []),
+        ...prop.ownership_documents.new_owner
+      ];
+    }
+    
+    prop.ownership_documents.new_owner = [];
+    if (d.documents) {
+      prop.ownership_documents.new_owner = Array.isArray(d.documents) 
+        ? d.documents 
+        : [d.documents];
+    }
+    
+    prop.timeline = prop.timeline || [];
+    prop.timeline.push({
+      date: new Date().toLocaleDateString('en-IN'),
+      event: 'Ownership Changed (Deal Closed)',
+      details: `Sold by ${prevOwnerName || 'Unknown'} to ${buyerName} for ₹${d.salePrice}`
+    });
+    
+    db.properties[propIndex] = prop;
+    
+    if (d.employeeId) {
+      setTimeout(() => {
+        notifyUser(d.employeeId, 'deal-closed-notif', {
+          dealId: d.id,
+          message: `Deal ${d.id} for Property ${d.propertyId} has been closed and ownership updated.`
+        });
+      }, 500);
+    }
+    
+    db.activity_logs = db.activity_logs || [];
+    db.activity_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      employeeName: req.user ? req.user.name : 'System',
+      action: `Deal ${d.id} closed. Ownership of Property ${d.propertyId} transferred to Customer ${d.customerId}.`,
+      dateTime: new Date().toLocaleString()
+    });
+    
+    writeDb(db);
+    try { syncToSheets('properties'); } catch(e) {}
+  }
+}
+
+function handleLeadStatusChange(lead, db, req) {
+  if (lead.status === 'Converted') {
+    const cleanPhone = String(lead.phone).trim();
+    let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
+    
+    if (!existingCust) {
+      const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
+      existingCust = {
+        id: custId,
+        name: lead.name,
+        email: lead.email || '',
+        phone: lead.phone,
+        stage: 'New Lead',
+        assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
+        budget: lead.budget || '',
+        city: lead.locality || '',
+        requirements: lead.remarks || 'Converted from Lead.',
+        dateAdded: new Date().toISOString().split('T')[0]
+      };
+      db.customers = db.customers || [];
+      db.customers.push(existingCust);
+      writeDb(db);
+      try { syncToSheets('customers'); } catch(e) {}
+    }
+    
+    db.queries = db.queries || [];
+    const queryId = `QRY-${String(db.queries.length + 1).padStart(3, '0')}`;
+    const queryType = lead.leadType === 'Seller' ? 'Sell Property' : 'Buy Property';
+    
+    const newQuery = {
+      id: queryId,
+      customerId: existingCust.id,
+      assignedEmployeeId: existingCust.assignedEmployeeId,
+      date: new Date().toLocaleDateString('en-IN'),
+      status: 'Pending Approval',
+      queryType: queryType,
+      stage: 'New Query',
+      budget: lead.budget || '',
+      demand: lead.demand || '',
+      r_c_i: lead.r_c_i || '',
+      propertyType: lead.propertyType || '',
+      locality: lead.locality || '',
+      sector_block: lead.sector_block || '',
+      size: lead.size || '',
+      remarks: `Converted from Lead ${lead.id}.`
+    };
+    db.queries.push(newQuery);
+    writeDb(db);
+    try { syncToSheets('queries'); } catch(e) {}
+    
+    db.activity_logs = db.activity_logs || [];
+    db.activity_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      employeeName: req.user ? req.user.name : 'System',
+      action: `Converted Lead ${lead.id} to Customer ${existingCust.id} and created Query ${queryId}`,
+      dateTime: new Date().toLocaleString()
+    });
+    writeDb(db);
+  }
+}
+
+function generateDynamicTimeline(moduleName, id, db) {
+  const timeline = [];
+  const allRemarks = db.remarks || [];
+  const allSiteVisits = db.site_visits || [];
+  const allFollowUps = db.follow_ups || [];
+  const allQueries = db.queries || [];
+  const allDeals = db.deals || [];
+  const allPitches = db.property_pitch_history || [];
+  const allLeads = db.leads || [];
+
+  if (moduleName === 'customers') {
+    const cust = (db.customers || []).find(c => String(c.id) === String(id));
+    if (cust) {
+      timeline.push({
+        date: cust.dateAdded || '',
+        event: 'Customer Profile Created',
+        details: `Customer ${cust.name} added to master record.`,
+        icon: 'UserCheck'
+      });
+      const cleanPhone = String(cust.phone).trim();
+      const cleanEmail = String(cust.email || '').trim().toLowerCase();
+      allLeads.forEach(l => {
+        const leadPhone = String(l.phone).trim();
+        const leadEmail = String(l.email || '').trim().toLowerCase();
+        if (leadPhone === cleanPhone || (cleanEmail && leadEmail === cleanEmail)) {
+          timeline.push({
+            date: l.dateAdded || '',
+            event: `Lead Created (${l.id})`,
+            details: `Source: ${l.source} • Status: ${l.status}`,
+            icon: 'Magnet'
+          });
+        }
+      });
+      allQueries.forEach(q => {
+        if (String(q.customerId) === String(id)) {
+          timeline.push({
+            date: q.date || '',
+            event: `Query Created (${q.id})`,
+            details: `Type: ${q.queryType} • Status: ${q.status} • Stage: ${q.stage}`,
+            icon: 'HelpCircle'
+          });
+        }
+      });
+      allSiteVisits.forEach(v => {
+        if (String(v.customerId) === String(id)) {
+          timeline.push({
+            date: v.date || '',
+            event: `Site Visit Scheduled/Done (${v.id})`,
+            details: `Property: ${v.propertyId} • Result: ${v.result}`,
+            icon: 'Eye'
+          });
+        }
+      });
+      allFollowUps.forEach(f => {
+        if (String(f.customerId) === String(id)) {
+          timeline.push({
+            date: f.date || '',
+            event: `Follow-Up Scheduled (${f.id})`,
+            details: `Status: ${f.status} • Assigned Exec: ${f.employeeId}`,
+            icon: 'PhoneCall'
+          });
+        }
+      });
+      allPitches.forEach(p => {
+        if (String(p.customerId) === String(id)) {
+          timeline.push({
+            date: p.pitchDate ? p.pitchDate.split(' ')[0] : '',
+            event: `Property Pitched (${p.id})`,
+            details: `Property: ${p.propertyId} pitched by ${p.employeeName} via ${p.pitchMethod}`,
+            icon: 'Send'
+          });
+        }
+      });
+      allDeals.forEach(d => {
+        if (String(d.customerId) === String(id) || String(d.sellerCustomerId) === String(id)) {
+          const role = String(d.customerId) === String(id) ? 'Buyer' : 'Seller';
+          timeline.push({
+            date: d.registrationDate || '',
+            event: `Deal ${d.status} (${d.id})`,
+            details: `Customer role: ${role} • Property: ${d.propertyId} • Price: ₹${d.salePrice}`,
+            icon: 'Handshake'
+          });
+        }
+      });
+    }
+  } else if (moduleName === 'properties') {
+    const prop = (db.properties || []).find(p => String(p.id) === String(id));
+    if (prop) {
+      timeline.push({
+        date: prop.date || '',
+        event: 'Property Added to Inventory',
+        details: `Status: ${prop.status} • Locality: ${prop.locality} • Price/Demand: ₹${prop.demand}`,
+        icon: 'Home'
+      });
+      allSiteVisits.forEach(v => {
+        if (String(v.propertyId) === String(id)) {
+          timeline.push({
+            date: v.date || '',
+            event: `Site Visit Showcased (${v.id})`,
+            details: `Customer: ${v.customerId} • Result: ${v.result}`,
+            icon: 'Eye'
+          });
+        }
+      });
+      allPitches.forEach(p => {
+        if (String(p.propertyId) === String(id)) {
+          timeline.push({
+            date: p.pitchDate ? p.pitchDate.split(' ')[0] : '',
+            event: `Pitched to Customer (${p.id})`,
+            details: `Pitched to ${p.customerName} by ${p.employeeName}`,
+            icon: 'Send'
+          });
+        }
+      });
+      allDeals.forEach(d => {
+        if (String(d.propertyId) === String(id)) {
+          timeline.push({
+            date: d.registrationDate || '',
+            event: `Deal ${d.status} (${d.id})`,
+            details: `Buyer: ${d.customerId} • Seller: ${d.sellerCustomerId} • Price: ₹${d.salePrice}`,
+            icon: 'Handshake'
+          });
+        }
+      });
+      if (prop.owner_history) {
+        prop.owner_history.forEach(h => {
+          timeline.push({
+            date: h.saleDate || '',
+            event: 'Ownership Transferred',
+            details: `Sold by ${h.ownerName} on ${h.saleDate} for ₹${h.salePrice}`,
+            icon: 'User'
+          });
+        });
+      }
+    }
+  } else if (moduleName === 'leads') {
+    const lead = (db.leads || []).find(l => String(l.id) === String(id));
+    if (lead) {
+      timeline.push({
+        date: lead.dateAdded || '',
+        event: 'Lead Created',
+        details: `Source: ${lead.source} • Budget: ₹${lead.budget}`,
+        icon: 'Magnet'
+      });
+    }
+  } else if (moduleName === 'queries') {
+    const q = (db.queries || []).find(r => String(r.id) === String(id));
+    if (q) {
+      timeline.push({
+        date: q.date || '',
+        event: 'Query Created',
+        details: `Type: ${q.queryType} • Status: ${q.status} • Stage: ${q.stage}`,
+        icon: 'HelpCircle'
+      });
+    }
+  } else if (moduleName === 'deals') {
+    const d = (db.deals || []).find(r => String(r.id) === String(id));
+    if (d) {
+      timeline.push({
+        date: d.registrationDate || '',
+        event: 'Deal Created',
+        details: `Status: ${d.status} • Price: ₹${d.salePrice}`,
+        icon: 'Handshake'
+      });
+    }
+  } else if (moduleName === 'dealers') {
+    const dealer = (db.dealers || []).find(r => String(r.id) === String(id));
+    if (dealer) {
+      timeline.push({
+        date: new Date().toLocaleDateString('en-IN'),
+        event: 'Dealer Created',
+        details: `Firm: ${dealer.firm_name} • Contact: ${dealer.person_name}`,
+        icon: 'Building'
+      });
+      
+      const calls = (db.dealer_calls || []).filter(c => String(c.dealerId) === String(id));
+      calls.forEach(c => {
+        timeline.push({
+          date: c.date || '',
+          event: `Outreach Call logged`,
+          details: `Outcome: ${c.remarks} • Followup: ${c.followUpDate || 'None'} • By: ${c.employeeName}`,
+          icon: 'PhoneCall'
+        });
+      });
+
+      const meetings = (db.dealer_meetings || []).filter(m => String(m.dealerId) === String(id));
+      meetings.forEach(m => {
+        timeline.push({
+          date: m.meetingDate || '',
+          event: `Meeting ${m.status}`,
+          details: `Purpose: ${m.purpose} • Result: ${m.outcome || 'Awaiting Report'}`,
+          icon: 'Calendar'
+        });
+      });
+    }
+  }
+
+  allRemarks.forEach(r => {
+    if (r.targetModule === moduleName && String(r.targetId) === String(id)) {
+      timeline.push({
+        date: r.dateTime ? r.dateTime.split(' ')[0] : '',
+        event: `Remark by ${r.employeeName}`,
+        details: r.comment,
+        icon: 'MessageSquare'
+      });
+    }
+  });
+
+  timeline.sort((a, b) => {
+    const parseDate = (dStr) => {
+      if (!dStr) return new Date(0);
+      if (dStr.includes('-')) return new Date(dStr);
+      const pts = dStr.split('/');
+      if (pts.length === 3) return new Date(pts[2], pts[1] - 1, pts[0]);
+      return new Date(dStr);
+    };
+    return parseDate(b.date) - parseDate(a.date);
+  });
+
+  return timeline;
+}
+
 // --- DYNAMIC DATA CRUD ROUTER ---
 
 app.get('/api/data/:module', authenticateToken, (req, res, next) => {
@@ -329,7 +758,12 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       documents: 'DOC',
       attendance: 'ATT',
       daily_prices: 'PRICE',
-      salaries: 'SAL'
+      salaries: 'SAL',
+      queries: 'QRY',
+      deals: 'DEAL',
+      property_pitch_history: 'PITCH',
+      dealer_calls: 'CALL',
+      dealer_meetings: 'MEET'
     };
     const prefix = prefixMap[module] || module.substring(0, 4).toUpperCase();
     
@@ -366,7 +800,55 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     }
   });
 
-  // Enforce unique phone number
+  // Enforce unique phone number / Master Customer record duplicate prevention
+  if (payload.phone && (module === 'customers' || module === 'leads')) {
+    const cleanPhone = String(payload.phone).trim();
+    const existingCust = (db.customers || []).find(r => r.phone && String(r.phone).trim() === cleanPhone);
+    if (existingCust) {
+      const queryId = `QRY-${String((db.queries || []).length + 1).padStart(3, '0')}`;
+      const queryType = payload.leadType === 'Seller' ? 'Sell Property' : 'Buy Property';
+      
+      const newQuery = {
+        id: queryId,
+        customerId: existingCust.id,
+        assignedEmployeeId: payload.assignedEmployeeId || existingCust.assignedEmployeeId || 'EMP-001',
+        date: new Date().toLocaleDateString('en-IN'),
+        status: 'Pending Approval',
+        queryType: queryType,
+        stage: 'New Query',
+        budget: payload.budget || '',
+        demand: payload.demand || '',
+        r_c_i: payload.r_c_i || '',
+        propertyType: payload.propertyType || '',
+        locality: payload.locality || '',
+        sector_block: payload.sector_block || '',
+        size: payload.size || '',
+        remarks: payload.remarks || payload.initial_notes || 'Auto-created query due to duplicate lead/customer submission.'
+      };
+      
+      if (!db.queries) db.queries = [];
+      db.queries.push(newQuery);
+      
+      const log = {
+        id: `LOG-${Date.now()}`,
+        employeeName: req.user.name,
+        action: `Detected duplicate phone ${cleanPhone}. Created Query ${queryId} for existing customer ${existingCust.id}`,
+        dateTime: new Date().toLocaleString()
+      };
+      if (!db.activity_logs) db.activity_logs = [];
+      db.activity_logs.unshift(log);
+      
+      writeDb(db);
+      try { syncToSheets('queries'); } catch(e) {}
+      
+      return res.status(201).json({
+        __is_redirected_query: true,
+        message: `Customer already exists. Created Query (${queryId}) linked to customer ${existingCust.name} (${existingCust.id}) instead.`,
+        data: newQuery
+      });
+    }
+  }
+
   if (payload.phone) {
     const cleanPhone = String(payload.phone).trim();
     const isDuplicate = (db[module] || []).some(r => r.phone && String(r.phone).trim() === cleanPhone);
@@ -388,6 +870,31 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
 
   if (!db[module]) db[module] = [];
   db[module].push(payload);
+
+  // Call automation triggers
+  if (module === 'queries') handleQueryStageChange(payload, db, req);
+  if (module === 'deals') handleDealStatusChange(payload, db, req);
+  if (module === 'leads') handleLeadStatusChange(payload, db, req);
+
+  // Custom SSE notifications triggers
+  if (module === 'site_visits' && payload.employeeId) {
+    notifyUser(payload.employeeId, 'visit-assigned', {
+      visitId: payload.id,
+      message: `New Site Visit ${payload.id} scheduled/assigned to you.`
+    });
+  }
+  if (module === 'queries' && payload.assignedEmployeeId && payload.status === 'Approved') {
+    notifyUser(payload.assignedEmployeeId, 'query-approved', {
+      queryId: payload.id,
+      message: `Your Property Query ${payload.id} has been Approved.`
+    });
+  }
+  if (module === 'documents') {
+    notifyUser('EMP-001', 'pending-docs-alert', {
+      docId: payload.id,
+      message: `New document "${payload.name}" uploaded. Verification pending.`
+    });
+  }
   
   // Track Activity Log
   const log = {
@@ -452,6 +959,32 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   // Update record preserving fixed identifiers
   db[module][index] = { ...db[module][index], ...payload, id };
 
+  // Call automation triggers
+  if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
+  if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
+  if (module === 'leads') handleLeadStatusChange(db[module][index], db, req);
+
+  // Custom SSE notifications triggers
+  const updatedRec = db[module][index];
+  if (module === 'site_visits' && updatedRec.employeeId) {
+    notifyUser(updatedRec.employeeId, 'visit-assigned', {
+      visitId: updatedRec.id,
+      message: `Site Visit ${updatedRec.id} has been updated/assigned to you.`
+    });
+  }
+  if (module === 'queries' && updatedRec.assignedEmployeeId && updatedRec.status === 'Approved') {
+    notifyUser(updatedRec.assignedEmployeeId, 'query-approved', {
+      queryId: updatedRec.id,
+      message: `Your Property Query ${updatedRec.id} has been Approved.`
+    });
+  }
+  if (module === 'documents') {
+    notifyUser('EMP-001', 'pending-docs-alert', {
+      docId: updatedRec.id,
+      message: `Document "${updatedRec.name}" has been updated. Verification pending.`
+    });
+  }
+
   // Track Activity Log
   const log = {
     id: `LOG-${Date.now()}`,
@@ -498,7 +1031,12 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     documents: 'DOC',
     attendance: 'ATT',
     daily_prices: 'PRICE',
-    salaries: 'SAL'
+    salaries: 'SAL',
+    queries: 'QRY',
+    deals: 'DEAL',
+    property_pitch_history: 'PITCH',
+    dealer_calls: 'CALL',
+    dealer_meetings: 'MEET'
   };
 
   const prefix = prefixMap[module];
@@ -755,6 +1293,101 @@ app.get('/api/search', authenticateToken, (req, res) => {
     }
   });
 
+  // 1.5. Interconnect search results
+  const matchedCustomerIds = new Set();
+  const matchedPropertyIds = new Set();
+  const matchedDealIds = new Set();
+  const matchedDealerIds = new Set();
+
+  if (results.customers) {
+    results.customers.forEach(c => matchedCustomerIds.add(c.id));
+  }
+  if (results.leads) {
+    results.leads.forEach(l => {
+      if (l.phone) {
+        const cleanP = String(l.phone).trim();
+        const cust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanP);
+        if (cust) matchedCustomerIds.add(cust.id);
+      }
+    });
+  }
+  if (results.properties) {
+    results.properties.forEach(p => matchedPropertyIds.add(p.id));
+  }
+  if (results.deals) {
+    results.deals.forEach(d => matchedDealIds.add(d.id));
+  }
+  if (results.sales) {
+    results.sales.forEach(s => matchedDealIds.add(s.id));
+  }
+  if (results.dealers) {
+    results.dealers.forEach(d => matchedDealerIds.add(d.id));
+  }
+
+  // Expand results to include linked records
+  if (matchedCustomerIds.size > 0) {
+    results.queries = results.queries || [];
+    (db.queries || []).forEach(q => {
+      if (matchedCustomerIds.has(q.customerId) && !results.queries.some(r => r.id === q.id)) {
+        results.queries.push(q);
+      }
+    });
+
+    results.deals = results.deals || [];
+    (db.deals || []).forEach(d => {
+      if ((matchedCustomerIds.has(d.customerId) || matchedCustomerIds.has(d.sellerCustomerId)) && !results.deals.some(r => r.id === d.id)) {
+        results.deals.push(d);
+      }
+    });
+
+    results.site_visits = results.site_visits || [];
+    (db.site_visits || []).forEach(v => {
+      if (matchedCustomerIds.has(v.customerId) && !results.site_visits.some(r => r.id === v.id)) {
+        results.site_visits.push(v);
+      }
+    });
+
+    results.properties = results.properties || [];
+    (db.properties || []).forEach(p => {
+      if (matchedCustomerIds.has(p.current_owner_id) && !results.properties.some(r => r.id === p.id)) {
+        results.properties.push(p);
+      }
+    });
+  }
+
+  if (matchedPropertyIds.size > 0) {
+    results.deals = results.deals || [];
+    (db.deals || []).forEach(d => {
+      if (matchedPropertyIds.has(d.propertyId) && !results.deals.some(r => r.id === d.id)) {
+        results.deals.push(d);
+      }
+    });
+
+    results.site_visits = results.site_visits || [];
+    (db.site_visits || []).forEach(v => {
+      if (matchedPropertyIds.has(v.propertyId) && !results.site_visits.some(r => r.id === v.id)) {
+        results.site_visits.push(v);
+      }
+    });
+
+    results.customers = results.customers || [];
+    (db.properties || []).forEach(p => {
+      if (matchedPropertyIds.has(p.id) && p.current_owner_id) {
+        const owner = (db.customers || []).find(c => String(c.id) === String(p.current_owner_id));
+        if (owner && !results.customers.some(r => r.id === owner.id)) {
+          results.customers.push(owner);
+        }
+      }
+    });
+  }
+
+  // Remove empty arrays from results
+  Object.keys(results).forEach(k => {
+    if (results[k].length === 0) {
+      delete results[k];
+    }
+  });
+
   // 2. Resolve Relationships for 360 view if exactly one entity matches, or a detailed query matches
   // Let's build a unified connection profile if there is a primary query focus (e.g. employeeId, propertyId, customerId)
   // Or just query related sub-tables:
@@ -842,8 +1475,17 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
   const allLeaves = db.leaves || [];
   const allRemarks = db.remarks || [];
   const allDocs = db.documents || [];
+  const allQueries = db.queries || [];
+  const allDeals = db.deals || [];
+  const allPitches = db.property_pitch_history || [];
+  const allDealerCalls = db.dealer_calls || [];
+  const allDealerMeetings = db.dealer_meetings || [];
 
   const data = {};
+  
+  // Consolidate dynamic timeline
+  data.timeline = generateDynamicTimeline(module, id, db);
+
   if (module === 'employees') {
     data.attendance = allAttendance.filter(a => String(a.employeeId) === String(id));
     data.leaves = allLeaves.filter(l => String(l.employeeId) === String(id));
@@ -867,6 +1509,22 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     }));
     data.remarks = allRemarks.filter(r => r.targetModule === 'customers' && String(r.targetId) === String(id));
     data.documents = allDocs.filter(d => d.targetModule === 'customers' && String(d.targetId) === String(id));
+    
+    // Extended ERP connections
+    const cleanPhone = String(cust ? cust.phone : '').trim();
+    const cleanEmail = String(cust ? cust.email : '').trim().toLowerCase();
+    data.leads = (db.leads || []).filter(l => {
+      const p = String(l.phone).trim();
+      const e = String(l.email || '').trim().toLowerCase();
+      return p === cleanPhone || (cleanEmail && e === cleanEmail);
+    });
+    data.queries = allQueries.filter(q => String(q.customerId) === String(id));
+    data.propertiesOwned = allProperties.filter(p => String(p.current_owner_id) === String(id));
+    data.deals = allDeals.filter(d => String(d.customerId) === String(id) || String(d.sellerCustomerId) === String(id));
+    data.purchaseHistory = allDeals.filter(d => String(d.customerId) === String(id) && d.status === 'Closed');
+    data.saleHistory = allDeals.filter(d => String(d.sellerCustomerId) === String(id) && d.status === 'Closed');
+    data.pitches = allPitches.filter(p => String(p.customerId) === String(id));
+    data.payments = []; // No payment module exists in GR CRM metadata
   } else if (module === 'properties') {
     const prop = allProperties.find(p => String(p.id) === String(id));
     data.employee = allEmployees.find(e => String(e.id) === String(prop && prop.assignedEmployeeId));
@@ -877,10 +1535,33 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     data.sales = allSales.filter(s => String(s.propertyId) === String(id));
     data.remarks = allRemarks.filter(r => r.targetModule === 'properties' && String(r.targetId) === String(id));
     data.documents = allDocs.filter(d => d.targetModule === 'properties' && String(d.targetId) === String(id));
+    
+    // Add ownership documents from prop fields
+    if (prop && prop.ownership_documents) {
+      const oldOwnerDocs = (prop.ownership_documents.old_owner || []).map(d => ({ ...d, uploadedBy: 'System', dateAdded: prop.date, id: `DOC-OLD-${d.name}` }));
+      const newOwnerDocs = (prop.ownership_documents.new_owner || []).map(d => ({ ...d, uploadedBy: 'System', dateAdded: prop.date, id: `DOC-NEW-${d.name}` }));
+      data.documents = [...data.documents, ...oldOwnerDocs, ...newOwnerDocs];
+    }
+    
     data.viewsCount = data.site_visits.length;
     data.viewedBy = data.site_visits.map(v => v.customer).filter(Boolean);
+    
+    // Extended ERP connections
+    data.currentOwner = allCustomers.find(c => String(c.id) === String(prop && prop.current_owner_id));
+    data.ownerHistory = prop ? (prop.owner_history || []) : [];
+    data.deals = allDeals.filter(d => String(d.propertyId) === String(id));
+    data.buyerHistory = data.deals.map(d => allCustomers.find(c => String(c.id) === String(d.customerId))).filter(Boolean);
+    data.sellerHistory = data.deals.map(d => allCustomers.find(c => String(c.id) === String(d.sellerCustomerId))).filter(Boolean);
+    data.pitches = allPitches.filter(p => String(p.propertyId) === String(id));
+  } else if (module === 'dealers') {
+    data.remarks = allRemarks.filter(r => r.targetModule === 'dealers' && String(r.targetId) === String(id));
+    data.documents = allDocs.filter(d => d.targetModule === 'dealers' && String(d.targetId) === String(id));
+    data.calls = allDealerCalls.filter(c => String(c.dealerId) === String(id));
+    data.meetings = allDealerMeetings.filter(m => String(m.dealerId) === String(id)).map(m => ({
+      ...m,
+      assignedEmployeeName: allEmployees.find(e => String(e.id) === String(m.assignedEmployeeId))?.name || m.assignedEmployeeId
+    }));
   } else {
-    // Basic fallback for other tables: search remarks and documents linked to them
     data.remarks = allRemarks.filter(r => r.targetModule === module && r.targetId === id);
     data.documents = allDocs.filter(d => d.targetModule === module && d.targetId === id);
   }
@@ -1221,7 +1902,12 @@ app.post('/api/public/quick-add', (req, res) => {
     documents: 'DOC',
     attendance: 'ATT',
     daily_prices: 'PRICE',
-    salaries: 'SAL'
+    salaries: 'SAL',
+    queries: 'QRY',
+    deals: 'DEAL',
+    property_pitch_history: 'PITCH',
+    dealer_calls: 'CALL',
+    dealer_meetings: 'MEET'
   };
   const prefix = prefixMap[module] || module.substring(0, 4).toUpperCase();
   

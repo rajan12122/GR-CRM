@@ -32,6 +32,29 @@ const DynamicForm = ({
   const [errors, setErrors] = useState({});
   const [customValues, setCustomValues] = useState({});
 
+  // Dynamic field filtering based on leadType or queryType
+  const filteredFields = fields.filter(f => {
+    if (moduleKey === 'leads') {
+      const type = formData.leadType;
+      if (type === 'Buyer') {
+        if (f.name === 'demand') return false;
+      }
+      if (type === 'Seller') {
+        if (f.name === 'budget') return false;
+      }
+    }
+    if (moduleKey === 'queries') {
+      const type = formData.queryType;
+      if (type === 'Buy Property') {
+        if (f.name === 'demand') return false;
+      }
+      if (type === 'Sell Property') {
+        if (f.name === 'budget') return false;
+      }
+    }
+    return true;
+  });
+
   // Trigger references fetches on form open
   useEffect(() => {
     if (open) {
@@ -108,7 +131,7 @@ const DynamicForm = ({
 
   const validate = () => {
     const newErrors = {};
-    fields.forEach(f => {
+    filteredFields.forEach(f => {
       if (f.name === 'id' && !initialData) return; // Skip validation for auto-assigned ID
       
       if (f.required) {
@@ -197,7 +220,7 @@ const DynamicForm = ({
             </Alert>
           )}
           <Grid container spacing={2}>
-            {fields.map(f => {
+            {filteredFields.map(f => {
               if (f.name === 'id' && !initialData) return null; // Hide auto-generated ID field on create
               
               // Primary keys or non-editable fields (like ID on edit) should be read-only

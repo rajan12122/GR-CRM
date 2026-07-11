@@ -22,7 +22,8 @@ const PipelineView = () => {
 
   useEffect(() => {
     if (metadata) {
-      fetchModuleData(pipelineType);
+      const moduleToFetch = (pipelineType === 'buyer_query' || pipelineType === 'seller_query') ? 'queries' : pipelineType;
+      fetchModuleData(moduleToFetch);
     }
   }, [pipelineType, metadata]);
 
@@ -34,6 +35,7 @@ const PipelineView = () => {
   let chipGroup = '';
   let title = '';
   let subtitle = '';
+  let filterFn = (rec) => true;
 
   if (pipelineType === 'properties') {
     targetModule = 'properties';
@@ -47,6 +49,20 @@ const PipelineView = () => {
     chipGroup = 'customerStages';
     title = 'Client Deal Nurturing Pipeline';
     subtitle = 'Track customer pathways from fresh leads to negotiation and booking closeouts.';
+  } else if (pipelineType === 'buyer_query') {
+    targetModule = 'queries';
+    stageField = 'stage';
+    chipGroup = 'buyerQueryStages';
+    title = 'Buyer Query Pipeline';
+    subtitle = 'Track prospective buyer query progression from Verified to Closed.';
+    filterFn = (rec) => rec.queryType === 'Buy Property' || !rec.queryType;
+  } else if (pipelineType === 'seller_query') {
+    targetModule = 'queries';
+    stageField = 'stage';
+    chipGroup = 'sellerQueryStages';
+    title = 'Seller Query Pipeline';
+    subtitle = 'Track seller property listings from inspection to sale readiness.';
+    filterFn = (rec) => rec.queryType === 'Sell Property';
   } else {
     return (
       <Box sx={{ p: 4 }}>
@@ -56,11 +72,11 @@ const PipelineView = () => {
   }
 
   const stages = metadata.chips[chipGroup] || [];
-  const records = moduleData[targetModule] || [];
+  const records = (moduleData[targetModule] || []).filter(filterFn);
 
   const handleCardMove = async (cardId, targetStageValue) => {
-    // Optimistically update
-    const record = records.find(r => r.id === cardId);
+    const allRecords = moduleData[targetModule] || [];
+    const record = allRecords.find(r => r.id === cardId);
     if (!record) return;
 
     const payload = { ...record, [stageField]: targetStageValue };

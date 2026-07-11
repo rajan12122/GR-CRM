@@ -200,6 +200,56 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
               />
             </ListItemButton>
           </ListItem>
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleNavClick('/pipeline/buyer_query')}
+              selected={activePath === '/pipeline/buyer_query'}
+              sx={{
+                borderRadius: '8px',
+                py: 1.2,
+                px: 2,
+                backgroundColor: activePath === '/pipeline/buyer_query' ? 'rgba(37, 99, 235, 0.15) !important' : 'transparent',
+                color: activePath === '/pipeline/buyer_query' ? '#3B82F6' : '#94A3B8',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  color: '#FFFFFF'
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                <Icons.TrendingUp size={20} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Buyer Query Pipeline" 
+                primaryTypographyProps={{ fontSize: '14px', fontWeight: 600 }} 
+              />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
+              onClick={() => handleNavClick('/pipeline/seller_query')}
+              selected={activePath === '/pipeline/seller_query'}
+              sx={{
+                borderRadius: '8px',
+                py: 1.2,
+                px: 2,
+                backgroundColor: activePath === '/pipeline/seller_query' ? 'rgba(37, 99, 235, 0.15) !important' : 'transparent',
+                color: activePath === '/pipeline/seller_query' ? '#3B82F6' : '#94A3B8',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  color: '#FFFFFF'
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                <Icons.TrendingDown size={20} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Seller Query Pipeline" 
+                primaryTypographyProps={{ fontSize: '14px', fontWeight: 600 }} 
+              />
+            </ListItemButton>
+          </ListItem>
         </List>
 
         <Typography variant="caption" sx={{ px: 3.5, py: 1.5, display: 'block', textTransform: 'uppercase', fontSize: '11px', fontWeight: 700, color: '#475569', letterSpacing: '0.05em' }}>

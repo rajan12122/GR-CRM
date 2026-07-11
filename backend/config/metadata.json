@@ -342,6 +342,31 @@
           "required": true,
           "showInTable": true,
           "editable": false
+        },
+        {
+          "name": "pitchedPropertyId",
+          "label": "Did you pitch any property?",
+          "type": "ref",
+          "refModule": "properties",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "pitchPrice",
+          "label": "Quoted Pitch Price (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "pitchRemarks",
+          "label": "Pitch Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
         }
       ]
     },
@@ -821,6 +846,31 @@
           "showInTable": true,
           "editable": true,
           "chipGroup": "followUpStatus"
+        },
+        {
+          "name": "pitchedPropertyId",
+          "label": "Did you pitch any property?",
+          "type": "ref",
+          "refModule": "properties",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "pitchPrice",
+          "label": "Quoted Pitch Price (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "pitchRemarks",
+          "label": "Pitch Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
         }
       ]
     },

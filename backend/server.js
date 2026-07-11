@@ -259,9 +259,47 @@ app.post('/api/metadata', authenticateToken, checkPermission('settings', 'edit')
 
 // --- AUTOMATION TRIGGERS ---
 
+function handleAutomatedPitchLogging(rec, db, req) {
+  if (!rec.pitchedPropertyId) return;
+  
+  db.property_pitch_history = db.property_pitch_history || [];
+  
+  const custId = rec.customerId || rec.id;
+  const cust = (db.customers || []).find(c => String(c.id) === String(custId)) || (db.leads || []).find(l => String(l.id) === String(custId));
+  const custName = cust ? (cust.name || cust.person_name || 'Client') : 'Client';
+  
+  const exists = db.property_pitch_history.some(p => String(p.customerId) === String(custId) && String(p.propertyId) === String(rec.pitchedPropertyId));
+  if (!exists) {
+    const pitchId = `PITCH-${String(db.property_pitch_history.length + 1).padStart(3, '0')}`;
+    const empName = req.user ? req.user.name : (rec.created_by || 'Sales Executive');
+    const newPitch = {
+      id: pitchId,
+      customerId: custId,
+      customerName: custName,
+      propertyId: rec.pitchedPropertyId,
+      employeeId: rec.assignedEmployeeId || (req.user ? req.user.id : 'EMP-001'),
+      employeeName: empName,
+      pitchMethod: 'Call',
+      interestLevel: 'Interested',
+      quotedPrice: Number(rec.pitchPrice || 0),
+      remarks: rec.pitchRemarks || 'Automatically logged from lead/follow-up entry.',
+      pitchDate: new Date().toLocaleDateString('en-IN')
+    };
+    db.property_pitch_history.push(newPitch);
+    
+    db.activity_logs = db.activity_logs || [];
+    db.activity_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      employeeName: empName,
+      action: `Automatically logged pitch ${pitchId} for Property ${rec.pitchedPropertyId} matching Client ${custId}`,
+      dateTime: new Date().toLocaleString()
+    });
+  }
+}
+
 function handleQueryStageChange(q, db, req) {
   if (!q.id) return;
-  const isInventoryAdded = q.queryType === 'Sell Property' && (q.stage === 'Inventory Added' || q.stage === 'Available For Sale');
+  const isInventoryAdded = q.queryType === 'Sell Property' && (q.status === 'Approved' || q.stage === 'Inventory Added' || q.stage === 'Available For Sale');
   if (isInventoryAdded) {
     db.properties = db.properties || [];
     const propExists = db.properties.some(p => p.linkedQueryId === q.id);
@@ -875,6 +913,9 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   if (module === 'queries') handleQueryStageChange(payload, db, req);
   if (module === 'deals') handleDealStatusChange(payload, db, req);
   if (module === 'leads') handleLeadStatusChange(payload, db, req);
+  if ((module === 'leads' || module === 'follow_ups') && payload.pitchedPropertyId) {
+    handleAutomatedPitchLogging(payload, db, req);
+  }
 
   // Custom SSE notifications triggers
   if (module === 'site_visits' && payload.employeeId) {
@@ -963,6 +1004,9 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
   if (module === 'leads') handleLeadStatusChange(db[module][index], db, req);
+  if ((module === 'leads' || module === 'follow_ups') && db[module][index].pitchedPropertyId) {
+    handleAutomatedPitchLogging(db[module][index], db, req);
+  }
 
   // Custom SSE notifications triggers
   const updatedRec = db[module][index];

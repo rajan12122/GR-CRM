@@ -1019,6 +1019,7 @@ const Salary = () => {
                         <TableCell sx={{ fontWeight: 700 }}>Check Out</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Hours</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Travel KM</TableCell>
                         <TableCell sx={{ fontWeight: 700 }}>Remarks</TableCell>
                       </TableRow>
                     </TableHead>
@@ -1047,11 +1048,14 @@ const Salary = () => {
                                 }}
                               />
                             </TableCell>
+                            <TableCell sx={{ fontWeight: 700, color: (Number(log.netKm) || 0) > 0 ? '#16A34A' : '#0F172A' }}>
+                              {log.netKm !== undefined ? `${log.netKm} KM` : '---'}
+                            </TableCell>
                             <TableCell sx={{ color: '#64748B', fontSize: '12px' }}>{log.remarks}</TableCell>
                           </TableRow>
                           {(log.odometerStart !== undefined || log.odometerEnd !== undefined) && (
                             <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
-                              <TableCell colSpan={7} sx={{ py: 0.5, pl: 4 }}>
+                              <TableCell colSpan={8} align="left" sx={{ py: 0.5, pl: 4 }}>
                                 <Typography variant="caption" sx={{ color: '#475569', fontWeight: 600 }}>
                                   🏍️ Bike Odometer: Start: <strong>{log.odometerStart || 0} KM</strong>
                                   {log.odometerEnd ? ` | End: ${log.odometerEnd} KM` : ''}

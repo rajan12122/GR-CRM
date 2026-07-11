@@ -128,10 +128,8 @@ const Attendance = () => {
   const compressImage = (file, maxWidth = 1000, maxH = 1000) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.readAsDataURL(file);
       reader.onload = (event) => {
         const img = new Image();
-        img.src = event.target.result;
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
@@ -158,8 +156,10 @@ const Attendance = () => {
           resolve(dataUrl);
         };
         img.onerror = (err) => reject(err);
+        img.src = event.target.result;
       };
       reader.onerror = (err) => reject(err);
+      reader.readAsDataURL(file);
     });
   };
 
@@ -168,8 +168,20 @@ const Attendance = () => {
     if (!file) return;
     try {
       setUploadingPhoto(true);
-      // Compress the image before uploading to keep request sizes tiny (under 100KB instead of 10MB)!
-      const base64Clean = await compressImage(file);
+      
+      let base64Clean;
+      try {
+        // Compress the image before uploading to keep request sizes tiny (under 100KB instead of 10MB)!
+        base64Clean = await compressImage(file);
+      } catch (compressErr) {
+        console.warn("Client-side image compression failed, falling back to raw upload:", compressErr);
+        base64Clean = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = (err) => reject(err);
+          reader.readAsDataURL(file);
+        });
+      }
       
       const res = await fetch('/api/upload', {
         method: 'POST',
@@ -1151,6 +1163,102 @@ const Attendance = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* My Attendance & Travel Logs for Employees */}
+      <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', mt: 4, mb: 4 }}>
+        <CardContent sx={{ p: 3 }}>
+          <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Icons.CalendarRange size={22} style={{ color: '#2563EB' }} />
+            My Attendance & Travel History (This Month)
+          </Typography>
+          <Divider sx={{ mb: 2.5 }} />
+
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '12px', overflow: 'hidden' }}>
+            <Table size="small">
+              <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 700 }}>Date</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>In Time</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Out Time</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Odometer Start</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Odometer End</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Personal Use</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Final Reading</TableCell>
+                  <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {(() => {
+                  const myMonthLogs = attendanceList
+                    .filter(a => String(a.employeeId) === String(user?.id))
+                    .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                  if (myMonthLogs.length === 0) {
+                    return (
+                      <TableRow>
+                        <TableCell colSpan={8} align="center" sx={{ py: 4, color: '#94A3B8' }}>
+                          No attendance or travel records logged for this month.
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  return myMonthLogs.map(log => {
+                    const finalKm = Math.max(0, (Number(log.odometerEnd) || 0) - (Number(log.odometerStart) || 0) - (Number(log.personalUseKm) || 0));
+                    return (
+                      <TableRow key={log.id} hover>
+                        <TableCell sx={{ fontWeight: 600 }}>{log.date}</TableCell>
+                        <TableCell>{log.inTime}</TableCell>
+                        <TableCell>{log.outTime || '---'}</TableCell>
+                        <TableCell>
+                          {log.odometerStart !== undefined ? (
+                            <Box display="flex" alignItems="center" gap={0.5}>
+                              {log.odometerStart} KM
+                              {log.odometerStartPhoto && (
+                                <a href={log.odometerStartPhoto} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', color: '#2563EB' }}>
+                                  <Icons.Image size={14} />
+                                </a>
+                              )}
+                            </Box>
+                          ) : '---'}
+                        </TableCell>
+                        <TableCell>
+                          {log.odometerEnd !== undefined ? (
+                            <Box display="flex" alignItems="center" gap={0.5}>
+                              {log.odometerEnd} KM
+                              {log.odometerEndPhoto && (
+                                <a href={log.odometerEndPhoto} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', color: '#2563EB' }}>
+                                  <Icons.Image size={14} />
+                                </a>
+                              )}
+                            </Box>
+                          ) : '---'}
+                        </TableCell>
+                        <TableCell>{log.personalUseKm !== undefined ? `${log.personalUseKm} KM` : '---'}</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: finalKm > 0 ? '#16A34A' : '#0F172A' }}>
+                          {log.odometerStart !== undefined && log.odometerEnd !== undefined ? `${finalKm} KM` : '---'}
+                        </TableCell>
+                        <TableCell>
+                          <Chip 
+                            label={log.status} 
+                            size="small" 
+                            sx={{ 
+                              backgroundColor: log.status === 'Present' ? 'rgba(34,197,94,0.1)' : log.status === 'Late' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                              color: log.status === 'Present' ? '#22C55E' : log.status === 'Late' ? '#F59E0B' : '#EF4444',
+                              fontWeight: 700,
+                              fontSize: '10px'
+                            }} 
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  });
+                })()}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
 
       {/* Salary Settlement Redirect Card */}
       {selectedEmployeeObj && (

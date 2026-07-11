@@ -1115,12 +1115,10 @@ const Salary = () => {
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Expenses Reimbursed</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.expensesReimbursement)}</Typography>
                 </Box>
-                {payrollStats.travelAllowance > 0 && (
-                  <Box display="flex" justifyContent="space-between" mb={1}>
-                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>Travel Allowance ({payrollStats.totalKmDriven} KM)</Typography>
-                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.travelAllowance)}</Typography>
-                  </Box>
-                )}
+                <Box display="flex" justifyContent="space-between" mb={1}>
+                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>Travel Allowance ({payrollStats.totalKmDriven || 0} KM)</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.travelAllowance || 0)}</Typography>
+                </Box>
                 
                 <Divider sx={{ borderColor: '#334155', my: 1.5 }} />
 
@@ -1279,12 +1277,10 @@ const Salary = () => {
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(e.amount)}</Typography>
                 </Box>
               ))}
-              {payrollStats.travelAllowance > 0 && (
-                <Box display="flex" justifyContent="space-between" py={0.5}>
-                  <Typography variant="body2">Travel Allowance ({payrollStats.totalKmDriven} KM @ ₹{payPerKm}/KM)</Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 700 }}>+ ₹{formatCurrency(payrollStats.travelAllowance)}</Typography>
-                </Box>
-              )}
+              <Box display="flex" justifyContent="space-between" py={0.5}>
+                <Typography variant="body2">Travel Allowance ({payrollStats.totalKmDriven || 0} KM @ ₹{payPerKm || 3}/KM)</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700 }}>+ ₹{formatCurrency(payrollStats.travelAllowance || 0)}</Typography>
+              </Box>
             </Grid>
             <Grid item xs={6}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS BREAKDOWN</Typography>

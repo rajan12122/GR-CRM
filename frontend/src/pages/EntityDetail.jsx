@@ -1265,12 +1265,10 @@ const EntityDetail = () => {
                         } catch (e) { return null; }
                       })()
                     )}
-                    {activeSalarySlip.travelAllowance > 0 && (
-                      <Box display="flex" justifyContent="space-between" py={0.5}>
-                        <Typography variant="body2">Travel Allowance ({activeSalarySlip.totalKmDriven || 0} KM @ ₹{activeSalarySlip.payPerKm || 3}/KM)</Typography>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>+ ₹{formatCurrency(activeSalarySlip.travelAllowance)}</Typography>
-                      </Box>
-                    )}
+                    <Box display="flex" justifyContent="space-between" py={0.5}>
+                      <Typography variant="body2">Travel Allowance ({activeSalarySlip.totalKmDriven || 0} KM @ ₹{activeSalarySlip.payPerKm || 3}/KM)</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>+ ₹{formatCurrency(activeSalarySlip.travelAllowance || 0)}</Typography>
+                    </Box>
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS</Typography>

@@ -115,6 +115,129 @@ const Attendance = () => {
   const [issueError, setIssueError] = useState('');
   const [issueSuccess, setIssueSuccess] = useState('');
 
+  // Odometer states
+  const [odoDialogOpen, setOdoDialogOpen] = useState(false);
+  const [odoMode, setOdoMode] = useState('in'); // 'in' or 'out'
+  const [odoReading, setOdoReading] = useState('');
+  const [odoPhotoUrl, setOdoPhotoUrl] = useState('');
+  const [odoPersonalUseChecked, setOdoPersonalUseChecked] = useState(false);
+  const [odoPersonalUse, setOdoPersonalUse] = useState('');
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const cameraInputRef = useRef(null);
+
+  const handleOdoFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    try {
+      setUploadingPhoto(true);
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const base64Clean = reader.result;
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('gr_crm_token')}`
+          },
+          body: JSON.stringify({
+            fileName: file.name || 'odometer.jpg',
+            base64Data: base64Clean
+          })
+        });
+        const data = await res.json();
+        if (data.fileUrl) {
+          setOdoPhotoUrl(data.fileUrl);
+        } else {
+          alert('Photo upload failed. Please try again.');
+        }
+        setUploadingPhoto(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error(err);
+      setUploadingPhoto(false);
+      alert('Photo capture failed.');
+    }
+  };
+
+  const handlePunchInStart = () => {
+    setOdoMode('in');
+    setOdoReading('');
+    setOdoPhotoUrl('');
+    setOdoDialogOpen(true);
+    setTimeout(() => {
+      if (cameraInputRef.current) cameraInputRef.current.click();
+    }, 250);
+  };
+
+  const handlePunchOutStart = () => {
+    setOdoMode('out');
+    setOdoReading('');
+    setOdoPhotoUrl('');
+    setOdoPersonalUseChecked(false);
+    setOdoPersonalUse('');
+    setOdoDialogOpen(true);
+    setTimeout(() => {
+      if (cameraInputRef.current) cameraInputRef.current.click();
+    }, 250);
+  };
+
+  const handleOdoPunchSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (!odoPhotoUrl) {
+      alert('Please click odometer picture first.');
+      return;
+    }
+    if (!odoReading) {
+      alert('Please enter odometer reading manually.');
+      return;
+    }
+
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      if (odoMode === 'in') {
+        const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 30);
+        const statusStr = isLate ? 'Late' : 'Present';
+        const payload = {
+          employeeId: user?.id || 'EMP-001',
+          date: todayStr,
+          inTime: timeStr,
+          outTime: '--',
+          status: statusStr,
+          odometerStart: Number(odoReading) || 0,
+          odometerStartPhoto: odoPhotoUrl
+        };
+        await createRecord('attendance', payload);
+        fetchModuleData('attendance');
+        startLocationSharing();
+      } else {
+        if (!todayRecord) return;
+        const payload = {
+          ...todayRecord,
+          outTime: timeStr,
+          odometerEnd: Number(odoReading) || 0,
+          odometerEndPhoto: odoPhotoUrl,
+          personalUseKm: odoPersonalUseChecked ? (Number(odoPersonalUse) || 0) : 0,
+          netKm: Math.max(0, (Number(odoReading) || 0) - (Number(todayRecord.odometerStart) || 0) - (odoPersonalUseChecked ? (Number(odoPersonalUse) || 0) : 0))
+        };
+        await updateRecord('attendance', todayRecord.id, payload);
+        fetchModuleData('attendance');
+        await endLocationSharing();
+      }
+      
+      setOdoDialogOpen(false);
+      setOdoReading('');
+      setOdoPhotoUrl('');
+      setOdoPersonalUseChecked(false);
+      setOdoPersonalUse('');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save punch entry.');
+    }
+  };
+
   const handlePunchIn = async () => {
     try {
       const now = new Date();
@@ -754,7 +877,7 @@ const Attendance = () => {
                     variant="contained"
                     color="error"
                     size="small"
-                    onClick={handlePunchOut}
+                    onClick={handlePunchOutStart}
                     sx={{ borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'none' }}
                   >
                     Punch Out
@@ -1459,7 +1582,7 @@ const Attendance = () => {
           <Button 
             onClick={() => {
               setGeoPermissionDialogOpen(false);
-              handlePunchIn();
+              handlePunchInStart();
             }} 
             variant="contained" 
             color="success"
@@ -1468,6 +1591,126 @@ const Attendance = () => {
             Allow & Punch In
           </Button>
         </DialogActions>
+      </Dialog>
+      {/* Odometer Camera Input Capture */}
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="environment" 
+        ref={cameraInputRef} 
+        onChange={handleOdoFileChange} 
+        style={{ display: 'none' }} 
+      />
+
+      {/* Odometer Punch In / Punch Out Dialog */}
+      <Dialog
+        open={odoDialogOpen}
+        onClose={() => setOdoDialogOpen(false)}
+        fullWidth
+        maxWidth="xs"
+        PaperProps={{ sx: { borderRadius: '12px', p: 1 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800, fontSize: '18px', fontFamily: 'Poppins' }}>
+          {odoMode === 'in' ? 'Shift Punch In: Odometer Check' : 'Shift Punch Out: Odometer Check'}
+        </DialogTitle>
+        <form onSubmit={handleOdoPunchSubmit}>
+          <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, py: 1 }}>
+            <Box display="flex" flexDirection="column" alignItems="center" gap={1} sx={{ p: 2, border: '1px dashed #CBD5E1', borderRadius: '8px', backgroundColor: '#F8FAFC' }}>
+              {uploadingPhoto ? (
+                <Box display="flex" flexDirection="column" alignItems="center" gap={1} py={2}>
+                  <CircularProgress size={24} />
+                  <Typography variant="caption" sx={{ color: '#64748B' }}>Uploading photo...</Typography>
+                </Box>
+              ) : odoPhotoUrl ? (
+                <Box display="flex" flexDirection="column" alignItems="center" gap={1}>
+                  <img src={odoPhotoUrl} alt="Odometer Preview" style={{ width: '100%', maxHeight: '180px', objectFit: 'contain', borderRadius: '6px' }} />
+                  <Button size="small" variant="outlined" onClick={() => cameraInputRef.current.click()} sx={{ textTransform: 'none', mt: 1 }}>
+                    Retake Photo
+                  </Button>
+                </Box>
+              ) : (
+                <Box display="flex" flexDirection="column" alignItems="center" gap={1} py={2}>
+                  <Icons.Camera size={32} style={{ color: '#64748B' }} />
+                  <Button variant="contained" size="small" onClick={() => cameraInputRef.current.click()} sx={{ textTransform: 'none', backgroundColor: '#475569' }}>
+                    Capture Odometer Photo
+                  </Button>
+                  <Typography variant="caption" sx={{ color: '#94A3B8' }}>Required to verify reading</Typography>
+                </Box>
+              )}
+            </Box>
+
+            <TextField
+              type="number"
+              label={odoMode === 'in' ? 'Start Odometer Reading (KM)' : 'End Odometer Reading (KM)'}
+              value={odoReading}
+              onChange={(e) => setOdoReading(e.target.value)}
+              placeholder="e.g. 12450"
+              fullWidth
+              required
+              InputProps={{
+                endAdornment: <Typography variant="caption" sx={{ color: '#94A3B8' }}>KM</Typography>
+              }}
+            />
+
+            {odoMode === 'out' && (
+              <>
+                <Box display="flex" alignItems="center" gap={1} sx={{ mt: 1 }}>
+                  <input
+                    type="checkbox"
+                    id="odo-personal-use"
+                    checked={odoPersonalUseChecked}
+                    onChange={(e) => setOdoPersonalUseChecked(e.target.checked)}
+                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                  />
+                  <label htmlFor="odo-personal-use" style={{ fontSize: '14px', color: '#475569', cursor: 'pointer', fontWeight: 500 }}>
+                    Used bike for personal use?
+                  </label>
+                </Box>
+
+                {odoPersonalUseChecked && (
+                  <TextField
+                    type="number"
+                    label="Personal Use Distance (KM)"
+                    value={odoPersonalUse}
+                    onChange={(e) => setOdoPersonalUse(e.target.value)}
+                    placeholder="e.g. 15"
+                    fullWidth
+                    required={odoPersonalUseChecked}
+                    InputProps={{
+                      endAdornment: <Typography variant="caption" sx={{ color: '#94A3B8' }}>KM</Typography>
+                    }}
+                  />
+                )}
+
+                {odoReading && todayRecord?.odometerStart && (
+                  <Box sx={{ p: 2, backgroundColor: '#F0FDF4', borderRadius: '8px', border: '1px solid #DCFCE7' }}>
+                    <Typography variant="caption" sx={{ color: '#166534', fontWeight: 700, display: 'block', mb: 0.5 }}>Calculated Driven Distance:</Typography>
+                    <Typography variant="body2" sx={{ color: '#14532D', fontWeight: 800 }}>
+                      ({odoReading} - {todayRecord.odometerStart}) 
+                      {odoPersonalUseChecked ? ` - ${odoPersonalUse || 0}` : ''} = {
+                        Math.max(0, Number(odoReading) - Number(todayRecord.odometerStart) - (odoPersonalUseChecked ? Number(odoPersonalUse || 0) : 0))
+                      } KM
+                    </Typography>
+                  </Box>
+                )}
+              </>
+            )}
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setOdoDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B' }}>
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              color={odoMode === 'in' ? 'success' : 'error'}
+              disabled={uploadingPhoto || !odoPhotoUrl || !odoReading}
+              sx={{ textTransform: 'none', fontWeight: 700, borderRadius: '6px' }}
+            >
+              {odoMode === 'in' ? 'Complete Punch In' : 'Complete Punch Out'}
+            </Button>
+          </DialogActions>
+        </form>
       </Dialog>
     </Box>
   );

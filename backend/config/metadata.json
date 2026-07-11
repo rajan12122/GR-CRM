@@ -853,6 +853,54 @@
           "showInTable": true,
           "editable": true,
           "chipGroup": "attendanceStatus"
+        },
+        {
+          "name": "odometerStart",
+          "label": "Odometer Start (KM)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "odometerStartPhoto",
+          "label": "Odometer Start Photo",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "odometerEnd",
+          "label": "Odometer End (KM)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "odometerEndPhoto",
+          "label": "Odometer End Photo",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "personalUseKm",
+          "label": "Personal Use (KM)",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "netKm",
+          "label": "Net KM Driven",
+          "type": "number",
+          "required": false,
+          "showInTable": true,
+          "editable": true
         }
       ]
     },

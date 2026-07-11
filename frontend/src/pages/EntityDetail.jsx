@@ -58,6 +58,12 @@ const EntityDetail = () => {
   const [activeMapShift, setActiveMapShift] = useState(null);
   const [activeSalarySlip, setActiveSalarySlip] = useState(null);
 
+  const travelLogs = useMemo(() => {
+    return (connections?.attendance || [])
+      .filter(a => a.odometerStart !== undefined || a.odometerEnd !== undefined)
+      .sort((a, b) => new Date(b.date) - new Date(a.date));
+  }, [connections]);
+
   const locationHistoryPastMonth = useMemo(() => {
     if (!record || !record.locationHistory) return [];
     const oneMonthAgo = new Date();
@@ -588,6 +594,9 @@ const EntityDetail = () => {
               <Tab label="Salesforce 360° Connections" sx={{ fontWeight: 600 }} />
               <Tab label={`Remarks History (${connections?.remarks?.length || 0})`} sx={{ fontWeight: 600 }} />
               <Tab label={`Documents/Files (${connections?.documents?.length || 0})`} sx={{ fontWeight: 600 }} />
+              {moduleName === 'employees' && (
+                <Tab label={`Odometer & Travel Logs (${travelLogs.length})`} sx={{ fontWeight: 600 }} />
+              )}
             </Tabs>
 
             <Box sx={{ p: 3 }}>
@@ -988,6 +997,95 @@ const EntityDetail = () => {
                 </Box>
               )}
 
+              {/* TAB 4: Odometer & Travel Logs */}
+              {activeTab === 3 && moduleName === 'employees' && (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Bike Odometer & Travel History Log</Typography>
+                  {travelLogs.length === 0 ? (
+                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>No odometer readings captured for this employee.</Typography>
+                  ) : (
+                    <Box display="flex" flexDirection="column" gap={2}>
+                      {travelLogs.map((log, index) => {
+                        const netKm = Math.max(0, (Number(log.odometerEnd) || 0) - (Number(log.odometerStart) || 0) - (Number(log.personalUseKm) || 0));
+                        const dailyAllowance = netKm * 3; // Default ₹3/KM allowance
+                        
+                        return (
+                          <Paper key={index} sx={{ p: 3, border: '1px solid #E2E8F0', boxShadow: 'none', borderRadius: '12px' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" borderBottom="1px solid #F1F5F9" pb={1.5} mb={2}>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Icons.Calendar size={16} style={{ color: '#2563EB' }} />
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{log.date}</Typography>
+                              </Box>
+                              <Chip 
+                                label={`${netKm} KM Driven`} 
+                                color="primary" 
+                                size="small" 
+                                sx={{ fontWeight: 700, backgroundColor: '#2563EB' }} 
+                              />
+                            </Box>
+
+                            <Grid container spacing={3}>
+                              {/* Punch In Details */}
+                              <Grid item xs={12} sm={4}>
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600, mb: 1 }}>PUNCH IN START</Typography>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}>Time: <strong>{log.inTime}</strong></Typography>
+                                <Typography variant="body2" sx={{ mb: 1 }}>Reading: <strong>{log.odometerStart || 0} KM</strong></Typography>
+                                {log.odometerStartPhoto ? (
+                                  <Box sx={{ mt: 1 }}>
+                                    <a href={log.odometerStartPhoto} target="_blank" rel="noreferrer">
+                                      <img 
+                                        src={log.odometerStartPhoto} 
+                                        alt="Start Odometer" 
+                                        style={{ width: '100%', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E2E8F0' }} 
+                                      />
+                                    </a>
+                                  </Box>
+                                ) : (
+                                  <Typography variant="caption" sx={{ color: '#94A3B8', fontStyle: 'italic' }}>No start photo captured</Typography>
+                                )}
+                              </Grid>
+
+                              {/* Punch Out Details */}
+                              <Grid item xs={12} sm={4}>
+                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600, mb: 1 }}>PUNCH OUT END</Typography>
+                                <Typography variant="body2" sx={{ mb: 0.5 }}>Time: <strong>{log.outTime || '--'}</strong></Typography>
+                                <Typography variant="body2" sx={{ mb: 1 }}>Reading: <strong>{log.odometerEnd ? `${log.odometerEnd} KM` : '--'}</strong></Typography>
+                                {log.odometerEndPhoto ? (
+                                  <Box sx={{ mt: 1 }}>
+                                    <a href={log.odometerEndPhoto} target="_blank" rel="noreferrer">
+                                      <img 
+                                        src={log.odometerEndPhoto} 
+                                        alt="End Odometer" 
+                                        style={{ width: '100%', maxHeight: '100px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #E2E8F0' }} 
+                                      />
+                                    </a>
+                                  </Box>
+                                ) : (
+                                  <Typography variant="caption" sx={{ color: '#94A3B8', fontStyle: 'italic' }}>No end photo captured</Typography>
+                                )}
+                              </Grid>
+
+                              {/* Calculation Summary */}
+                              <Grid item xs={12} sm={4}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', backgroundColor: '#F8FAFC', borderRadius: '8px', p: 2, height: '100%', boxSizing: 'border-box' }}>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600, mb: 1 }}>CALCULATION LOG</Typography>
+                                  <Typography variant="body2" sx={{ mb: 0.5 }}>Odometer Start: <strong>{log.odometerStart || 0} KM</strong></Typography>
+                                  <Typography variant="body2" sx={{ mb: 0.5 }}>Odometer End: <strong>{log.odometerEnd || 0} KM</strong></Typography>
+                                  <Typography variant="body2" sx={{ mb: 0.5, color: '#EF4444' }}>Personal Use: <strong>-{log.personalUseKm || 0} KM</strong></Typography>
+                                  <Divider sx={{ my: 1 }} />
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#16A34A', mb: 0.5 }}>Net Distance: {netKm} KM</Typography>
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#2563EB' }}>Allowance: ₹{dailyAllowance.toLocaleString('en-IN')} (at ₹3/KM)</Typography>
+                                </Box>
+                              </Grid>
+                            </Grid>
+                          </Paper>
+                        );
+                      })}
+                    </Box>
+                  )}
+                </Box>
+              )}
+
             </Box>
           </Card>
         </Grid>
@@ -1167,6 +1265,12 @@ const EntityDetail = () => {
                         } catch (e) { return null; }
                       })()
                     )}
+                    {activeSalarySlip.travelAllowance > 0 && (
+                      <Box display="flex" justifyContent="space-between" py={0.5}>
+                        <Typography variant="body2">Travel Allowance ({activeSalarySlip.totalKmDriven || 0} KM @ ₹{activeSalarySlip.payPerKm || 3}/KM)</Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>+ ₹{formatCurrency(activeSalarySlip.travelAllowance)}</Typography>
+                      </Box>
+                    )}
                   </Grid>
                   <Grid item xs={6}>
                     <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS</Typography>
@@ -1226,16 +1330,28 @@ const EntityDetail = () => {
                             </TableHead>
                             <TableBody>
                               {parsedLogs.map((log, idx) => (
-                                <TableRow key={idx} sx={{ '&:nth-of-type(odd)': { backgroundColor: '#F8FAFC' } }}>
-                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.date} ({log.day})</TableCell>
-                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkIn}</TableCell>
-                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkOut}</TableCell>
-                                  <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.hours}</TableCell>
-                                  <TableCell sx={{ py: 0.2, fontSize: '9px', fontWeight: log.status === 'Half Day' || log.status === 'Absent' ? 700 : 400, color: log.status === 'Half Day' ? '#F59E0B' : log.status === 'Absent' ? '#EF4444' : '#0F172A' }}>
-                                    {log.status}
-                                  </TableCell>
-                                  <TableCell sx={{ py: 0.2, fontSize: '9px', color: '#64748B' }}>{log.remarks}</TableCell>
-                                </TableRow>
+                                <React.Fragment key={idx}>
+                                  <TableRow sx={{ '&:nth-of-type(odd)': { backgroundColor: '#F8FAFC' } }}>
+                                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.date} ({log.day})</TableCell>
+                                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkIn}</TableCell>
+                                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.checkOut}</TableCell>
+                                    <TableCell sx={{ py: 0.2, fontSize: '9px' }}>{log.hours}</TableCell>
+                                    <TableCell sx={{ py: 0.2, fontSize: '9px', fontWeight: log.status === 'Half Day' || log.status === 'Absent' ? 700 : 400, color: log.status === 'Half Day' ? '#F59E0B' : log.status === 'Absent' ? '#EF4444' : '#0F172A' }}>
+                                      {log.status}
+                                    </TableCell>
+                                    <TableCell sx={{ py: 0.2, fontSize: '9px', color: '#64748B' }}>{log.remarks}</TableCell>
+                                  </TableRow>
+                                  {(log.odometerStart !== undefined || log.odometerEnd !== undefined) && (
+                                    <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
+                                      <TableCell colSpan={6} sx={{ py: 0.3, pl: 2, fontSize: '9px', color: '#475569' }}>
+                                        🏍️ Bike Odometer: Start: <strong>{log.odometerStart || 0} KM</strong>
+                                        {log.odometerEnd ? ` | End: ${log.odometerEnd} KM` : ''}
+                                        {log.personalUseKm ? ` | Personal Use: ${log.personalUseKm} KM` : ''}
+                                        {log.netKm !== undefined ? ` | Final Reading: ${log.netKm} KM` : ''}
+                                      </TableCell>
+                                    </TableRow>
+                                  )}
+                                </React.Fragment>
                               ))}
                             </TableBody>
                           </Table>

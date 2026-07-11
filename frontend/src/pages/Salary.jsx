@@ -77,6 +77,7 @@ const Salary = () => {
   const [overtimeHourlyRate, setOvertimeHourlyRate] = useState(0);
   const [isOvertimeManual, setIsOvertimeManual] = useState(false);
   const [extraDaysOverride, setExtraDaysOverride] = useState(0);
+  const [payPerKm, setPayPerKm] = useState(3);
 
   // Dynamic Lists
   const [allowances, setAllowances] = useState([]);
@@ -162,6 +163,7 @@ const Salary = () => {
       setOvertimeHourlyRate(Number(existingSavedSalary.overtimeHourlyRate) || 0);
       setIsOvertimeManual(existingSavedSalary.isOvertimeManual || false);
       setExtraDaysOverride(Number(existingSavedSalary.extraDays) || 0);
+      setPayPerKm(existingSavedSalary.payPerKm !== undefined ? Number(existingSavedSalary.payPerKm) : 3);
       
       try {
         setAllowances(JSON.parse(existingSavedSalary.allowancesJson || '[]'));
@@ -183,6 +185,7 @@ const Salary = () => {
       setOvertimeHours(0);
       setIsOvertimeManual(false);
       setExtraDaysOverride(0);
+      setPayPerKm(3);
       setAllowances([]);
       setDeductions([]);
       setExpenses([]);
@@ -281,7 +284,13 @@ const Salary = () => {
         hours: workHours > 0 ? `${Math.floor(workHours)}h ${Math.round((workHours % 1) * 60)}m` : '--',
         workHoursDecimal: workHours,
         status,
-        remarks
+        remarks,
+        odometerStart: attRec?.odometerStart,
+        odometerStartPhoto: attRec?.odometerStartPhoto,
+        odometerEnd: attRec?.odometerEnd,
+        odometerEndPhoto: attRec?.odometerEndPhoto,
+        personalUseKm: attRec?.personalUseKm,
+        netKm: attRec?.netKm
       });
     }
 
@@ -347,12 +356,16 @@ const Salary = () => {
     const deductionsTotal = deductions.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
     const expensesReimbursement = expenses.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
 
+    // Travel Allowance based on Odometer final readings
+    const totalKmDriven = dailyLogs.reduce((acc, log) => acc + (Number(log.netKm) || 0), 0);
+    const travelAllowance = totalKmDriven * payPerKm;
+
     // Advance Recovery calculations
     const finalRecovery = Math.min(recoveredAmount, Math.max(0, advanceTaken - recoveredAmount));
     const finalBalance = Math.max(0, advanceTaken - finalRecovery);
 
-    // Final Net salary settlement calculations
-    const netPay = Math.max(0, earnedSalary + allowancesTotal + expensesReimbursement - deductionsTotal - finalRecovery);
+    // Final Net salary settlement calculations (including Travel Allowance!)
+    const netPay = Math.max(0, earnedSalary + allowancesTotal + expensesReimbursement - deductionsTotal - finalRecovery + travelAllowance);
 
     return {
       baseSalary,
@@ -365,9 +378,11 @@ const Salary = () => {
       expensesReimbursement,
       advanceRecovery: finalRecovery,
       advanceBalance: finalBalance,
-      netPay
+      netPay,
+      totalKmDriven,
+      travelAllowance
     };
-  }, [selectedEmployeeObj, attendanceCounts, allowances, deductions, expenses, extraDaysOverride, advanceTaken, recoveredAmount]);
+  }, [selectedEmployeeObj, attendanceCounts, allowances, deductions, expenses, extraDaysOverride, advanceTaken, recoveredAmount, dailyLogs, payPerKm]);
 
   // Sync state values on changes
   useEffect(() => {
@@ -464,13 +479,23 @@ const Salary = () => {
         checkOut: l.checkOut,
         hours: l.hours,
         status: l.status,
-        remarks: l.remarks
+        remarks: l.remarks,
+        odometerStart: l.odometerStart,
+        odometerStartPhoto: l.odometerStartPhoto,
+        odometerEnd: l.odometerEnd,
+        odometerEndPhoto: l.odometerEndPhoto,
+        personalUseKm: l.personalUseKm,
+        netKm: l.netKm
       }))),
       // Advance tracking parameters saved
       advanceTaken: Number(advanceTaken),
       advanceDate,
       recoveryMonth,
-      advanceBalance: payrollStats.advanceBalance
+      advanceBalance: payrollStats.advanceBalance,
+      // Odometer tracking fields saved
+      payPerKm: Number(payPerKm),
+      travelAllowance: Number(payrollStats.travelAllowance || 0),
+      totalKmDriven: Number(payrollStats.totalKmDriven || 0)
     };
 
     try {
@@ -588,9 +613,25 @@ const Salary = () => {
               </FormControl>
             </Grid>
 
+            {/* Pay per KM rate config */}
+            <Grid item xs={6} sm={2}>
+              <TextField
+                label="Pay per KM"
+                size="small"
+                type="number"
+                fullWidth
+                value={payPerKm}
+                disabled={user.role !== 'Admin' && user.role !== 'Manager'}
+                onChange={(e) => setPayPerKm(Number(e.target.value) || 0)}
+                InputProps={{
+                  startAdornment: <span style={{ marginRight: '4px', color: '#94A3B8', fontSize: '13px' }}>₹</span>
+                }}
+              />
+            </Grid>
+
             {/* Status controller */}
             {(user.role === 'Admin' || user.role === 'Manager') && (
-              <Grid item xs={12} sm={4}>
+              <Grid item xs={6} sm={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Settlement Status</InputLabel>
                   <Select
@@ -983,31 +1024,50 @@ const Salary = () => {
                     </TableHead>
                     <TableBody>
                       {dailyLogs.map((log, idx) => (
-                        <TableRow 
-                          key={idx}
-                          sx={{ 
-                            backgroundColor: log.status === 'Absent' ? 'rgba(239, 68, 68, 0.02)' : log.status === 'Leave' ? 'rgba(245, 158, 11, 0.02)' : 'inherit'
-                          }}
-                        >
-                          <TableCell sx={{ fontWeight: 600 }}>{log.date}</TableCell>
-                          <TableCell>{log.day}</TableCell>
-                          <TableCell>{log.checkIn}</TableCell>
-                          <TableCell>{log.checkOut}</TableCell>
-                          <TableCell>{log.hours}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={log.status} 
-                              size="small" 
-                              sx={{ 
-                                fontWeight: 700,
-                                fontSize: '10px',
-                                backgroundColor: log.status === 'Present' ? 'rgba(34,197,94,0.1)' : log.status === 'Extra Day' ? 'rgba(37,99,235,0.1)' : log.status === 'Half Day' ? 'rgba(245,158,11,0.1)' : log.status === 'Leave' ? 'rgba(100,116,139,0.1)' : 'rgba(239,68,68,0.1)',
-                                color: log.status === 'Present' ? '#22C55E' : log.status === 'Extra Day' ? '#2563EB' : log.status === 'Half Day' ? '#F59E0B' : log.status === 'Leave' ? '#64748B' : '#EF4444'
-                              }}
-                            />
-                          </TableCell>
-                          <TableCell sx={{ color: '#64748B', fontSize: '12px' }}>{log.remarks}</TableCell>
-                        </TableRow>
+                        <React.Fragment key={idx}>
+                          <TableRow 
+                            sx={{ 
+                              backgroundColor: log.status === 'Absent' ? 'rgba(239, 68, 68, 0.02)' : log.status === 'Leave' ? 'rgba(245, 158, 11, 0.02)' : 'inherit'
+                            }}
+                          >
+                            <TableCell sx={{ fontWeight: 600 }}>{log.date}</TableCell>
+                            <TableCell>{log.day}</TableCell>
+                            <TableCell>{log.checkIn}</TableCell>
+                            <TableCell>{log.checkOut}</TableCell>
+                            <TableCell>{log.hours}</TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={log.status} 
+                                size="small" 
+                                sx={{ 
+                                  fontWeight: 700,
+                                  fontSize: '10px',
+                                  backgroundColor: log.status === 'Present' ? 'rgba(34,197,94,0.1)' : log.status === 'Extra Day' ? 'rgba(37,99,235,0.1)' : log.status === 'Half Day' ? 'rgba(245,158,11,0.1)' : log.status === 'Leave' ? 'rgba(100,116,139,0.1)' : 'rgba(239,68,68,0.1)',
+                                  color: log.status === 'Present' ? '#22C55E' : log.status === 'Extra Day' ? '#2563EB' : log.status === 'Half Day' ? '#F59E0B' : log.status === 'Leave' ? '#64748B' : '#EF4444'
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ color: '#64748B', fontSize: '12px' }}>{log.remarks}</TableCell>
+                          </TableRow>
+                          {(log.odometerStart !== undefined || log.odometerEnd !== undefined) && (
+                            <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
+                              <TableCell colSpan={7} sx={{ py: 0.5, pl: 4 }}>
+                                <Typography variant="caption" sx={{ color: '#475569', fontWeight: 600 }}>
+                                  🏍️ Bike Odometer: Start: <strong>{log.odometerStart || 0} KM</strong>
+                                  {log.odometerEnd ? ` | End: ${log.odometerEnd} KM` : ''}
+                                  {log.personalUseKm ? ` | Personal Use: ${log.personalUseKm} KM` : ''}
+                                  {log.netKm !== undefined ? ` | Final Reading: ${log.netKm} KM` : ''}
+                                  {log.odometerStartPhoto && (
+                                    <span> | <a href={log.odometerStartPhoto} target="_blank" rel="noreferrer" style={{ color: '#2563EB', textDecoration: 'underline' }}>View Start Pic</a></span>
+                                  )}
+                                  {log.odometerEndPhoto && (
+                                    <span> | <a href={log.odometerEndPhoto} target="_blank" rel="noreferrer" style={{ color: '#2563EB', textDecoration: 'underline' }}>View End Pic</a></span>
+                                  )}
+                                </Typography>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
                       ))}
                     </TableBody>
                   </Table>
@@ -1055,6 +1115,12 @@ const Salary = () => {
                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>Expenses Reimbursed</Typography>
                   <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.expensesReimbursement)}</Typography>
                 </Box>
+                {payrollStats.travelAllowance > 0 && (
+                  <Box display="flex" justifyContent="space-between" mb={1}>
+                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>Travel Allowance ({payrollStats.totalKmDriven} KM)</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: '#22C55E' }}>+ ₹{formatCurrency(payrollStats.travelAllowance)}</Typography>
+                  </Box>
+                )}
                 
                 <Divider sx={{ borderColor: '#334155', my: 1.5 }} />
 
@@ -1213,6 +1279,12 @@ const Salary = () => {
                   <Typography variant="body2" sx={{ fontWeight: 700 }}>₹{formatCurrency(e.amount)}</Typography>
                 </Box>
               ))}
+              {payrollStats.travelAllowance > 0 && (
+                <Box display="flex" justifyContent="space-between" py={0.5}>
+                  <Typography variant="body2">Travel Allowance ({payrollStats.totalKmDriven} KM @ ₹{payPerKm}/KM)</Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 700 }}>+ ₹{formatCurrency(payrollStats.travelAllowance)}</Typography>
+                </Box>
+              )}
             </Grid>
             <Grid item xs={6}>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, borderBottom: '1px solid #E2E8F0', pb: 0.5 }}>DEDUCTIONS BREAKDOWN</Typography>

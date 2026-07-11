@@ -125,34 +125,70 @@ const Attendance = () => {
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const cameraInputRef = useRef(null);
 
+  const compressImage = (file, maxWidth = 1000, maxH = 1000) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxH) {
+              width = Math.round((width * maxH) / height);
+              height = maxH;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          resolve(dataUrl);
+        };
+        img.onerror = (err) => reject(err);
+      };
+      reader.onerror = (err) => reject(err);
+    });
+  };
+
   const handleOdoFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     try {
       setUploadingPhoto(true);
-      const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64Clean = reader.result;
-        const res = await fetch('/api/upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('gr_crm_token')}`
-          },
-          body: JSON.stringify({
-            fileName: file.name || 'odometer.jpg',
-            base64Data: base64Clean
-          })
-        });
-        const data = await res.json();
-        if (data.fileUrl) {
-          setOdoPhotoUrl(data.fileUrl);
-        } else {
-          alert('Photo upload failed. Please try again.');
-        }
-        setUploadingPhoto(false);
-      };
-      reader.readAsDataURL(file);
+      // Compress the image before uploading to keep request sizes tiny (under 100KB instead of 10MB)!
+      const base64Clean = await compressImage(file);
+      
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('gr_crm_token')}`
+        },
+        body: JSON.stringify({
+          fileName: file.name || 'odometer.jpg',
+          base64Data: base64Clean
+        })
+      });
+      const data = await res.json();
+      if (data.fileUrl) {
+        setOdoPhotoUrl(data.fileUrl);
+      } else {
+        alert('Photo upload failed. Please try again.');
+      }
+      setUploadingPhoto(false);
     } catch (err) {
       console.error(err);
       setUploadingPhoto(false);

@@ -153,7 +153,19 @@ const MainLayout = () => {
               }
             }}
             showLabels
-            sx={{ height: 65 }}
+            sx={{ 
+              height: 65,
+              '& .MuiBottomNavigationAction-root': {
+                minWidth: 'auto',
+                padding: '6px 0',
+              },
+              '& .MuiBottomNavigationAction-label': {
+                fontSize: '10px',
+                '&.Mui-selected': {
+                  fontSize: '10px',
+                }
+              }
+            }}
           >
             <BottomNavigationAction 
               label="Dashboard" 

@@ -95,6 +95,7 @@ const EntityDetail = () => {
   const [queryRemarks, setQueryRemarks] = useState('');
 
   const [callDuration, setCallDuration] = useState('');
+  const [callOutcomeOption, setCallOutcomeOption] = useState('Call Done');
   const [callBudget, setCallBudget] = useState('');
   const [callAreas, setCallAreas] = useState('');
   const [callFollowUp, setCallFollowUp] = useState('');
@@ -781,7 +782,7 @@ const EntityDetail = () => {
                                   size="small"
                                   sx={{ fontWeight: 700 }}
                                 />
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Query ID: {q.id}</Typography>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/queries/${q.id}`)}>Query ID: {q.id}</Typography>
                               </Box>
                               <Box display="flex" gap={1}>
                                 <Chip 
@@ -876,7 +877,7 @@ const EntityDetail = () => {
                                 </Grid>
                                 <Grid item xs={12}>
                                   <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Registry Details:</Typography>
-                                  <Typography variant="body2">Date Registered: {d.registrationDate || 'Pending'} • Executed By: {d.employeeId} • Docs Attached: {d.documents || 'None'}</Typography>
+                                  <Typography variant="body2">Date Registered: {d.registrationDate || 'Pending'} • Executed By: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${d.employeeId}`)}>{d.employeeId}</span> • Docs Attached: {d.documents || 'None'}</Typography>
                                 </Grid>
                               </Grid>
                             </Paper>
@@ -927,9 +928,9 @@ const EntityDetail = () => {
                               />
                             </Box>
                             <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
-                              Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: {p.employeeName}
+                              Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${p.employeeId || 'EMP-001'}`)}>{p.employeeName}</span>
                             </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>Quoted Offer Price: ₹{formatCurrency(p.quotedPrice)}</Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>Quoted Offer Price: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/property_pitch_history/${p.id}`)}>{p.id}</span> (Quoted: ₹{formatCurrency(p.quotedPrice)})</Typography>
                             <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>Remarks: {p.remarks}</Typography>
                           </Paper>
                         ))
@@ -1106,9 +1107,9 @@ const EntityDetail = () => {
                           ) : (
                             connections.site_visits.map((sv, idx) => (
                               <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: {sv.customer?.name || sv.customerId}</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${sv.customerId}`)}>{sv.customer?.name || sv.customerId}</span></Typography>
                                 <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                                  Showed on: {sv.date} • Showed by: {sv.employeeId} • Outcome: <strong>{sv.result}</strong>
+                                  Showed on: {sv.date} • Showed by: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${sv.employeeId}`)}>{sv.employeeId}</span> • Outcome: <strong>{sv.result}</strong>
                                 </Typography>
                               </Paper>
                             ))
@@ -1121,7 +1122,7 @@ const EntityDetail = () => {
                           ) : (
                             connections.pitches.map(p => (
                               <Paper key={p.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: {p.customerName || p.customerId}</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${p.customerId}`)}>{p.customerName || p.customerId}</span></Typography>
                                 <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
                                   Pitched on: {p.pitchDate} • Method: {p.pitchMethod} • Offered: <strong>₹{formatCurrency(p.quotedPrice)}</strong>
                                 </Typography>
@@ -1144,7 +1145,7 @@ const EntityDetail = () => {
                           {connections.ownerHistory.map((h, idx) => (
                             <Box key={idx} sx={{ mb: 3, position: 'relative' }}>
                               <Box sx={{ position: 'absolute', left: '-35px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10B981' }} />
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Owner: {h.ownerName} ({h.ownerId})</Typography>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Owner: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${h.ownerId}`)}>{h.ownerName} ({h.ownerId})</span></Typography>
                               <Typography variant="body2" sx={{ color: '#475569' }}>
                                 Purchase Date: {h.purchaseDate || 'N/A'} • Bought for: ₹{formatCurrency(h.purchasePrice || 0)}
                               </Typography>
@@ -1257,8 +1258,8 @@ const EntityDetail = () => {
                               <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Deal: {d.id}</Typography>
                               <Chip label={d.status} color={d.status === 'Closed' ? 'success' : 'warning'} size="small" sx={{ fontWeight: 700 }} />
                             </Box>
-                            <Typography variant="body2">Seller Customer: <strong style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate(`/module/customers/${d.sellerCustomerId}`)}>{d.sellerCustomerId}</strong></Typography>
-                            <Typography variant="body2">Buyer Customer: <strong style={{ textDecoration: 'underline', cursor: 'pointer' }} onClick={() => navigate(`/module/customers/${d.customerId}`)}>{d.customerId}</strong></Typography>
+                            <Typography variant="body2">Seller Customer: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${d.sellerCustomerId}`)}>{d.sellerCustomerId}</span></Typography>
+                            <Typography variant="body2">Buyer Customer: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${d.customerId}`)}>{d.customerId}</span></Typography>
                             <Typography variant="body2" sx={{ mt: 1, fontWeight: 700 }}>Price Sold: ₹{formatCurrency(d.salePrice)}</Typography>
                           </Paper>
                         ))
@@ -1370,7 +1371,7 @@ const EntityDetail = () => {
                         connections.meetings.map(m => (
                           <Paper key={m.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
                             <Box display="flex" justifyContent="space-between" mb={1}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Meeting: {m.purpose || 'Dealer Intro'} ({m.id})</Typography>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Meeting: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/dealer_meetings/${m.id}`)}>{m.purpose || 'Dealer Intro'} ({m.id})</span></Typography>
                               <Chip 
                                 label={m.status} 
                                 color={m.status === 'Completed' ? 'success' : m.status === 'Cancelled' ? 'error' : 'warning'} 
@@ -1378,7 +1379,7 @@ const EntityDetail = () => {
                                 sx={{ fontWeight: 700 }}
                               />
                             </Box>
-                            <Typography variant="body2">RM Assigned: <strong>{m.assignedEmployeeName}</strong></Typography>
+                            <Typography variant="body2">RM Assigned: <strong><span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${m.assignedEmployeeId}`)}>{m.assignedEmployeeName}</span></strong></Typography>
                             <Typography variant="body2">Date Scheduled: <strong>{m.meetingDate}</strong> • Priority: {m.priority}</Typography>
                             {m.outcome && (
                               <Box sx={{ mt: 1.5, p: 1.5, backgroundColor: '#F8FAFC', borderRadius: '8px', borderLeft: '3px solid #10B981' }}>
@@ -1409,6 +1410,7 @@ const EntityDetail = () => {
                             setCallBudget('');
                             setCallAreas('');
                             setCallRemarks('');
+                            setCallOutcomeOption('Call Done');
                             setCallDialogOpen(true);
                           }}
                         >
@@ -1419,10 +1421,18 @@ const EntityDetail = () => {
                         <Typography variant="body2" sx={{ color: '#94A3B8' }}>No call logs registered for this dealer.</Typography>
                       ) : (
                         connections.calls.map(c => (
-                          <Paper key={c.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                          <Paper key={c.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', cursor: 'pointer' }} onClick={() => navigate(`/module/dealer_calls/${c.id}`)}>
                             <Box display="flex" justifyContent="space-between" mb={1}>
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Call Log: {c.id}</Typography>
-                              <Typography variant="caption" sx={{ color: '#64748B' }}>Called on: {c.date} • By: {c.employeeName}</Typography>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', textDecoration: 'underline' }}>Call Log: {c.id}</Typography>
+                                <Chip 
+                                  label={c.callOutcome || 'Call Done'} 
+                                  color={c.callOutcome === 'Call Done' ? 'success' : 'warning'} 
+                                  size="small" 
+                                  sx={{ fontWeight: 700, fontSize: '10px', height: 20 }}
+                                />
+                              </Box>
+                              <Typography variant="caption" sx={{ color: '#64748B' }}>Called on: {c.date} • By: <span style={{ textDecoration: 'underline', color: '#2563EB' }} onClick={(e) => { e.stopPropagation(); navigate(`/module/employees/${c.employeeId || 'EMP-001'}`); }}>{c.employeeName}</span></Typography>
                             </Box>
                             <Grid container spacing={2}>
                               <Grid item xs={6} sm={4}>
@@ -2177,7 +2187,16 @@ const EntityDetail = () => {
         <DialogTitle sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>Log Outreach Phone Call</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1.5 }}>
-            <TextField label="Call Duration (minutes)" type="number" fullWidth value={callDuration} onChange={(e) => setCallDuration(e.target.value)} />
+                        <TextField label="Call Duration (minutes)" type="number" fullWidth value={callDuration} onChange={(e) => setCallDuration(e.target.value)} />
+            <FormControl fullWidth>
+              <InputLabel>Call Outcome Status</InputLabel>
+              <Select value={callOutcomeOption} onChange={(e) => setCallOutcomeOption(e.target.value)} label="Call Outcome Status">
+                <MenuItem value="Call Done">Call Done</MenuItem>
+                <MenuItem value="Not Picked the Call">Not Picked the Call</MenuItem>
+                <MenuItem value="Switch Off">Switch Off</MenuItem>
+                <MenuItem value="Not Reachable">Not Reachable</MenuItem>
+              </Select>
+            </FormControl>
             <TextField label="Discussed Budget expectation" type="number" fullWidth value={callBudget} onChange={(e) => setCallBudget(e.target.value)} />
             <TextField label="Discussed Sectors/Areas" fullWidth value={callAreas} onChange={(e) => setCallAreas(e.target.value)} />
             <TextField label="Next Followup Date" type="date" InputLabelProps={{ shrink: true }} fullWidth value={callFollowUp} onChange={(e) => setCallFollowUp(e.target.value)} />
@@ -2195,7 +2214,8 @@ const EntityDetail = () => {
               budget: Number(callBudget || 0),
               areas: callAreas,
               followUpDate: callFollowUp,
-              remarks: callRemarks
+              remarks: callRemarks,
+              callOutcome: callOutcomeOption
             };
             const res = await createRecord('dealer_calls', payload);
             if (res.success) {

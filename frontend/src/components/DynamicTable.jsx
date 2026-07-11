@@ -109,6 +109,29 @@ const DynamicTable = ({
     const val = rec[field.name];
     if (val === undefined || val === null) return '';
 
+    if (field.name === 'id') {
+      return (
+        <Typography 
+          variant="body2" 
+          onClick={(e) => { e.stopPropagation(); onInspectClick(moduleKey, val); }}
+          sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', '&:hover': { textDecoration: 'underline' }, display: 'inline' }}
+        >
+          {val}
+        </Typography>
+      );
+    }
+    if (field.name === 'name' || field.name === 'person_name' || field.name === 'firm_name') {
+      return (
+        <Typography 
+          variant="body2" 
+          onClick={(e) => { e.stopPropagation(); onInspectClick(moduleKey, rec.id); }}
+          sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', '&:hover': { textDecoration: 'underline' }, display: 'inline' }}
+        >
+          {val}
+        </Typography>
+      );
+    }
+
     // If it's a chip dropdown option, look up color in metadata
     if (field.type === 'select' && field.chipGroup && metadata?.chips[field.chipGroup]) {
       const chipConfig = metadata.chips[field.chipGroup].find(c => c.value === val);

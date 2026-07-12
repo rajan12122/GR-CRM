@@ -34,9 +34,10 @@ const DynamicForm = ({
   const [customValues, setCustomValues] = useState({});
 
   // Inline creation states for property / project pitches
-  const [pitchedItemType, setPitchedItemType] = useState('Property'); // 'Property' or 'Project'
+  const [nestedDealerData, setNestedDealerData] = useState({});
   const [nestedPropertyData, setNestedPropertyData] = useState({});
   const [nestedProjectData, setNestedProjectData] = useState({});
+  const [pitchedItemType, setPitchedItemType] = useState('Property');
 
   // Dynamic field filtering based on leadType or queryType and dealer conditional checks
   const filteredFields = fields.filter(f => {
@@ -130,6 +131,17 @@ const DynamicForm = ({
         setPitchedItemType('Property');
       }
       
+      setNestedDealerData({
+        firm_name: '',
+        address: '',
+        sector_block: '',
+        person_name: '',
+        contact_num: '',
+        contacted_num: '',
+        remarks: '',
+        callOutcome: 'Call Done'
+      });
+
       setNestedPropertyData({
         contact_person_name: '',
         contact_number: '',
@@ -230,6 +242,21 @@ const DynamicForm = ({
     return payload;
   };
 
+  const resolveDealerId = async (payload) => {
+    if (moduleKey === 'properties' && payload.dealerId === 'Other_Dealer') {
+      const dealerRes = await createRecord('dealers', {
+        ...nestedDealerData
+      });
+      if (dealerRes.success) {
+        payload.dealerId = dealerRes.data.id;
+        fetchModuleData('dealers');
+      } else {
+        throw new Error(dealerRes.message || "Failed to auto-create associated dealer");
+      }
+    }
+    return payload;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
@@ -240,6 +267,7 @@ const DynamicForm = ({
             payload[f.name] = customValues[f.name] || '';
           }
         });
+        payload = await resolveDealerId(payload);
         payload = await resolvePitchedProperty(payload);
         onSubmit(payload);
       } catch (err) {
@@ -258,6 +286,7 @@ const DynamicForm = ({
             payload[f.name] = customValues[f.name] || '';
           }
         });
+        payload = await resolveDealerId(payload);
         payload = await resolvePitchedProperty(payload);
         
         const res = await createRecord(moduleKey, payload);
@@ -650,12 +679,48 @@ const DynamicForm = ({
                             {opt.name ? `${opt.name} (${opt.id})` : opt.id}
                           </MenuItem>
                         ))}
+                        {f.refModule === 'dealers' && (
+                          <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                            + Add New Property Dealer
+                          </MenuItem>
+                        )}
                         <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
                           Other (Specify...)
                         </MenuItem>
                       </Select>
                       {errors[f.name] && <FormHelperText>{errors[f.name]}</FormHelperText>}
                     </FormControl>
+
+                    {formData[f.name] === 'Other_Dealer' && (
+                      <Paper sx={{ p: 2.5, mt: 1.5, border: '1px solid #3B82F6', borderRadius: '12px', backgroundColor: '#EFF6FF', boxShadow: 'none' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#1E3A8A', fontFamily: 'Poppins' }}>
+                          Create New Property Dealer
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <TextField label="Firm Name" size="small" fullWidth required value={nestedDealerData.firm_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, firm_name: e.target.value }))} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField label="Person Name" size="small" fullWidth required value={nestedDealerData.person_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, person_name: e.target.value }))} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField label="Contact Number" size="small" fullWidth required value={nestedDealerData.contact_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contact_num: e.target.value }))} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField label="Contacted Number" size="small" fullWidth value={nestedDealerData.contacted_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contacted_num: e.target.value }))} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField label="Area/Sector/Block" size="small" fullWidth required value={nestedDealerData.sector_block || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField label="Address" size="small" fullWidth value={nestedDealerData.address || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, address: e.target.value }))} />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField label="Call Notes/Remarks" size="small" fullWidth multiline rows={2} value={nestedDealerData.remarks || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, remarks: e.target.value }))} />
+                          </Grid>
+                        </Grid>
+                      </Paper>
+                    )}
 
                     {isOther && (
                       <TextField

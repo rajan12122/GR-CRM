@@ -142,7 +142,7 @@
       "leadType": "Buyer",
       "status": "Negotiation",
       "assignmentStatus": "accepted",
-      "assignedEmployeeId": "EMP-001",
+      "assignedEmployeeId": "EMP-003",
       "id": "LEAD-005",
       "dateAdded": "2026-07-12",
       "assignmentTime": "2026-07-12T14:44:00.597Z",
@@ -155,7 +155,7 @@
       "leadType": "Buyer",
       "status": "Negotiation",
       "assignmentStatus": "accepted",
-      "assignedEmployeeId": "EMP-001",
+      "assignedEmployeeId": "EMP-003",
       "id": "LEAD-006",
       "dateAdded": "2026-07-12",
       "assignmentTime": "2026-07-12T14:44:15.527Z",
@@ -1827,6 +1827,24 @@
     },
     {
       "id": "REM-006"
+    },
+    {
+      "id": "REM-1783867724612-zbyh",
+      "targetModule": "leads",
+      "targetId": "LEAD-005",
+      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "12/7/2026",
+      "timestamp": "2026-07-12T14:48:44.630Z"
+    },
+    {
+      "id": "REM-1783867724637-z4tn",
+      "targetModule": "leads",
+      "targetId": "LEAD-006",
+      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "12/7/2026",
+      "timestamp": "2026-07-12T14:48:44.637Z"
     }
   ],
   "documents": [
@@ -1843,6 +1861,16 @@
     }
   ],
   "activity_logs": [
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Dynamic Stage Test Lead\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T14:48:44.637Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Dynamic Stage Test Lead\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T14:48:44.631Z"
+    },
     {
       "id": "LOG-1783867455583",
       "employeeName": "Gagan Chopra",

@@ -22,7 +22,7 @@ const PipelineView = () => {
 
   useEffect(() => {
     if (metadata) {
-      const moduleToFetch = (pipelineType === 'buyer_query' || pipelineType === 'seller_query') ? 'queries' : pipelineType;
+      const moduleToFetch = (pipelineType === 'buyer_query' || pipelineType === 'customers') ? 'follow_ups' : (pipelineType === 'seller_query' ? 'queries' : (pipelineType === 'property_pitches' ? 'property_pitch_history' : pipelineType));
       fetchModuleData(moduleToFetch);
     }
   }, [pipelineType, metadata]);

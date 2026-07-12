@@ -46,7 +46,7 @@ const EntityDetailWrapper = () => {
 const PipelineViewWrapper = () => {
   const { pipelineType } = useParams();
   const { hasPermission } = useApp();
-  const moduleToCheck = (pipelineType === 'buyer_query' || pipelineType === 'seller_query') ? 'queries' : (pipelineType === 'property_pitches' ? 'property_pitch_history' : pipelineType);
+  const moduleToCheck = (pipelineType === 'buyer_query' || pipelineType === 'customers') ? 'follow_ups' : (pipelineType === 'seller_query' ? 'queries' : (pipelineType === 'property_pitches' ? 'property_pitch_history' : pipelineType));
   return hasPermission(moduleToCheck, 'view') ? <PipelineView key={pipelineType} /> : <Navigate to="/" replace />;
 };
 

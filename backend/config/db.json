@@ -88,7 +88,7 @@
       "phone": 9417094170,
       "source": "Facebook",
       "status": "In-Progress",
-      "assignedEmployeeId": "EMP-004",
+      "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 4500000,
@@ -111,7 +111,7 @@
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
-      "assignedEmployeeId": "EMP-003",
+      "assignedEmployeeId": "EMP-004",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 15000000,
@@ -1812,6 +1812,24 @@
       "author": "System Rotation Engine",
       "date": "12/7/2026",
       "timestamp": "2026-07-12T07:41:13.053Z"
+    },
+    {
+      "id": "REM-1783845673160-4ci3",
+      "targetModule": "leads",
+      "targetId": "LEAD-001",
+      "comment": "System: Lead rotated automatically from sakshi to Shubham due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "12/7/2026",
+      "timestamp": "2026-07-12T08:41:13.183Z"
+    },
+    {
+      "id": "REM-1783845673188-th8l",
+      "targetModule": "leads",
+      "targetId": "LEAD-002",
+      "comment": "System: Lead rotated automatically from Shubham to sakshi due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "12/7/2026",
+      "timestamp": "2026-07-12T08:41:13.188Z"
     }
   ],
   "documents": [
@@ -1828,6 +1846,16 @@
     }
   ],
   "activity_logs": [
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Gaurav Malhotra\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T08:41:13.188Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Amit Pathak\" to Shubham (inactivity)",
+      "timestamp": "2026-07-12T08:41:13.186Z"
+    },
     {
       "id": "LOG-1783842688796",
       "employeeName": "Gagan Chopra",

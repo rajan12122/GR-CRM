@@ -1221,49 +1221,38 @@ const EntityDetail = () => {
 
                       <Divider sx={{ my: 4 }} />
                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Pitched Properties & Details</Typography>
-                        <Button 
-                          variant="contained" 
-                          size="small" 
-                          startIcon={<Icons.Plus size={16} />}
-                          onClick={() => {
-                            setPitchPropertyId('');
-                            setPitchEmployeeId(record.assignedEmployeeId || '');
-                            setPitchPrice('');
-                            setPitchRemarks('');
-                            setPitchWarning('');
-                            setPitchDialogOpen(true);
-                          }}
-                        >
-                          Log New Pitch
-                        </Button>
+                        <Typography variant="h6" sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Pitched Clients & Prospects History</Typography>
                       </Box>
                       {connections.pitches?.length === 0 ? (
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No property pitches logged for this client yet.</Typography>
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pitches logged for this property yet.</Typography>
                       ) : (
-                        connections.pitches.map(p => (
-                          <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
-                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                              <Box display="flex" alignItems="center" gap={1}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
-                                  Property: {p.propertyId}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
+                        connections.pitches.map(p => {
+                          const isLead = String(p.customerId).startsWith('LEAD-');
+                          const clientPath = isLead ? `/module/leads/${p.customerId}` : `/module/customers/${p.customerId}`;
+                          return (
+                            <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                              <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                <Box display="flex" alignItems="center" gap={1}>
+                                  <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(clientPath)}>
+                                    Client: {p.customerName || p.customerId}
+                                  </Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
+                                </Box>
+                                <Chip 
+                                  label={p.interestLevel} 
+                                  color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
+                                  size="small"
+                                  sx={{ fontWeight: 700 }}
+                                />
                               </Box>
-                              <Chip 
-                                label={p.interestLevel} 
-                                color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
-                                size="small"
-                                sx={{ fontWeight: 700 }}
-                              />
-                            </Box>
-                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
-                              Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${p.employeeId || 'EMP-001'}`)}>{p.employeeName}</span>
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>Quoted Offer Price: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/property_pitch_history/${p.id}`)}>{p.id}</span> (Quoted: ₹{formatCurrency(p.quotedPrice)})</Typography>
-                            <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>Remarks: {p.remarks}</Typography>
-                          </Paper>
-                        ))
+                              <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                                Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${p.employeeId || 'EMP-001'}`)}>{p.employeeName}</span>
+                              </Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>Quoted Offer Price: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/property_pitch_history/${p.id}`)}>{p.id}</span> (Quoted: ₹{formatCurrency(p.quotedPrice)})</Typography>
+                              <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>Remarks: {p.remarks}</Typography>
+                            </Paper>
+                          );
+                        })
                       )}
                     </Box>
                   )}
@@ -1293,14 +1282,18 @@ const EntityDetail = () => {
                           {connections.pitches?.length === 0 ? (
                             <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pitch logs registered for this property listing.</Typography>
                           ) : (
-                            connections.pitches.map(p => (
-                              <Paper key={p.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${p.customerId}`)}>{p.customerName || p.customerId}</span></Typography>
-                                <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
-                                  Pitched on: {p.pitchDate} • Method: {p.pitchMethod} • Offered: <strong>₹{formatCurrency(p.quotedPrice)}</strong>
-                                </Typography>
-                              </Paper>
-                            ))
+                            connections.pitches.map(p => {
+                              const isLead = String(p.customerId).startsWith('LEAD-');
+                              const clientPath = isLead ? `/module/leads/${p.customerId}` : `/module/customers/${p.customerId}`;
+                              return (
+                                <Paper key={p.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>Client: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(clientPath)}>{p.customerName || p.customerId}</span></Typography>
+                                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>
+                                    Pitched on: {p.pitchDate} • Method: {p.pitchMethod} • Offered: <strong>₹{formatCurrency(p.quotedPrice)}</strong>
+                                  </Typography>
+                                </Paper>
+                              );
+                            })
                           )}
                         </Grid>
                       </Grid>

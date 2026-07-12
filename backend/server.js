@@ -286,6 +286,28 @@ function handleAutomatedPitchLogging(rec, db, req) {
       pitchDate: new Date().toLocaleDateString('en-IN')
     };
     db.property_pitch_history.push(newPitch);
+
+    // Automatically update customer / lead pipeline stage/status
+    if (cust) {
+      if (String(custId).startsWith('LEAD-')) {
+        cust.status = 'In-Progress';
+      } else {
+        cust.stage = 'Interested';
+      }
+      try {
+        if (String(custId).startsWith('LEAD-')) syncToSheets('leads');
+        else syncToSheets('customers');
+      } catch(e) {}
+    }
+
+    // Automatically update active non-approved queries stage to Property Matching
+    const queries = (db.queries || []).filter(q => String(q.customerId) === String(custId) && q.status !== 'Approved');
+    queries.forEach(q => {
+      q.stage = 'Property Matching';
+    });
+    if (queries.length > 0) {
+      try { syncToSheets('queries'); } catch(e) {}
+    }
     
     db.activity_logs = db.activity_logs || [];
     db.activity_logs.unshift({
@@ -400,6 +422,41 @@ function handleDealerVisitAssignment(payload, db, req, oldPayload = null) {
 function handleDealStatusChange(d, db, req) {
   if (!d.id || d.status !== 'Closed') return;
   
+  // Convert Lead to Customer if Deal closed for a Lead ID
+  if (d.customerId && String(d.customerId).startsWith('LEAD-')) {
+    const leadId = d.customerId;
+    const lead = (db.leads || []).find(l => String(l.id) === String(leadId));
+    if (lead) {
+      const cleanPhone = String(lead.phone).trim();
+      let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
+      if (!existingCust) {
+        const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
+        existingCust = {
+          id: custId,
+          name: lead.name,
+          email: lead.email || '',
+          phone: lead.phone,
+          stage: 'Converted Buyer Deal Closed',
+          assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
+          budget: lead.budget || '',
+          city: lead.locality || '',
+          requirements: lead.remarks || `Converted via Closed Deal ${d.id}`,
+          dateAdded: new Date().toISOString().split('T')[0]
+        };
+        db.customers = db.customers || [];
+        db.customers.push(existingCust);
+        try { syncToSheets('customers'); } catch(e) {}
+      }
+      
+      // Update deal reference to customer
+      d.customerId = existingCust.id;
+      
+      // Update lead status
+      lead.status = 'Converted';
+      try { syncToSheets('leads'); } catch(e) {}
+    }
+  }
+
   db.properties = db.properties || [];
   const propIndex = db.properties.findIndex(p => String(p.id) === String(d.propertyId));
   if (propIndex !== -1) {
@@ -476,6 +533,11 @@ function handleDealStatusChange(d, db, req) {
 
 function handleLeadStatusChange(lead, db, req) {
   if (lead.status === 'Converted') {
+    if (lead.leadType !== 'Seller') {
+      // If it's a buyer lead, do NOT convert directly to customer.
+      // Buyer leads must only be converted via a Closed Deal.
+      return;
+    }
     const cleanPhone = String(lead.phone).trim();
     let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
     
@@ -486,11 +548,11 @@ function handleLeadStatusChange(lead, db, req) {
         name: lead.name,
         email: lead.email || '',
         phone: lead.phone,
-        stage: 'New Lead',
+        stage: 'Converted Seller',
         assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
         budget: lead.budget || '',
         city: lead.locality || '',
-        requirements: lead.remarks || 'Converted from Lead.',
+        requirements: lead.remarks || 'Converted direct property seller.',
         dateAdded: new Date().toISOString().split('T')[0]
       };
       db.customers = db.customers || [];
@@ -498,10 +560,9 @@ function handleLeadStatusChange(lead, db, req) {
       writeDb(db);
       try { syncToSheets('customers'); } catch(e) {}
     }
-    
+
     db.queries = db.queries || [];
     const queryId = `QRY-${String(db.queries.length + 1).padStart(3, '0')}`;
-    const queryType = lead.leadType === 'Seller' ? 'Sell Property' : 'Buy Property';
     
     const newQuery = {
       id: queryId,
@@ -509,7 +570,7 @@ function handleLeadStatusChange(lead, db, req) {
       assignedEmployeeId: existingCust.assignedEmployeeId,
       date: new Date().toLocaleDateString('en-IN'),
       status: 'Pending Approval',
-      queryType: queryType,
+      queryType: 'Sell Property',
       stage: 'New Query',
       budget: lead.budget || '',
       demand: lead.demand || '',
@@ -532,6 +593,87 @@ function handleLeadStatusChange(lead, db, req) {
       dateTime: new Date().toLocaleString()
     });
     writeDb(db);
+  }
+}
+
+function handleFollowUpPipelineAction(f, db, req) {
+  if (!f.pipelineAction || f.pipelineAction === 'None') return;
+
+  const action = f.pipelineAction;
+  const customerId = f.customerId; // This can be LEAD-... or CUST-...
+  
+  if (action === 'Lead_Contacted' || action === 'Lead_VisitScheduled' || action === 'Lead_Negotiation') {
+    if (customerId && String(customerId).startsWith('LEAD-')) {
+      const lead = (db.leads || []).find(l => String(l.id) === String(customerId));
+      if (lead) {
+        const targetStatusMap = {
+          'Lead_Contacted': 'Contacted',
+          'Lead_VisitScheduled': 'Visit Scheduled',
+          'Lead_Negotiation': 'Negotiation'
+        };
+        lead.status = targetStatusMap[action];
+        // Skip calling handleLeadStatusChange directly since they aren't 'Converted' yet.
+        try { syncToSheets('leads'); } catch(e) {}
+      }
+    }
+  } else if (action === 'Query_Approved') {
+    // Find matching buyer query
+    const q = (db.queries || []).find(x => String(x.customerId) === String(customerId) && x.status !== 'Approved');
+    if (q) {
+      q.status = 'Approved';
+      q.stage = 'Available For Sale';
+      handleQueryStageChange(q, db, req);
+      try { syncToSheets('queries'); } catch(e) {}
+    }
+  } else if (action === 'Query_ClosedWon') {
+    // Close Deal Successfully
+    // 1. If customerId is a Lead, convert to Customer first
+    let finalCustomerId = customerId;
+    if (customerId && String(customerId).startsWith('LEAD-')) {
+      const lead = (db.leads || []).find(l => String(l.id) === String(customerId));
+      if (lead) {
+        const cleanPhone = String(lead.phone).trim();
+        let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
+        if (!existingCust) {
+          const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
+          existingCust = {
+            id: custId,
+            name: lead.name,
+            email: lead.email || '',
+            phone: lead.phone,
+            stage: 'Converted Buyer Deal Closed',
+            assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
+            budget: lead.budget || '',
+            city: lead.locality || '',
+            requirements: lead.remarks || `Converted via Follow-Up close action.`,
+            dateAdded: new Date().toISOString().split('T')[0]
+          };
+          db.customers = db.customers || [];
+          db.customers.push(existingCust);
+          try { syncToSheets('customers'); } catch(e) {}
+        }
+        finalCustomerId = existingCust.id;
+        lead.status = 'Converted';
+        try { syncToSheets('leads'); } catch(e) {}
+      }
+    }
+
+    // 2. Insert new Deal closed
+    const dealId = `DEAL-${String((db.deals || []).length + 1).padStart(3, '0')}`;
+    const newDeal = {
+      id: dealId,
+      customerId: finalCustomerId,
+      propertyId: f.pitchedPropertyId || 'PROP-001',
+      employeeId: f.employeeId || 'EMP-001',
+      status: 'Closed',
+      salePrice: f.pitchPrice || 1000000,
+      registrationDate: new Date().toISOString().split('T')[0]
+    };
+    
+    db.deals = db.deals || [];
+    db.deals.push(newDeal);
+    handleDealStatusChange(newDeal, db, req);
+    try { syncToSheets('deals'); } catch(e) {}
   }
 }
 
@@ -904,6 +1046,21 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       
       if (!db.queries) db.queries = [];
       db.queries.push(newQuery);
+
+      // Automatically schedule a follow up task for the auto-created query
+      db.follow_ups = db.follow_ups || [];
+      const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
+      const newFollowUp = {
+        id: followUpId,
+        customerId: existingCust.id,
+        employeeId: payload.assignedEmployeeId || existingCust.assignedEmployeeId || 'EMP-001',
+        date: new Date().toLocaleDateString('en-IN'),
+        time: '12:00 PM',
+        status: 'Pending Call',
+        remarks: `Auto-scheduled follow up for auto-created duplicate check Query ${queryId}.`
+      };
+      db.follow_ups.push(newFollowUp);
+      try { syncToSheets('follow_ups'); } catch(e) {}
       
       const log = {
         id: `LOG-${Date.now()}`,
@@ -956,9 +1113,27 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   if (!db[module]) db[module] = [];
   db[module].push(payload);
 
-  if (module === 'queries') handleQueryStageChange(payload, db, req);
+  if (module === 'queries') {
+    handleQueryStageChange(payload, db, req);
+    
+    // Automatically schedule a follow up task for the new query
+    db.follow_ups = db.follow_ups || [];
+    const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
+    const newFollowUp = {
+      id: followUpId,
+      customerId: payload.customerId,
+      employeeId: payload.assignedEmployeeId || 'EMP-001',
+      date: new Date().toLocaleDateString('en-IN'),
+      time: '12:00 PM',
+      status: 'Pending Call',
+      remarks: `Auto-scheduled follow up for new Query ${payload.id}: ${payload.remarks || 'No notes'}`
+    };
+    db.follow_ups.push(newFollowUp);
+    try { syncToSheets('follow_ups'); } catch(e) {}
+  }
   if (module === 'deals') handleDealStatusChange(payload, db, req);
   if (module === 'leads') handleLeadStatusChange(payload, db, req);
+  if (module === 'follow_ups') handleFollowUpPipelineAction(payload, db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(payload, db);
   if (module === 'dealers') handleDealerVisitAssignment(payload, db, req);
   if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && payload.pitchedPropertyId) {
@@ -1078,12 +1253,41 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     }
   }
 
+  if (module === 'properties') {
+    const oldProp = db.properties[index];
+    const trackFields = ['demand', 'status', 'locality', 'sector_block', 'size', 'propertyType'];
+    const historyEntries = [];
+    
+    trackFields.forEach(f => {
+      const oldVal = oldProp[f];
+      const newVal = payload[f];
+      if (newVal !== undefined && String(oldVal || '').trim() !== String(newVal || '').trim()) {
+        historyEntries.push({
+          id: `PROPH-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          propertyId: id,
+          field: f,
+          fieldName: metadata.modules.properties.fields.find(field => field.name === f)?.label || f,
+          oldValue: oldVal || 'None',
+          newValue: newVal || 'None',
+          date: new Date().toLocaleDateString('en-IN'),
+          employeeName: req.user.name
+        });
+      }
+    });
+    
+    if (historyEntries.length > 0) {
+      db.property_history = db.property_history || [];
+      db.property_history.push(...historyEntries);
+    }
+  }
+
   // Update record preserving fixed identifiers
   db[module][index] = { ...db[module][index], ...payload, id };
 
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
   if (module === 'leads') handleLeadStatusChange(db[module][index], db, req);
+  if (module === 'follow_ups') handleFollowUpPipelineAction(db[module][index], db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(db[module][index], db);
   if (module === 'dealers') handleDealerVisitAssignment(db[module][index], db, req, oldPayload);
   if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && db[module][index].pitchedPropertyId) {
@@ -1688,6 +1892,7 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
       ...p,
       customer: allCustomers.find(c => String(c.id) === String(p.customerId)) || (db.leads || []).find(l => String(l.id) === String(p.customerId))
     }));
+    data.history = (db.property_history || []).filter(h => String(h.propertyId) === String(id));
   } else if (module === 'dealers') {
     data.remarks = allRemarks.filter(r => r.targetModule === 'dealers' && String(r.targetId) === String(id));
     data.documents = allDocs.filter(d => d.targetModule === 'dealers' && String(d.targetId) === String(id));
@@ -2033,6 +2238,22 @@ app.post('/api/public/lead-intake', (req, res) => {
     
     if (!db.queries) db.queries = [];
     db.queries.push(newQuery);
+
+    // Automatically schedule a follow up task for the new query
+    db.follow_ups = db.follow_ups || [];
+    const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
+    const newFollowUp = {
+      id: followUpId,
+      customerId: matchedId,
+      employeeId: existingCust ? (existingCust.assignedEmployeeId || 'EMP-001') : (existingLead.assignedEmployeeId || 'EMP-001'),
+      date: new Date().toLocaleDateString('en-IN'),
+      time: '12:00 PM',
+      status: 'Pending Call',
+      remarks: `Auto-scheduled follow up for requirements form Query ${queryId}.`
+    };
+    db.follow_ups.push(newFollowUp);
+    try { syncToSheets('follow_ups'); } catch(e) {}
+
     writeDb(db);
     try { syncToSheets('queries'); } catch(e) {}
     
@@ -2153,6 +2374,22 @@ app.post('/api/public/quick-add', (req, res) => {
       
       if (!db.queries) db.queries = [];
       db.queries.push(newQuery);
+
+      // Automatically schedule a follow up task for the new query
+      db.follow_ups = db.follow_ups || [];
+      const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
+      const newFollowUp = {
+        id: followUpId,
+        customerId: matchedId,
+        employeeId: payload.assignedEmployeeId || (existingCust ? existingCust.assignedEmployeeId : existingLead.assignedEmployeeId) || 'EMP-001',
+        date: new Date().toLocaleDateString('en-IN'),
+        time: '12:00 PM',
+        status: 'Pending Call',
+        remarks: `Auto-scheduled follow up for Quick-Add Query ${queryId}.`
+      };
+      db.follow_ups.push(newFollowUp);
+      try { syncToSheets('follow_ups'); } catch(e) {}
+
       writeDb(db);
       try { syncToSheets('queries'); } catch(e) {}
       

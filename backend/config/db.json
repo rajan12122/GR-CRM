@@ -29,19 +29,6 @@
     },
     {
       "id": "EMP-003",
-      "name": "Shubham",
-      "email": "shubham@123",
-      "phone": 1231354,
-      "role": "Employee",
-      "status": "Active",
-      "joinDate": "2026-04-01",
-      "salary": 14000,
-      "dutyHours": 9,
-      "holidaysAllotted": 4,
-      "password": "shubham123"
-    },
-    {
-      "id": "EMP-004",
       "name": "sakshi",
       "email": "sakshi@123",
       "phone": 46843213,
@@ -60,7 +47,7 @@
       "name": "Rajesh Singhal",
       "email": "singhal.r@gmail.com",
       "phone": 9814098140,
-      "stage": "Negotiation",
+      "stage": "Property Pitched",
       "assignedEmployeeId": "EMP-003",
       "budget": 8500000,
       "city": "Mohali",
@@ -78,6 +65,42 @@
       "city": "Chandigarh",
       "requirements": "4BHK independent house or villa near the main highway.",
       "dateAdded": "2026-06-15"
+    },
+    {
+      "id": "CUST-003",
+      "name": "Verification Test Lead",
+      "email": "verifylead@test.com",
+      "phone": 9988112233,
+      "stage": "Converted Buyer Deal Closed",
+      "assignedEmployeeId": "EMP-001",
+      "budget": "1.2 Cr",
+      "city": "Sector 62",
+      "requirements": "Converted via Follow-Up close action.",
+      "dateAdded": "2026-07-12"
+    },
+    {
+      "id": "CUST-004",
+      "name": "Verification Test Lead",
+      "email": "verifylead@test.com",
+      "phone": 9988498081,
+      "stage": "Converted Buyer Deal Closed",
+      "assignedEmployeeId": "EMP-001",
+      "budget": "1.2 Cr",
+      "city": "Sector 62",
+      "requirements": "Converted via Follow-Up close action.",
+      "dateAdded": "2026-07-12"
+    },
+    {
+      "id": "CUST-005",
+      "name": "Verification Test Lead",
+      "email": "verifylead@test.com",
+      "phone": "9988585063",
+      "stage": "Converted Buyer Deal Closed",
+      "assignedEmployeeId": "EMP-001",
+      "budget": "1.2 Cr",
+      "city": "Sector 62",
+      "requirements": "Converted via Follow-Up close action.",
+      "dateAdded": "2026-07-12"
     }
   ],
   "leads": [
@@ -111,7 +134,7 @@
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
-      "assignedEmployeeId": "EMP-004",
+      "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 15000000,
@@ -126,6 +149,90 @@
       "pitchedPropertyId": "",
       "pitchPrice": "",
       "pitchRemarks": ""
+    },
+    {
+      "id": "LEAD-003",
+      "name": "Verification Test Lead",
+      "email": "verifylead@test.com",
+      "phone": 9988112233,
+      "source": "",
+      "status": "Converted",
+      "assignedEmployeeId": "EMP-003",
+      "preferredEmployees": "",
+      "enableRotation": "",
+      "budget": "1.2 Cr",
+      "r_c_i": "",
+      "propertyType": "3 BHK Apartment",
+      "locality": "Sector 62",
+      "sector_block": "",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "",
+      "dateAdded": "2026-07-12",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "LEAD-004",
+      "name": "Verification Test Lead",
+      "email": "verifylead@test.com",
+      "phone": 9988498081,
+      "source": "",
+      "status": "Converted",
+      "assignedEmployeeId": "EMP-003",
+      "preferredEmployees": "",
+      "enableRotation": "",
+      "budget": "1.2 Cr",
+      "r_c_i": "",
+      "propertyType": "3 BHK Apartment",
+      "locality": "Sector 62",
+      "sector_block": "",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "",
+      "dateAdded": "2026-07-12",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "LEAD-005",
+      "name": "Verification Test Lead",
+      "email": "verifylead@test.com",
+      "phone": 9988905691,
+      "source": "",
+      "status": "New Lead",
+      "assignedEmployeeId": "EMP-003",
+      "preferredEmployees": "",
+      "enableRotation": "",
+      "budget": "1.2 Cr",
+      "r_c_i": "",
+      "propertyType": "3 BHK Apartment",
+      "locality": "Sector 62",
+      "sector_block": "",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "",
+      "dateAdded": "2026-07-12",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "name": "Verification Test Lead",
+      "phone": "9988585063",
+      "email": "verifylead@test.com",
+      "leadType": "Buyer",
+      "status": "Converted",
+      "budget": "1.2 Cr",
+      "locality": "Sector 62",
+      "propertyType": "3 BHK Apartment",
+      "id": "LEAD-006",
+      "dateAdded": "2026-07-12",
+      "assignmentStatus": "pending",
+      "assignmentTime": "2026-07-12T13:40:43.228Z",
+      "droppedBy": []
     }
   ],
   "properties": [
@@ -136,8 +243,8 @@
       "contact_person_name": "Alam",
       "contact_number": 7814992504,
       "dealer_owner_booked": "Dealer",
-      "dealerId": "DEAL-001",
-      "dealer_deal_type": "Direct",
+      "dealerId": "",
+      "dealer_deal_type": "",
       "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
@@ -163,8 +270,8 @@
       "contact_person_name": "Alam",
       "contact_number": 7814992504,
       "dealer_owner_booked": "Dealer",
-      "dealerId": "DEAL-001",
-      "dealer_deal_type": "Dealer To Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
       "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
@@ -185,10 +292,10 @@
     },
     {
       "id": "PROP-003",
-      "status": "",
+      "status": "Sold",
       "date": "06/02/2026",
-      "contact_person_name": "",
-      "contact_number": 9646330007,
+      "contact_person_name": "Verification Test Lead",
+      "contact_number": "9988585063",
       "dealer_owner_booked": "Dealer",
       "dealerId": "",
       "dealer_deal_type": "",
@@ -208,7 +315,20 @@
       "time": "",
       "demand": "80 Lakh",
       "lead_source": "Whatsapp",
-      "initial_notes": "Ground Floor"
+      "initial_notes": "Ground Floor",
+      "owner_history": [],
+      "current_owner_id": "CUST-005",
+      "ownership_documents": {
+        "old_owner": [],
+        "new_owner": []
+      },
+      "timeline": [
+        {
+          "date": "12/7/2026",
+          "event": "Ownership Changed (Deal Closed)",
+          "details": "Sold by Verification Test Lead to Verification Test Lead for ₹15500000"
+        }
+      ]
     },
     {
       "id": "PROP-004",
@@ -506,6 +626,60 @@
       "demand": "1.2 Cr",
       "lead_source": "Referral",
       "initial_notes": "Aerocity "
+    },
+    {
+      "id": "PROP-015",
+      "status": "Available",
+      "date": "2026-07-12",
+      "contact_person_name": "SOURAV Gupta",
+      "contact_number": 5313213,
+      "dealer_owner_booked": "Dealer",
+      "dealerId": "Subhash",
+      "dealer_deal_type": "Direct",
+      "booked_by_customer_id": "",
+      "dealer_firm_name": "gdsg",
+      "r_c_i": "Residential",
+      "propertyType": "Plot",
+      "locality": "g",
+      "sector_block": "e",
+      "address_number": "Vijay Colony,ward No.9,near Reliance Tower",
+      "size": "w",
+      "bhk_and_washrooms": "e",
+      "dimensions": "f",
+      "location_type": "Normal",
+      "facing": "North",
+      "white": "e",
+      "time": "f",
+      "demand": "e",
+      "lead_source": "Gagan",
+      "initial_notes": "e"
+    },
+    {
+      "id": "PROP-016",
+      "status": "Available",
+      "date": "12/7/2026",
+      "contact_person_name": "",
+      "contact_number": "",
+      "dealer_owner_booked": "Dealer",
+      "dealerId": "N",
+      "dealer_deal_type": "Dealer To Dealer",
+      "booked_by_customer_id": "",
+      "dealer_firm_name": 2,
+      "r_c_i": "Commercial",
+      "propertyType": "Plot",
+      "locality": 1,
+      "sector_block": 1,
+      "address_number": 4,
+      "size": 42,
+      "bhk_and_washrooms": 42,
+      "dimensions": 42,
+      "location_type": "Normal",
+      "facing": "South",
+      "white": 2,
+      "time": 42,
+      "demand": 2,
+      "lead_source": "Facebook",
+      "initial_notes": 24
     }
   ],
   "projects": [
@@ -1241,8 +1415,9 @@
       "time": "11:00 AM",
       "status": "Pending",
       "pitchedPropertyId": "PROP-003",
-      "pitchPrice": 18500000,
-      "pitchRemarks": "Follow up pitch for PROP-003 corner plot."
+      "pitchPrice": 46,
+      "pitchRemarks": "",
+      "pipelineAction": "Lead_Contacted"
     },
     {
       "id": "FOLLOW-002",
@@ -1253,7 +1428,8 @@
       "status": "Pending",
       "pitchedPropertyId": "",
       "pitchPrice": "",
-      "pitchRemarks": ""
+      "pitchRemarks": "",
+      "pipelineAction": ""
     },
     {
       "id": "FOLLOW-003",
@@ -1264,7 +1440,104 @@
       "status": "Completed",
       "pitchedPropertyId": "",
       "pitchPrice": "",
-      "pitchRemarks": ""
+      "pitchRemarks": "",
+      "pipelineAction": ""
+    },
+    {
+      "id": "FOLLOW-004",
+      "customerId": "CUST-002",
+      "employeeId": "EMP-003",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": "",
+      "pipelineAction": ""
+    },
+    {
+      "id": "FOLLOW-005",
+      "customerId": "CUST-001",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": "",
+      "pipelineAction": "Site Visit Arranged"
+    },
+    {
+      "id": "FOLLOW-006",
+      "customerId": "LEAD-003",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 15500000,
+      "pitchRemarks": "",
+      "pipelineAction": "Query_ClosedWon"
+    },
+    {
+      "id": "FOLLOW-007",
+      "customerId": "CUST-003",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": "",
+      "pipelineAction": ""
+    },
+    {
+      "id": "FOLLOW-008",
+      "customerId": "",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 15500000,
+      "pitchRemarks": "",
+      "pipelineAction": "Query_ClosedWon"
+    },
+    {
+      "id": "FOLLOW-009",
+      "customerId": "LEAD-004",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 15500000,
+      "pitchRemarks": "",
+      "pipelineAction": "Query_ClosedWon"
+    },
+    {
+      "id": "FOLLOW-010",
+      "customerId": "LEAD-005",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 15500000,
+      "pitchRemarks": "",
+      "pipelineAction": "Query_ClosedWon"
+    },
+    {
+      "id": "FOLLOW-011",
+      "customerId": "LEAD-006",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "remarks": "Auto-scheduled follow up for new Query QRY-009: Verification test query",
+      "pipelineAction": "Query_ClosedWon",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 15500000
     }
   ],
   "attendance": [
@@ -1796,40 +2069,22 @@
       "id": "REM-006"
     },
     {
-      "id": "REM-1783842073051-hvo8",
+      "id": "REM-1783863639363-xxz2",
       "targetModule": "leads",
-      "targetId": "LEAD-001",
-      "comment": "System: Lead rotated automatically from Shubham to sakshi due to inactivity.",
+      "targetId": "LEAD-004",
+      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
       "author": "System Rotation Engine",
       "date": "12/7/2026",
-      "timestamp": "2026-07-12T07:41:13.052Z"
+      "timestamp": "2026-07-12T13:40:39.462Z"
     },
     {
-      "id": "REM-1783842073053-jodd",
+      "id": "REM-1783863639462-jg6h",
       "targetModule": "leads",
-      "targetId": "LEAD-002",
-      "comment": "System: Lead rotated automatically from sakshi to Shubham due to inactivity.",
+      "targetId": "LEAD-005",
+      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
       "author": "System Rotation Engine",
       "date": "12/7/2026",
-      "timestamp": "2026-07-12T07:41:13.053Z"
-    },
-    {
-      "id": "REM-1783845673160-4ci3",
-      "targetModule": "leads",
-      "targetId": "LEAD-001",
-      "comment": "System: Lead rotated automatically from sakshi to Shubham due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T08:41:13.183Z"
-    },
-    {
-      "id": "REM-1783845673188-th8l",
-      "targetModule": "leads",
-      "targetId": "LEAD-002",
-      "comment": "System: Lead rotated automatically from Shubham to sakshi due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T08:41:13.188Z"
+      "timestamp": "2026-07-12T13:40:39.462Z"
     }
   ],
   "documents": [
@@ -1846,6 +2101,290 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783863643445",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-011 in follow_ups",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "id": "LOG-1783863643431",
+      "employeeName": "Gagan Chopra",
+      "action": "Deal DEAL-005 closed. Ownership of Property PROP-003 transferred to Customer CUST-005.",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "id": "LOG-1783863643404",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "id": "LOG-1783863643373",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "id": "LOG-1783863643308",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record QRY-009 in queries",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "id": "LOG-1783863643308",
+      "employeeName": "Gagan Chopra",
+      "action": "Automatically logged pitch PITCH-010 for Property PROP-003 matching Client LEAD-006",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "id": "LOG-1783863643256",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record QRY-009 in queries",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "id": "LOG-1783863643228",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-006 in leads",
+      "dateTime": "12/7/2026, 7:10:43 pm"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Verification Test Lead\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T13:40:39.462Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Verification Test Lead\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T13:40:39.462Z"
+    },
+    {
+      "id": "LOG-1783863575660",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-010 in follow_ups",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863575648",
+      "employeeName": "Gagan Chopra",
+      "action": "Deal DEAL-004 closed. Ownership of Property PROP-003 transferred to Customer CUST-005.",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863575606",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863575561",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863575494",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record QRY-008 in queries",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863575494",
+      "employeeName": "Gagan Chopra",
+      "action": "Automatically logged pitch PITCH-010 for Property PROP-003 matching Client LEAD-005",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863575439",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record QRY-008 in queries",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863575416",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-005 in leads",
+      "dateTime": "12/7/2026, 7:09:35 pm"
+    },
+    {
+      "id": "LOG-1783863559187",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-009 in follow_ups",
+      "dateTime": "12/7/2026, 7:09:19 pm"
+    },
+    {
+      "id": "LOG-1783863559175",
+      "employeeName": "Gagan Chopra",
+      "action": "Deal DEAL-003 closed. Ownership of Property PROP-003 transferred to Customer CUST-004.",
+      "dateTime": "12/7/2026, 7:09:19 pm"
+    },
+    {
+      "id": "LOG-1783863559135",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:09:19 pm"
+    },
+    {
+      "id": "LOG-1783863559113",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:09:19 pm"
+    },
+    {
+      "id": "LOG-1783863559038",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record PITCH-009 in property_pitch_history",
+      "dateTime": "12/7/2026, 7:09:19 pm"
+    },
+    {
+      "id": "LOG-1783863558992",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record QRY-007 in queries",
+      "dateTime": "12/7/2026, 7:09:18 pm"
+    },
+    {
+      "id": "LOG-1783863558951",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-004 in leads",
+      "dateTime": "12/7/2026, 7:09:18 pm"
+    },
+    {
+      "id": "LOG-1783863543518",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-008 in follow_ups",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863543518",
+      "employeeName": "Gagan Chopra",
+      "action": "Automatically logged pitch PITCH-008 for Property PROP-003 matching Client FOLLOW-008",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863543507",
+      "employeeName": "Gagan Chopra",
+      "action": "Deal DEAL-002 closed. Ownership of Property PROP-003 transferred to Customer undefined.",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863543491",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863543445",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863543382",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record PITCH-007 in property_pitch_history",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863543331",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record QRY-006 in queries",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863543295",
+      "employeeName": "Gagan Chopra",
+      "action": "Detected duplicate phone 9988112233. Created Query QRY-005 for existing customer CUST-003",
+      "dateTime": "12/7/2026, 7:09:03 pm"
+    },
+    {
+      "id": "LOG-1783863523240",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-005 in follow_ups",
+      "dateTime": "12/7/2026, 7:08:43 pm"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Verification Test Lead\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T13:38:37.098Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Gaurav Malhotra\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T13:38:37.098Z"
+    },
+    {
+      "id": "LOG-1783863424868",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-006 in follow_ups",
+      "dateTime": "12/7/2026, 7:07:04 pm"
+    },
+    {
+      "id": "LOG-1783863424834",
+      "employeeName": "Gagan Chopra",
+      "action": "Deal DEAL-001 closed. Ownership of Property PROP-003 transferred to Customer CUST-003.",
+      "dateTime": "12/7/2026, 7:07:04 pm"
+    },
+    {
+      "id": "LOG-1783863424679",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:07:04 pm"
+    },
+    {
+      "id": "LOG-1783863424606",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROP-003 in properties",
+      "dateTime": "12/7/2026, 7:07:04 pm"
+    },
+    {
+      "id": "LOG-1783863424544",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record PITCH-006 in property_pitch_history",
+      "dateTime": "12/7/2026, 7:07:04 pm"
+    },
+    {
+      "id": "LOG-1783863424506",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record QRY-004 in queries",
+      "dateTime": "12/7/2026, 7:07:04 pm"
+    },
+    {
+      "id": "LOG-1783863424461",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-003 in leads",
+      "dateTime": "12/7/2026, 7:07:04 pm"
+    },
+    {
+      "id": "LOG-1783863394085",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-001 in follow_ups",
+      "dateTime": "12/7/2026, 7:06:34 pm"
+    },
+    {
+      "id": "LOG-1783863394084",
+      "employeeName": "Gagan Chopra",
+      "action": "Automatically logged pitch PITCH-005 for Property PROP-003 matching Client CUST-001",
+      "dateTime": "12/7/2026, 7:06:34 pm"
+    },
+    {
+      "id": "LOG-1783863295362",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record PITCH-004 in property_pitch_history",
+      "dateTime": "12/7/2026, 7:04:55 pm"
+    },
+    {
+      "id": "LOG-1783863295316",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record QRY-003 in queries",
+      "dateTime": "12/7/2026, 7:04:55 pm"
+    },
+    {
+      "id": "LOG-1783863295251",
+      "employeeName": "Gagan Chopra",
+      "action": "Detected duplicate phone 9988776655. Created Query QRY-002 for existing customer CUST-002",
+      "dateTime": "12/7/2026, 7:04:55 pm"
+    },
     {
       "user": "System",
       "action": "Auto-rotated Lead \"Gaurav Malhotra\" to sakshi (inactivity)",
@@ -2526,37 +3065,16 @@
       "person_name": "no.",
       "contact_num": 1456132132,
       "contacted_num": 13213215,
-      "remarks": "dsaDs"
-    },
-    {
-      "id": "DEAL-002",
-      "firm_name": "Apex Builders & Realty",
-      "address": "SCO 24, Sector 70",
-      "sector_block": "Sector 70",
-      "person_name": "Arun Sharma",
-      "contact_num": "9876543210",
-      "contacted_num": "9876543211",
-      "remarks": "Reputable sourcing agent for residential plots in Sector 70.",
-      "assignedEmployeeId": "EMP-003",
-      "visitStatus": "Assigned"
-    },
-    {
-      "id": "DEAL-003",
-      "firm_name": "Royal Property Group",
-      "address": "Kabir Towers, Sector 82",
-      "sector_block": "Sector 82",
-      "person_name": "Karan Johar",
-      "contact_num": "9988776655",
-      "contacted_num": "9988776656",
-      "remarks": "Specializes in premium commercial properties.",
-      "assignedEmployeeId": "EMP-004",
+      "remarks": "dsaDs",
+      "callOutcome": "",
+      "assignedEmployeeId": "EMP-001",
       "visitStatus": "Assigned"
     }
   ],
   "dealer_calls": [
     {
       "id": "CALL-001",
-      "dealerId": "DEAL-001",
+      "dealerId": "DEALER-001",
       "date": "10/07/2026",
       "duration": 5,
       "callOutcome": "Call Done",
@@ -2565,60 +3083,12 @@
       "followUpDate": "2026-07-15",
       "remarks": "Dealer interested in residential plots. Has a couple of buyer clients.",
       "employeeName": "Vipin"
-    },
-    {
-      "dealerId": "DEAL-001",
-      "employeeName": "Sales Representative",
-      "date": "12/7/2026",
-      "duration": "10",
-      "budget": 1,
-      "areas": "70",
-      "followUpDate": "2026-07-26",
-      "remarks": "r",
-      "callOutcome": "Call Done",
-      "id": "CALL-002"
-    },
-    {
-      "dealerId": "DEAL-001",
-      "employeeName": "Sales Representative",
-      "date": "12/7/2026",
-      "duration": "1",
-      "budget": 9417094170,
-      "areas": "12",
-      "followUpDate": "2026-07-31",
-      "remarks": "ni",
-      "callOutcome": "Call Done",
-      "id": "CALL-003"
-    },
-    {
-      "id": "CALL-004",
-      "dealerId": "DEAL-002",
-      "date": "12/07/2026",
-      "duration": 8,
-      "callOutcome": "Call Done",
-      "budget": 18000000,
-      "areas": "Aerotropolis",
-      "followUpDate": "2026-07-20",
-      "remarks": "Discussed residential plot listing options in Aerotropolis. Sourced PROP-003.",
-      "employeeName": "sakshi"
-    },
-    {
-      "id": "CALL-005",
-      "dealerId": "DEAL-003",
-      "date": "12/07/2026",
-      "duration": 4,
-      "callOutcome": "Call Done",
-      "budget": 25000000,
-      "areas": "Sector 82",
-      "followUpDate": "2026-07-18",
-      "remarks": "Gathered details about upcoming commercial units. Sourced PROP-004.",
-      "employeeName": "Shubham"
     }
   ],
   "dealer_meetings": [
     {
       "id": "MEET-001",
-      "dealerId": "DEAL-001",
+      "dealerId": "DEALER-001",
       "assignedEmployeeId": "EMP-003",
       "meetingDate": "2026-07-12",
       "meetingTime": "",
@@ -2636,16 +3106,6 @@
       "documents_collected": "",
       "next_action": "",
       "followUpDate": "",
-      "remarks": ""
-    },
-    {
-      "id": "MEET-002",
-      "dealerId": "DEAL-002",
-      "assignedEmployeeId": "EMP-003",
-      "meetingDate": "2026-07-15",
-      "meetingTime": "11:30 AM",
-      "status": "Assigned",
-      "purpose": "Verify papers for PROP-003 corner plot.",
       "remarks": ""
     }
   ],
@@ -2673,25 +3133,166 @@
       "id": "PITCH-002",
       "customerId": "CUST-002",
       "customerName": "Simran Jeet",
-      "propertyId": "PROP-003",
-      "employeeName": "Shubham",
-      "pitchDate": "12/07/2026 14:30:00",
+      "propertyId": "PROP-017",
+      "propertyName": "",
+      "employeeName": "sakshi",
+      "pitchDate": "12/7/2026 6:33:43 pm",
       "pitchMethod": "Call",
-      "quotedPrice": 18500000,
+      "quotedPrice": 0,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
       "interestLevel": "Interested",
-      "remarks": "Simran showed high interest in the Aerotropolis 200 Sq.Yd. plot."
+      "followUpDate": "",
+      "remarks": 0
     },
     {
       "id": "PITCH-003",
-      "customerId": "LEAD-001",
-      "customerName": "Amit Pathak",
-      "propertyId": "PROP-004",
+      "customerId": "CUST-002",
+      "customerName": "Simran Jeet",
+      "propertyId": "PROP-018",
+      "propertyName": "",
       "employeeName": "sakshi",
-      "pitchDate": "12/07/2026 15:45:00",
-      "pitchMethod": "Office Visit",
-      "quotedPrice": 26000000,
+      "pitchDate": "12/7/2026 6:33:44 pm",
+      "pitchMethod": "Call",
+      "quotedPrice": 0,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
       "interestLevel": "Interested",
-      "remarks": "Amit wants to inspect the property site on Monday."
+      "followUpDate": "",
+      "remarks": 0
+    },
+    {
+      "id": "PITCH-004",
+      "customerId": "",
+      "customerName": "",
+      "propertyId": "PROP-003",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "",
+      "pitchMethod": "Call",
+      "quotedPrice": 15000000,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "Verification pitch update"
+    },
+    {
+      "id": "PITCH-005",
+      "customerId": "CUST-001",
+      "customerName": "Rajesh Singhal",
+      "propertyId": "PROP-003",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "12/7/2026",
+      "pitchMethod": "Call",
+      "quotedPrice": 46,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "Automatically logged from lead/follow-up entry."
+    },
+    {
+      "id": "PITCH-006",
+      "customerId": "LEAD-003",
+      "customerName": "Verification Test Lead",
+      "propertyId": "PROP-003",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "",
+      "pitchMethod": "Call",
+      "quotedPrice": 15000000,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "Verification pitch update"
+    },
+    {
+      "id": "PITCH-007",
+      "customerId": "",
+      "customerName": "",
+      "propertyId": "PROP-003",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "",
+      "pitchMethod": "Call",
+      "quotedPrice": 15000000,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "Verification pitch update"
+    },
+    {
+      "id": "PITCH-008",
+      "customerId": "FOLLOW-008",
+      "customerName": "Client",
+      "propertyId": "PROP-003",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "12/7/2026",
+      "pitchMethod": "Call",
+      "quotedPrice": 15500000,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "Automatically logged from lead/follow-up entry."
+    },
+    {
+      "id": "PITCH-009",
+      "customerId": "LEAD-004",
+      "customerName": "Verification Test Lead",
+      "propertyId": "PROP-003",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "",
+      "pitchMethod": "Call",
+      "quotedPrice": 15000000,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "Verification pitch update"
+    },
+    {
+      "id": "PITCH-010",
+      "customerId": "LEAD-006",
+      "customerName": "Verification Test Lead",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "employeeName": "Gagan Chopra",
+      "pitchMethod": "Call",
+      "interestLevel": "Interested",
+      "quotedPrice": 15000000,
+      "remarks": "Verification pitch update",
+      "pitchDate": "12/7/2026"
     }
   ],
   "project_history": [
@@ -2724,9 +3325,333 @@
       "sector_block": "D",
       "size": 200,
       "remarks": "Want to sell",
-      "pitchedPropertyId": "PROP-004",
-      "pitchPrice": 26000000,
-      "pitchRemarks": "Query pitch for PROP-004 commercial space."
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "QRY-002",
+      "customerId": "CUST-002",
+      "assignedEmployeeId": "EMP-003",
+      "date": "12/7/2026",
+      "queryType": "Buy Property",
+      "status": "Pending Approval",
+      "stage": "New Query",
+      "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "3 BHK Apartment",
+      "locality": "Sector 62",
+      "sector_block": "",
+      "size": "",
+      "remarks": "Auto-created query due to duplicate lead/customer submission.",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "QRY-003",
+      "customerId": "",
+      "assignedEmployeeId": "EMP-001",
+      "date": "12/7/2026",
+      "queryType": "Buy Property",
+      "status": "Pending Approval",
+      "stage": "New Query",
+      "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "size": "",
+      "remarks": "Verification test query",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "QRY-004",
+      "customerId": "LEAD-003",
+      "assignedEmployeeId": "EMP-001",
+      "date": "12/7/2026",
+      "queryType": "Buy Property",
+      "status": "Pending Approval",
+      "stage": "New Query",
+      "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "size": "",
+      "remarks": "Verification test query",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "QRY-005",
+      "customerId": "CUST-003",
+      "assignedEmployeeId": "EMP-001",
+      "date": "12/7/2026",
+      "queryType": "Buy Property",
+      "status": "Pending Approval",
+      "stage": "New Query",
+      "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "3 BHK Apartment",
+      "locality": "Sector 62",
+      "sector_block": "",
+      "size": "",
+      "remarks": "Auto-created query due to duplicate lead/customer submission.",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "QRY-006",
+      "customerId": "",
+      "assignedEmployeeId": "EMP-001",
+      "date": "12/7/2026",
+      "queryType": "Buy Property",
+      "status": "Pending Approval",
+      "stage": "New Query",
+      "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "size": "",
+      "remarks": "Verification test query",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "QRY-007",
+      "customerId": "LEAD-004",
+      "assignedEmployeeId": "EMP-001",
+      "date": "12/7/2026",
+      "queryType": "Buy Property",
+      "status": "Pending Approval",
+      "stage": "New Query",
+      "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "size": "",
+      "remarks": "Verification test query",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "QRY-008",
+      "customerId": "LEAD-005",
+      "assignedEmployeeId": "EMP-001",
+      "date": "12/7/2026",
+      "queryType": "Buy Property",
+      "status": "Pending Approval",
+      "stage": "Property Pitched",
+      "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "size": "",
+      "remarks": "Verification test query",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 15000000,
+      "pitchRemarks": "Verification pitch update"
+    },
+    {
+      "customerId": "LEAD-006",
+      "assignedEmployeeId": "EMP-001",
+      "status": "Pending Approval",
+      "queryType": "Buy Property",
+      "stage": "Property Matching",
+      "budget": "1.2 Cr",
+      "remarks": "Verification test query",
+      "id": "QRY-009",
+      "date": "12/7/2026",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 15000000,
+      "pitchRemarks": "Verification pitch update"
+    }
+  ],
+  "notices": [],
+  "deals": [
+    {
+      "id": "DEAL-001",
+      "customerId": "CUST-003",
+      "sellerCustomerId": "",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "registrationDate": "2026-07-12",
+      "salePrice": 15500000,
+      "purchasePrice": "",
+      "brokerage": "",
+      "commission": "",
+      "status": "Closed",
+      "documents": ""
+    },
+    {
+      "id": "DEAL-002",
+      "customerId": "",
+      "sellerCustomerId": "",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "registrationDate": "2026-07-12",
+      "salePrice": 15500000,
+      "purchasePrice": "",
+      "brokerage": "",
+      "commission": "",
+      "status": "Closed",
+      "documents": ""
+    },
+    {
+      "id": "DEAL-003",
+      "customerId": "CUST-004",
+      "sellerCustomerId": "",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "registrationDate": "2026-07-12",
+      "salePrice": 15500000,
+      "purchasePrice": "",
+      "brokerage": "",
+      "commission": "",
+      "status": "Closed",
+      "documents": ""
+    },
+    {
+      "id": "DEAL-004",
+      "customerId": "CUST-005",
+      "sellerCustomerId": "",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "registrationDate": "2026-07-12",
+      "salePrice": 15500000,
+      "purchasePrice": "",
+      "brokerage": "",
+      "commission": "",
+      "status": "Closed",
+      "documents": ""
+    },
+    {
+      "id": "DEAL-005",
+      "customerId": "CUST-005",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "status": "Closed",
+      "salePrice": 15500000,
+      "registrationDate": "2026-07-12"
+    }
+  ],
+  "property_history": [
+    {
+      "id": "PROPH-1783863424606-5hfv",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "80 Lakh",
+      "newValue": "1.65 Cr",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863424679-4oap",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "1.65 Cr",
+      "newValue": "80 Lakh",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863543445-7wfh",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "80 Lakh",
+      "newValue": "1.65 Cr",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863543491-lwvk",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "1.65 Cr",
+      "newValue": "80 Lakh",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863559113-zfqs",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "80 Lakh",
+      "newValue": "1.65 Cr",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863559135-mb5f",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "1.65 Cr",
+      "newValue": "80 Lakh",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863575561-imbb",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "80 Lakh",
+      "newValue": "1.65 Cr",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863575606-a4uq",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "1.65 Cr",
+      "newValue": "80 Lakh",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863643373-uosx",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "80 Lakh",
+      "newValue": "1.65 Cr",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    },
+    {
+      "id": "PROPH-1783863643404-rowx",
+      "propertyId": "PROP-003",
+      "field": "demand",
+      "fieldName": "Demand",
+      "oldValue": "1.65 Cr",
+      "newValue": "80 Lakh",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
     }
   ]
 }

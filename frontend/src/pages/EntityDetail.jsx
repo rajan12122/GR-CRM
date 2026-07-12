@@ -257,6 +257,7 @@ const EntityDetail = () => {
     } else if (moduleName === 'properties') {
       list.push({ label: 'Overview', icon: 'Home' });
       list.push({ label: `Pitches & Showings (${connections.pitches?.length || 0})`, icon: 'Eye' });
+      list.push({ label: `Price/Status History Logs (${connections.history?.length || 0})`, icon: 'Clock' });
       list.push({ label: 'Owner History', icon: 'UserCheck' });
       list.push({ label: `Docs Vault (${connections.documents?.length || 0})`, icon: 'FolderOpen' });
       list.push({ label: `Deals History (${connections.deals?.length || 0})`, icon: 'TrendingUp' });
@@ -1317,8 +1318,39 @@ const EntityDetail = () => {
                     </Box>
                   )}
 
-                  {/* Tab 2: Owner History */}
+                  {/* Tab 2: Price/Status History Logs */}
                   {activeTab === 2 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Pricing & Attribute Historical Timeline</Typography>
+                      {renderListControls([
+                        { value: 'date', label: 'Date Changed' },
+                        { value: 'field', label: 'Attribute' }
+                      ])}
+
+                      {!connections.history || connections.history.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pricing updates or status changes recorded yet.</Typography>
+                      ) : (
+                        filterAndSortList(connections.history || [], ['date', 'field', 'fieldName', 'oldValue', 'newValue', 'employeeName']).map(h => (
+                          <Paper key={h.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Box display="flex" justifyContent="space-between" mb={0.5}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#F59E0B' }}>Attribute Changed: {h.fieldName}</Typography>
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>{h.date}</Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                              Previous Value: <span style={{ textDecoration: 'line-through', color: '#EF4444' }}>{h.oldValue}</span>
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                              New Value: <span style={{ color: '#10B981', fontWeight: 700 }}>{h.newValue}</span>
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Updated by: {h.employeeName}</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 3: Owner History */}
+                  {activeTab === 3 && (
                     <Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Permanent Ownership Registry History</Typography>
                       {connections.ownerHistory?.length === 0 ? (
@@ -1342,8 +1374,8 @@ const EntityDetail = () => {
                     </Box>
                   )}
 
-                  {/* Tab 3: Docs Vault */}
-                  {activeTab === 3 && (
+                  {/* Tab 4: Docs Vault */}
+                  {activeTab === 4 && (
                     <Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Docs Vault (Property Deeds & NOCs)</Typography>
                       <Box component="form" onSubmit={handleUploadDoc} sx={{ mb: 4, p: 2.5, border: '1px dashed #CBD5E1', borderRadius: '12px' }}>
@@ -1428,8 +1460,8 @@ const EntityDetail = () => {
                     </Box>
                   )}
 
-                  {/* Tab 4: Deals History */}
-                  {activeTab === 4 && (
+                  {/* Tab 5: Deals History */}
+                  {activeTab === 5 && (
                     <Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Deals & Transaction History</Typography>
                       {connections.deals?.length === 0 ? (
@@ -1450,8 +1482,8 @@ const EntityDetail = () => {
                     </Box>
                   )}
 
-                  {/* Tab 5: Property Activity Timeline */}
-                  {activeTab === 5 && (
+                  {/* Tab 6: Property Activity Timeline */}
+                  {activeTab === 6 && (
                     <Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Consolidated Property Activity Timeline</Typography>
                       {connections.timeline?.length === 0 ? (

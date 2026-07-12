@@ -898,6 +898,15 @@
           "required": false,
           "showInTable": false,
           "editable": true
+        },
+        {
+          "name": "pipelineAction",
+          "label": "Pipeline/Next Action Stage",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "pipelineActionGroup"
         }
       ]
     },
@@ -2642,6 +2651,38 @@
         "value": "Rescheduled",
         "label": "Shifted Date",
         "color": "#3B82F6"
+      }
+    ],
+    "pipelineActionGroup": [
+      {
+        "value": "None",
+        "label": "Keep Current Stage",
+        "color": "#64748B"
+      },
+      {
+        "value": "Lead_Contacted",
+        "label": "Lead -> Contacted",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Lead_VisitScheduled",
+        "label": "Lead -> Site Visit Scheduled",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Lead_Negotiation",
+        "label": "Lead -> Negotiation",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Query_Approved",
+        "label": "Query -> Approve Requirement",
+        "color": "#10B981"
+      },
+      {
+        "value": "Query_ClosedWon",
+        "label": "Query -> Close Deal Successfully",
+        "color": "#059669"
       }
     ],
     "attendanceStatus": [

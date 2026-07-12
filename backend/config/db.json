@@ -56,18 +56,6 @@
     },
     {
       "id": "CUST-002",
-      "name": "Simran Jeet",
-      "email": "simran.jeet@yahoo.com",
-      "phone": 9988776655,
-      "stage": "Site Visit",
-      "assignedEmployeeId": "EMP-003",
-      "budget": 12000000,
-      "city": "Chandigarh",
-      "requirements": "4BHK independent house or villa near the main highway.",
-      "dateAdded": "2026-06-15"
-    },
-    {
-      "id": "CUST-003",
       "name": "Verification Test Lead",
       "email": "verifylead@test.com",
       "phone": 9988112233,
@@ -79,7 +67,7 @@
       "dateAdded": "2026-07-12"
     },
     {
-      "id": "CUST-004",
+      "id": "CUST-003",
       "name": "Verification Test Lead",
       "email": "verifylead@test.com",
       "phone": 9988498081,
@@ -91,10 +79,10 @@
       "dateAdded": "2026-07-12"
     },
     {
-      "id": "CUST-005",
+      "id": "CUST-004",
       "name": "Verification Test Lead",
       "email": "verifylead@test.com",
-      "phone": "9988585063",
+      "phone": 9988585063,
       "stage": "Converted Buyer Deal Closed",
       "assignedEmployeeId": "EMP-001",
       "budget": "1.2 Cr",
@@ -220,18 +208,61 @@
       "pitchRemarks": ""
     },
     {
-      "name": "Verification Test Lead",
-      "phone": "9988585063",
-      "email": "verifylead@test.com",
-      "leadType": "Buyer",
-      "status": "Converted",
-      "budget": "1.2 Cr",
-      "locality": "Sector 62",
-      "propertyType": "3 BHK Apartment",
       "id": "LEAD-006",
+      "name": "Verification Test Lead",
+      "email": "verifylead@test.com",
+      "phone": 9988585063,
+      "source": "",
+      "status": "Converted",
+      "assignedEmployeeId": "EMP-003",
+      "preferredEmployees": "",
+      "enableRotation": "",
+      "budget": "1.2 Cr",
+      "r_c_i": "",
+      "propertyType": "3 BHK Apartment",
+      "locality": "Sector 62",
+      "sector_block": "",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "",
+      "dateAdded": "2026-07-12",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "id": "LEAD-007",
+      "name": "rajan",
+      "email": "fsdf",
+      "phone": 16651,
+      "source": "Instagram",
+      "status": "Open",
+      "assignedEmployeeId": "EMP-001",
+      "preferredEmployees": "EMP-002",
+      "enableRotation": "true",
+      "budget": 0,
+      "r_c_i": "Residential",
+      "propertyType": "LOI",
+      "locality": "f",
+      "sector_block": "e",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "e",
+      "dateAdded": "2026-07-12",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
+    },
+    {
+      "name": "Kanban Test Lead",
+      "phone": "9988497305",
+      "email": "kanbanlead@test.com",
+      "leadType": "Buyer",
+      "status": "New Lead",
+      "id": "LEAD-008",
       "dateAdded": "2026-07-12",
       "assignmentStatus": "pending",
-      "assignmentTime": "2026-07-12T13:40:43.228Z",
+      "assignmentTime": "2026-07-12T14:02:33.570Z",
       "droppedBy": []
     }
   ],
@@ -295,7 +326,7 @@
       "status": "Sold",
       "date": "06/02/2026",
       "contact_person_name": "Verification Test Lead",
-      "contact_number": "9988585063",
+      "contact_number": 9988585063,
       "dealer_owner_booked": "Dealer",
       "dealerId": "",
       "dealer_deal_type": "",
@@ -315,20 +346,7 @@
       "time": "",
       "demand": "80 Lakh",
       "lead_source": "Whatsapp",
-      "initial_notes": "Ground Floor",
-      "owner_history": [],
-      "current_owner_id": "CUST-005",
-      "ownership_documents": {
-        "old_owner": [],
-        "new_owner": []
-      },
-      "timeline": [
-        {
-          "date": "12/7/2026",
-          "event": "Ownership Changed (Deal Closed)",
-          "details": "Sold by Verification Test Lead to Verification Test Lead for ₹15500000"
-        }
-      ]
+      "initial_notes": "Ground Floor"
     },
     {
       "id": "PROP-004",
@@ -1534,10 +1552,20 @@
       "date": "12/7/2026",
       "time": "12:00 PM",
       "status": "Pending Call",
-      "remarks": "Auto-scheduled follow up for new Query QRY-009: Verification test query",
-      "pipelineAction": "Query_ClosedWon",
       "pitchedPropertyId": "PROP-003",
-      "pitchPrice": 15500000
+      "pitchPrice": 15500000,
+      "pitchRemarks": "",
+      "pipelineAction": "Query_ClosedWon"
+    },
+    {
+      "id": "FOLLOW-012",
+      "customerId": "LEAD-008",
+      "queryId": "QRY-010",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "remarks": "Auto-scheduled follow up for new Query QRY-010: Verification test query for kanban links"
     }
   ],
   "attendance": [
@@ -2067,24 +2095,6 @@
     },
     {
       "id": "REM-006"
-    },
-    {
-      "id": "REM-1783863639363-xxz2",
-      "targetModule": "leads",
-      "targetId": "LEAD-004",
-      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T13:40:39.462Z"
-    },
-    {
-      "id": "REM-1783863639462-jg6h",
-      "targetModule": "leads",
-      "targetId": "LEAD-005",
-      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T13:40:39.462Z"
     }
   ],
   "documents": [
@@ -2101,6 +2111,46 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783864953752",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record PITCH-010 in property_pitch_history",
+      "dateTime": "12/7/2026, 7:32:33 pm"
+    },
+    {
+      "id": "LOG-1783864953699",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record QRY-010 in queries",
+      "dateTime": "12/7/2026, 7:32:33 pm"
+    },
+    {
+      "id": "LOG-1783864953571",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-008 in leads",
+      "dateTime": "12/7/2026, 7:32:33 pm"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"rajan\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T13:50:29.356Z"
+    },
+    {
+      "id": "LOG-1783863958857",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-007 in leads",
+      "dateTime": "12/7/2026, 7:15:58 pm"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Verification Test Lead\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T13:45:29.353Z"
+    },
+    {
+      "id": "LOG-1783863877372",
+      "employeeName": "Gagan Chopra",
+      "action": "Deleted record CUST-002 in customers",
+      "dateTime": "12/7/2026, 7:14:37 pm"
+    },
     {
       "id": "LOG-1783863643445",
       "employeeName": "Gagan Chopra",
@@ -3282,17 +3332,17 @@
       "remarks": "Verification pitch update"
     },
     {
-      "id": "PITCH-010",
-      "customerId": "LEAD-006",
-      "customerName": "Verification Test Lead",
+      "customerId": "LEAD-008",
+      "customerName": "Kanban Test Lead",
       "propertyId": "PROP-003",
       "employeeId": "EMP-001",
       "employeeName": "Gagan Chopra",
       "pitchMethod": "Call",
       "interestLevel": "Interested",
+      "status": "Negotiation",
       "quotedPrice": 15000000,
-      "remarks": "Verification pitch update",
-      "pitchDate": "12/7/2026"
+      "remarks": "Verification pitch with pipeline stage",
+      "id": "PITCH-010"
     }
   ],
   "project_history": [
@@ -3470,18 +3520,35 @@
       "pitchRemarks": "Verification pitch update"
     },
     {
+      "id": "QRY-009",
       "customerId": "LEAD-006",
       "assignedEmployeeId": "EMP-001",
-      "status": "Pending Approval",
+      "date": "12/7/2026",
       "queryType": "Buy Property",
+      "status": "Pending Approval",
       "stage": "Property Matching",
       "budget": "1.2 Cr",
+      "demand": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "size": "",
       "remarks": "Verification test query",
-      "id": "QRY-009",
-      "date": "12/7/2026",
       "pitchedPropertyId": "PROP-003",
       "pitchPrice": 15000000,
       "pitchRemarks": "Verification pitch update"
+    },
+    {
+      "customerId": "LEAD-008",
+      "assignedEmployeeId": "EMP-001",
+      "status": "Pending Approval",
+      "queryType": "Buy Property",
+      "stage": "New Query",
+      "budget": "1.2 Cr",
+      "remarks": "Verification test query for kanban links",
+      "id": "QRY-010",
+      "date": "12/7/2026"
     }
   ],
   "notices": [],
@@ -3545,11 +3612,16 @@
     {
       "id": "DEAL-005",
       "customerId": "CUST-005",
+      "sellerCustomerId": "",
       "propertyId": "PROP-003",
       "employeeId": "EMP-001",
-      "status": "Closed",
+      "registrationDate": "2026-07-12",
       "salePrice": 15500000,
-      "registrationDate": "2026-07-12"
+      "purchasePrice": "",
+      "brokerage": "",
+      "commission": "",
+      "status": "Closed",
+      "documents": ""
     }
   ],
   "property_history": [

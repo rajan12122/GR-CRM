@@ -841,6 +841,15 @@
           "refModule": "customers"
         },
         {
+          "name": "queryId",
+          "label": "Associated Query",
+          "type": "ref",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "refModule": "queries"
+        },
+        {
           "name": "employeeId",
           "label": "Assigned Exec",
           "type": "ref",

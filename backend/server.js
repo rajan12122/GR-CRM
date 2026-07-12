@@ -1053,6 +1053,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       const newFollowUp = {
         id: followUpId,
         customerId: existingCust.id,
+        queryId: queryId,
         employeeId: payload.assignedEmployeeId || existingCust.assignedEmployeeId || 'EMP-001',
         date: new Date().toLocaleDateString('en-IN'),
         time: '12:00 PM',
@@ -1122,6 +1123,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     const newFollowUp = {
       id: followUpId,
       customerId: payload.customerId,
+      queryId: payload.id,
       employeeId: payload.assignedEmployeeId || 'EMP-001',
       date: new Date().toLocaleDateString('en-IN'),
       time: '12:00 PM',
@@ -2245,6 +2247,7 @@ app.post('/api/public/lead-intake', (req, res) => {
     const newFollowUp = {
       id: followUpId,
       customerId: matchedId,
+      queryId: queryId,
       employeeId: existingCust ? (existingCust.assignedEmployeeId || 'EMP-001') : (existingLead.assignedEmployeeId || 'EMP-001'),
       date: new Date().toLocaleDateString('en-IN'),
       time: '12:00 PM',
@@ -2381,6 +2384,7 @@ app.post('/api/public/quick-add', (req, res) => {
       const newFollowUp = {
         id: followUpId,
         customerId: matchedId,
+        queryId: queryId,
         employeeId: payload.assignedEmployeeId || (existingCust ? existingCust.assignedEmployeeId : existingLead.assignedEmployeeId) || 'EMP-001',
         date: new Date().toLocaleDateString('en-IN'),
         time: '12:00 PM',

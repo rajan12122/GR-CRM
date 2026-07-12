@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import EntityTooltip from './EntityTooltip';
 import * as Icons from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 const KanbanBoard = ({ 
   records, 
@@ -19,6 +20,7 @@ const KanbanBoard = ({
   onCardMove, 
   onInspectClick 
 }) => {
+  const { moduleData } = useApp();
   const [draggedItem, setDraggedItem] = useState(null);
 
   const handleDragStart = (item) => {
@@ -117,56 +119,103 @@ const KanbanBoard = ({
                   </Typography>
                 </Box>
               ) : (
-                columnRecords.map(item => (
-                  <Card
-                    key={item.id}
-                    draggable
-                    onDragStart={() => handleDragStart(item)}
-                    sx={{
-                      cursor: 'grab',
-                      '&:active': { cursor: 'grabbing' },
-                      border: '1px solid #E2E8F0',
-                      boxShadow: '0 2px 4px rgba(15,23,42,0.02)',
-                      '&:hover': {
-                        boxShadow: '0 8px 16px rgba(15,23,42,0.06)'
-                      }
-                    }}
-                  >
-                    <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
-                      <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                        <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>
-                          {item.name || item.title || item.id}
-                        </Typography>
-                        <IconButton 
-                          size="small" 
-                          onClick={() => onInspectClick(item.id)}
-                          sx={{ p: 0, color: '#2563EB' }}
-                        >
-                          <Icons.Eye size={16} />
-                        </IconButton>
-                      </Box>
-                      
-                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1.5 }}>
-                        ID: {item.id} {item.location && `• ${item.location}`}
-                      </Typography>
+                columnRecords.map(item => {
+                  let cardTitle = item.name || item.title || item.id;
+                  let cardSubtitle = item.id;
+                  let detailsText = '';
+                  let pitchedBadge = null;
 
-                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                          {item.price ? `₹${(item.price/100000).toFixed(1)} Lacs` : item.budget ? `Budget: ₹${(item.budget/100000).toFixed(1)}L` : ''}
+                  if (String(item.id).startsWith('QRY-')) {
+                    const cust = (moduleData.customers || []).find(c => String(c.id) === String(item.customerId)) || 
+                                 (moduleData.leads || []).find(l => String(l.id) === String(item.customerId));
+                    const custName = cust ? (cust.name || cust.person_name) : `Client: ${item.customerId}`;
+                    cardTitle = `${custName} (${item.id})`;
+                    cardSubtitle = `${item.queryType || 'Property Query'}`;
+                    
+                    const propertyTypeName = item.propertyType || item.r_c_i || 'Property';
+                    const localityName = item.locality || '';
+                    const sectorName = item.sector_block ? `Sec ${item.sector_block}` : '';
+                    detailsText = `${propertyTypeName} in ${[localityName, sectorName].filter(Boolean).join(', ')}`;
+                    
+                    if (item.pitchedPropertyId) {
+                      pitchedBadge = (
+                        <Chip 
+                          label={`Pitched: ${item.pitchedPropertyId}`} 
+                          size="small" 
+                          color="primary" 
+                          variant="outlined" 
+                          sx={{ height: 18, fontSize: '9px', fontWeight: 700, borderRadius: '4px', mt: 1 }} 
+                        />
+                      );
+                    }
+                  } else if (String(item.id).startsWith('PROP-')) {
+                    cardTitle = `${item.locality} ${item.sector_block ? `Sec ${item.sector_block}` : ''}`;
+                    cardSubtitle = `${item.propertyType || 'Listing'} - ${item.id}`;
+                    detailsText = item.contact_person_name ? `Owner/Contact: ${item.contact_person_name}` : '';
+                  } else if (String(item.id).startsWith('CUST-')) {
+                    cardTitle = item.name || item.id;
+                    cardSubtitle = item.id;
+                    detailsText = item.requirements || '';
+                  }
+
+                  return (
+                    <Card
+                      key={item.id}
+                      draggable
+                      onDragStart={() => handleDragStart(item)}
+                      sx={{
+                        cursor: 'grab',
+                        '&:active': { cursor: 'grabbing' },
+                        border: '1px solid #E2E8F0',
+                        boxShadow: '0 2px 4px rgba(15,23,42,0.02)',
+                        '&:hover': {
+                          boxShadow: '0 8px 16px rgba(15,23,42,0.06)'
+                        }
+                      }}
+                    >
+                      <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                        <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={0.5}>
+                          <Typography variant="body2" sx={{ fontWeight: 700, color: '#0F172A', lineHeight: 1.3 }}>
+                            {cardTitle}
+                          </Typography>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => onInspectClick(item.id)}
+                            sx={{ p: 0, color: '#2563EB' }}
+                          >
+                            <Icons.Eye size={16} />
+                          </IconButton>
+                        </Box>
+                        
+                        <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                          {cardSubtitle}
                         </Typography>
-                        {item.assignedEmployeeId && (
-                          <EntityTooltip moduleName="employees" id={item.assignedEmployeeId}>
-                            <Chip 
-                              label={`RM: ${item.assignedEmployeeId}`} 
-                              size="small" 
-                              sx={{ height: 18, fontSize: '9px', fontWeight: 600, borderRadius: '4px', cursor: 'help' }} 
-                            />
-                          </EntityTooltip>
+
+                        {detailsText && (
+                          <Typography variant="body2" sx={{ color: '#475569', fontSize: '12px', mb: 1.5, fontWeight: 500 }}>
+                            {detailsText}
+                          </Typography>
                         )}
-                      </Box>
-                    </CardContent>
-                  </Card>
-                ))
+
+                        <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={0.5}>
+                          <Typography variant="caption" sx={{ fontWeight: 700, color: '#0F172A' }}>
+                            {item.demand ? `₹${item.demand}` : item.price ? `₹${(item.price/100000).toFixed(1)} Lacs` : item.budget ? `Budget: ₹${item.budget}` : ''}
+                          </Typography>
+                          {item.assignedEmployeeId && (
+                            <EntityTooltip moduleName="employees" id={item.assignedEmployeeId}>
+                              <Chip 
+                                label={`RM: ${item.assignedEmployeeId}`} 
+                                size="small" 
+                                sx={{ height: 18, fontSize: '9px', fontWeight: 600, borderRadius: '4px', cursor: 'help' }} 
+                              />
+                            </EntityTooltip>
+                          )}
+                        </Box>
+                        {pitchedBadge}
+                      </CardContent>
+                    </Card>
+                  );
+                })
               )}
             </Box>
           </Box>

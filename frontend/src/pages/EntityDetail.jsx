@@ -90,6 +90,7 @@ const EntityDetail = () => {
   const [pitchEmployeeId, setPitchEmployeeId] = useState('');
   const [pitchMethod, setPitchMethod] = useState('Call');
   const [pitchInterest, setPitchInterest] = useState('Interested');
+  const [pitchStatus, setPitchStatus] = useState('Pitched');
   const [pitchPrice, setPitchPrice] = useState('');
   const [pitchFollowUp, setPitchFollowUp] = useState('');
   const [pitchRemarks, setPitchRemarks] = useState('');
@@ -3153,6 +3154,20 @@ const EntityDetail = () => {
                 <MenuItem value="Not Interested">Not Interested</MenuItem>
               </Select>
             </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Property Pitch Pipeline Stage</InputLabel>
+              <Select value={pitchStatus} onChange={(e) => setPitchStatus(e.target.value)} label="Property Pitch Pipeline Stage">
+                <MenuItem value="Pitched">Pitched / Offered</MenuItem>
+                <MenuItem value="Interested">Interested</MenuItem>
+                <MenuItem value="Site Visit Scheduled">Site Visit Scheduled</MenuItem>
+                <MenuItem value="Site Visit Completed">Site Visit Completed</MenuItem>
+                <MenuItem value="Negotiation">Negotiation</MenuItem>
+                <MenuItem value="Token Received">Token Received</MenuItem>
+                <MenuItem value="Deal Closed">Deal Closed / Won</MenuItem>
+                <MenuItem value="Rejected">Rejected</MenuItem>
+                <MenuItem value="Hold">On Hold</MenuItem>
+              </Select>
+            </FormControl>
             <TextField label="Quoted Pitch Price Offer" type="number" fullWidth value={pitchPrice} onChange={(e) => setPitchPrice(e.target.value)} />
             <TextField label="Next Followup Date" type="date" InputLabelProps={{ shrink: true }} fullWidth value={pitchFollowUp} onChange={(e) => setPitchFollowUp(e.target.value)} />
             <TextField label="Meeting Remarks" multiline rows={3} fullWidth value={pitchRemarks} onChange={(e) => setPitchRemarks(e.target.value)} />
@@ -3216,6 +3231,7 @@ const EntityDetail = () => {
               employeeName: (moduleData.employees || []).find(e => e.id === pitchEmployeeId)?.name || pitchEmployeeId,
               pitchMethod,
               interestLevel: pitchInterest,
+              status: pitchStatus,
               quotedPrice: Number(pitchPrice || 0),
               followUpDate: pitchFollowUp,
               remarks: pitchRemarks,

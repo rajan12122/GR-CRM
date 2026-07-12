@@ -35,16 +35,24 @@ import EntityTooltip from './EntityTooltip';
 
 const EntityChip = ({ moduleName, id, onClick }) => {
   const { moduleData } = useApp();
-  const list = moduleData[moduleName] || [];
+  
+  let resolvedModule = moduleName;
+  if (moduleName === 'customers' && String(id).startsWith('LEAD-')) {
+    resolvedModule = 'leads';
+  } else if (moduleName === 'customers' && String(id).startsWith('CUST-')) {
+    resolvedModule = 'customers';
+  }
+  
+  const list = moduleData[resolvedModule] || [];
   const record = list.find(r => String(r.id) === String(id));
   const resolvedName = record ? (record.name || record.title || record.firm_name || record.person_name || 'Unnamed') : `ID: ${id}`;
   
   return (
-    <Tooltip title={`${moduleName.slice(0, -1).toUpperCase()}: ${resolvedName}`} arrow placement="top">
+    <Tooltip title={`${resolvedModule.slice(0, -1).toUpperCase()}: ${resolvedName}`} arrow placement="top">
       <Chip 
         label={id} 
         size="small"
-        onClick={onClick}
+        onClick={(e) => { e.stopPropagation(); onClick(resolvedModule, id); }}
         sx={{ cursor: 'pointer', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}
       />
     </Tooltip>
@@ -194,7 +202,7 @@ const DynamicTable = ({
         <EntityChip 
           moduleName={field.refModule} 
           id={val} 
-          onClick={() => onInspectClick(field.refModule, val)} 
+          onClick={(actualModule, actualId) => onInspectClick(actualModule || field.refModule, actualId || val)} 
         />
       );
     }
@@ -208,7 +216,7 @@ const DynamicTable = ({
               key={itemId}
               moduleName={field.refModule} 
               id={itemId} 
-              onClick={() => onInspectClick(field.refModule, itemId)} 
+              onClick={(actualModule, actualId) => onInspectClick(actualModule || field.refModule, actualId || itemId)} 
             />
           ))}
         </Box>

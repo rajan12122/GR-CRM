@@ -84,7 +84,7 @@ const GlobalSearch = ({ open, onClose }) => {
     setActiveRecordType(type);
     setActiveTab(0);
     
-    if (['customers', 'employees', 'properties'].includes(type)) {
+    if (['customers', 'employees', 'properties', 'dealers', 'projects', 'leads', 'follow_ups', 'queries', 'dealer_meetings'].includes(type)) {
       setLoading(true);
       const relations = await fetchEntity360(type, record.id);
       setConnections(relations);
@@ -280,7 +280,7 @@ const GlobalSearch = ({ open, onClose }) => {
                 </Box>
 
                 {/* Tab layout connections */}
-                {['customers', 'employees', 'properties'].includes(activeRecordType) && connections ? (
+                {['customers', 'employees', 'properties', 'dealers', 'projects', 'leads', 'follow_ups', 'queries', 'dealer_meetings'].includes(activeRecordType) && connections ? (
                   <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
                     <Tabs 
                       value={activeTab} 
@@ -409,6 +409,61 @@ const GlobalSearch = ({ open, onClose }) => {
                                     <Paper key={sa.id} sx={{ p: 1, mt: 0.5, backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', boxShadow: 'none' }}>
                                       <Typography variant="body2" sx={{ fontWeight: 600, color: '#EF4444' }}>Sold out Deal</Typography>
                                       <Typography variant="caption" sx={{ color: '#64748B' }}>Sold Price: ₹{sa.salePrice?.toLocaleString('en-IN')} • Date: {sa.agreementDate}</Typography>
+                                    </Paper>
+                                  ))
+                                )}
+                              </Grid>
+                            </Grid>
+                          )}
+
+                          {/* DEALER LINK PROFILE */}
+                          {activeRecordType === 'dealers' && (
+                            <Grid container spacing={2}>
+                              <Grid item xs={12}>
+                                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Firm Name & Person Name:</Typography>
+                                <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                                  {activeRecord.firm_name} ({activeRecord.person_name})
+                                </Typography>
+
+                                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Associated Properties & Inventory Listings ({connections.properties?.length || 0}):</Typography>
+                                {connections.properties?.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8', mb: 1.5 }}>None</Typography>
+                                ) : (
+                                  connections.properties.map(p => (
+                                    <Paper key={p.id} sx={{ p: 1, mb: 1, backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#2563EB' }}>{p.id}</Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748B' }}>Type: {p.propertyType || p.r_c_i} • Price: ₹{Number(p.demand || 0).toLocaleString('en-IN')}</Typography>
+                                    </Paper>
+                                  ))
+                                )}
+                              </Grid>
+                            </Grid>
+                          )}
+
+                          {/* LEADS, FOLLOW-UPS, QUERIES LINK PROFILE */}
+                          {['leads', 'follow_ups', 'queries'].includes(activeRecordType) && (
+                            <Grid container spacing={2}>
+                              <Grid item xs={12}>
+                                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Pitched Properties & Details ({connections.pitches?.length || 0}):</Typography>
+                                {connections.pitches?.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8', mb: 1.5 }}>No pitches logged yet</Typography>
+                                ) : (
+                                  connections.pitches.map(p => (
+                                    <Paper key={p.id} sx={{ p: 1, mb: 1, backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 600, color: '#2563EB' }}>Property: {p.propertyId}</Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748B' }}>Pitched on: {p.pitchDate} • Offered: ₹{Number(p.quotedPrice || 0).toLocaleString('en-IN')}</Typography>
+                                    </Paper>
+                                  ))
+                                )}
+
+                                <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Site Visits & Showings ({connections.site_visits?.length || 0}):</Typography>
+                                {connections.site_visits?.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>No site visits registered</Typography>
+                                ) : (
+                                  connections.site_visits.map((sv, idx) => (
+                                    <Paper key={idx} sx={{ p: 1, mb: 1, backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Property: {sv.propertyId}</Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748B' }}>Date: {sv.date} • Outcome: {sv.result}</Typography>
                                     </Paper>
                                   ))
                                 )}

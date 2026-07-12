@@ -169,6 +169,24 @@ const KanbanBoard = ({
                     } else {
                       detailsText = `Pitched Property ID: ${item.propertyId}`;
                     }
+                  } else if (String(item.id).startsWith('FOLLOW-')) {
+                    const cust = (moduleData.customers || []).find(c => String(c.id) === String(item.customerId)) || 
+                                 (moduleData.leads || []).find(l => String(l.id) === String(item.customerId));
+                    const custName = cust ? (cust.name || cust.person_name) : `Client: ${item.customerId}`;
+                    cardTitle = `${custName} (${item.id})`;
+                    cardSubtitle = `Scheduled: ${item.date} ${item.time ? `• ${item.time}` : ''}`;
+                    detailsText = item.remarks || '';
+                    if (item.queryId) {
+                      pitchedBadge = (
+                        <Chip 
+                          label={`Query: ${item.queryId}`} 
+                          size="small" 
+                          color="secondary" 
+                          variant="outlined" 
+                          sx={{ height: 18, fontSize: '9px', fontWeight: 700, borderRadius: '4px', mt: 1 }} 
+                        />
+                      );
+                    }
                   }
 
                   return (

@@ -95,7 +95,7 @@
       "email": "gupta.rajan1212@gmail.com",
       "phone": 15032,
       "source": "Instagram",
-      "status": "Open",
+      "status": "In-Progress",
       "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "EMP-002",
       "enableRotation": "",
@@ -118,8 +118,8 @@
       "email": "ds",
       "phone": "ds",
       "source": "Facebook",
-      "status": "In-Progress",
-      "assignedEmployeeId": "EMP-001",
+      "status": "Contacted",
+      "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "EMP-001",
       "enableRotation": "",
       "budget": 0,
@@ -1798,6 +1798,11 @@
   ],
   "activity_logs": [
     {
+      "user": "System",
+      "action": "Auto-rotated Lead \"d\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T14:34:17.222Z"
+    },
+    {
       "id": "LOG-1783866572604",
       "employeeName": "Gagan Chopra",
       "action": "Created record PITCH-002 in property_pitch_history",
@@ -2893,17 +2898,23 @@
       "remarks": "weq"
     },
     {
+      "id": "PITCH-002",
       "customerId": "LEAD-001",
       "customerName": "Rajan Gupta",
       "propertyId": "PROP-003",
-      "employeeId": "EMP-001",
+      "propertyName": "",
       "employeeName": "Gagan Chopra",
+      "pitchDate": "",
       "pitchMethod": "Call",
-      "interestLevel": "Interested",
-      "status": "Site Visit Scheduled",
       "quotedPrice": 9000000,
-      "remarks": "Kanban board test pitch",
-      "id": "PITCH-002"
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "Site Visit Scheduled",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "Kanban board test pitch"
     }
   ],
   "project_history": [

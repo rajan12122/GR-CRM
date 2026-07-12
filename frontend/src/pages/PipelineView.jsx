@@ -32,43 +32,49 @@ const PipelineView = () => {
   // Determine configuration based on pipelineType
   let targetModule = '';
   let stageField = '';
-  let chipGroup = '';
+  let stages = [];
   let title = '';
   let subtitle = '';
-  let filterFn = (rec) => true;
 
   if (pipelineType === 'properties') {
     targetModule = 'properties';
     stageField = 'status';
-    chipGroup = 'propertyStatus';
+    stages = metadata.chips.propertyStatus || [];
     title = 'Property Pipeline (Kanban)';
     subtitle = 'Track inventory status updates (Available, Booked, Agreement, Sold) in real time.';
   } else if (pipelineType === 'property_pitches') {
     targetModule = 'property_pitch_history';
     stageField = 'status';
-    chipGroup = 'pitchStatus';
+    stages = metadata.chips.pitchStatus || [];
     title = 'Property Interest Pipeline';
     subtitle = 'Track prospective client interest stages for pitched property listings.';
   } else if (pipelineType === 'customers') {
-    targetModule = 'customers';
-    stageField = 'stage';
-    chipGroup = 'customerStages';
+    targetModule = 'follow_ups';
+    stageField = 'pipelineAction';
+    stages = [
+      { value: 'None', label: 'Fresh Lead / Scheduled', color: '#3B82F6' },
+      { value: 'Lead_Contacted', label: 'Lead -> Contacted', color: '#8B5CF6' },
+      { value: 'Lead_VisitScheduled', label: 'Lead -> Site Visit Scheduled', color: '#EC4899' },
+      { value: 'Lead_Negotiation', label: 'Lead -> Negotiation', color: '#10B981' }
+    ];
     title = 'Client Deal Nurturing Pipeline';
     subtitle = 'Track customer pathways from fresh leads to negotiation and booking closeouts.';
   } else if (pipelineType === 'buyer_query') {
-    targetModule = 'queries';
-    stageField = 'stage';
-    chipGroup = 'buyerQueryStages';
+    targetModule = 'follow_ups';
+    stageField = 'pipelineAction';
+    stages = [
+      { value: 'None', label: 'New Query / Scheduled', color: '#3B82F6' },
+      { value: 'Query_Approved', label: 'Query -> Approve Requirement', color: '#10B981' },
+      { value: 'Query_ClosedWon', label: 'Query -> Close Deal Successfully', color: '#111827' }
+    ];
     title = 'Buyer Query Pipeline';
     subtitle = 'Track prospective buyer query progression from Verified to Closed.';
-    filterFn = (rec) => rec.queryType === 'Buy Property' || !rec.queryType;
   } else if (pipelineType === 'seller_query') {
     targetModule = 'queries';
     stageField = 'stage';
-    chipGroup = 'sellerQueryStages';
+    stages = metadata.chips.sellerQueryStages || [];
     title = 'Seller Query Pipeline';
     subtitle = 'Track seller property listings from inspection to sale readiness.';
-    filterFn = (rec) => rec.queryType === 'Sell Property';
   } else {
     return (
       <Box sx={{ p: 4 }}>
@@ -77,77 +83,39 @@ const PipelineView = () => {
     );
   }
 
-  const stages = metadata.chips[chipGroup] || [];
-  
   let records = [];
   if (pipelineType === 'customers') {
-    const mapLeadStatusToStage = (status) => {
-      if (status === 'Open' || status === 'New Lead') return 'New Lead';
-      if (status === 'Contacted') return 'Contacted';
-      if (status === 'Visit Scheduled' || status === 'Site Visit Scheduled') return 'Site Visit';
-      if (status === 'Negotiation') return 'Negotiation';
-      if (status === 'Junk') return 'Lost';
-      if (status === 'Converted') return 'Closed';
-      return 'New Lead';
-    };
-
-    const activeLeads = (moduleData.leads || [])
-      .filter(l => l.status !== 'Converted' && l.status !== 'Junk')
-      .map(l => ({
-        ...l,
-        stage: mapLeadStatusToStage(l.status)
+    records = (moduleData.follow_ups || [])
+      .filter(f => String(f.customerId).startsWith('LEAD-') && !f.queryId)
+      .map(f => ({
+        ...f,
+        pipelineAction: f.pipelineAction || 'None'
       }));
-
-    const customers = (moduleData.customers || []);
-    records = [...activeLeads, ...customers];
+  } else if (pipelineType === 'buyer_query') {
+    records = (moduleData.follow_ups || [])
+      .filter(f => !!f.queryId || String(f.remarks).toLowerCase().includes('query'))
+      .map(f => ({
+        ...f,
+        pipelineAction: f.pipelineAction || 'None'
+      }));
+  } else if (pipelineType === 'seller_query') {
+    records = (moduleData.queries || []).filter(rec => rec.queryType === 'Sell Property');
   } else {
-    records = (moduleData[targetModule] || []).filter(filterFn);
+    records = (moduleData[targetModule] || []);
   }
 
   const handleCardMove = async (cardId, targetStageValue) => {
-    if (pipelineType === 'customers') {
-      if (String(cardId).startsWith('LEAD-')) {
-        const lead = (moduleData.leads || []).find(l => l.id === cardId);
-        if (!lead) return;
-        
-        const mapStageToLeadStatus = (stage) => {
-          if (stage === 'New Lead') return 'Open';
-          if (stage === 'Contacted') return 'Contacted';
-          if (stage === 'Site Visit') return 'Visit Scheduled';
-          if (stage === 'Negotiation') return 'Negotiation';
-          if (stage === 'Lost') return 'Junk';
-          if (stage === 'Closed') return 'Converted';
-          return 'In-Progress';
-        };
+    const allRecords = moduleData[targetModule] || [];
+    const record = allRecords.find(r => r.id === cardId);
+    if (!record) return;
 
-        const payload = { ...lead, status: mapStageToLeadStatus(targetStageValue) };
-        await updateRecord('leads', cardId, payload);
-      } else {
-        const customer = (moduleData.customers || []).find(c => c.id === cardId);
-        if (!customer) return;
-        const payload = { ...customer, stage: targetStageValue };
-        await updateRecord('customers', cardId, payload);
-      }
-    } else {
-      const allRecords = moduleData[targetModule] || [];
-      const record = allRecords.find(r => r.id === cardId);
-      if (!record) return;
-
-      const payload = { ...record, [stageField]: targetStageValue };
-      await updateRecord(targetModule, cardId, payload);
-    }
+    const dbValue = targetStageValue === 'None' ? 'None' : targetStageValue;
+    const payload = { ...record, [stageField]: dbValue };
+    await updateRecord(targetModule, cardId, payload);
   };
 
   const handleInspectClick = (id) => {
-    if (pipelineType === 'customers') {
-      if (String(id).startsWith('LEAD-')) {
-        navigate(`/module/leads/${id}`);
-      } else {
-        navigate(`/module/customers/${id}`);
-      }
-    } else {
-      navigate(`/module/${targetModule}/${id}`);
-    }
+    navigate(`/module/${targetModule}/${id}`);
   };
 
   return (

@@ -15,7 +15,8 @@ import {
   Grid,
   Chip,
   Switch,
-  FormControlLabel
+  FormControlLabel,
+  Typography
 } from '@mui/material';
 import { useApp } from '../context/AppContext';
 

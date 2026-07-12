@@ -2232,7 +2232,7 @@ const EntityDetail = () => {
                             <TextField label="Document/File Name" size="small" fullWidth required value={docName} onChange={(e) => setDocName(e.target.value)} />
                           </Grid>
                           <Grid item xs={12} sm={5}>
-                            <input type="file" onChange={handleFileSelect} style={{ display: 'none' }} id="nested-project-file" />
+                            <input type="file" onChange={handleFileChange} style={{ display: 'none' }} id="nested-project-file" />
                             <label htmlFor="nested-project-file">
                               <Button variant="outlined" component="span" fullWidth size="medium" startIcon={uploadingFile ? <CircularProgress size={16} /> : <Icons.Upload size={16} />}>
                                 {docUrl ? "File Ready" : "Choose Brochure/Layout"}

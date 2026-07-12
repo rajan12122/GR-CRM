@@ -95,6 +95,16 @@ const EntityDetail = () => {
   const [pitchRemarks, setPitchRemarks] = useState('');
   const [pitchWarning, setPitchWarning] = useState('');
   const [pitchItemType, setPitchItemType] = useState('Property');
+  const [nestedDealerData, setNestedDealerData] = useState({
+    firm_name: '',
+    address: '',
+    sector_block: '',
+    person_name: '',
+    contact_num: '',
+    contacted_num: '',
+    remarks: '',
+    callOutcome: 'Call Done'
+  });
   const [nestedPropertyData, setNestedPropertyData] = useState({
     contact_person_name: '',
     contact_number: '',
@@ -2863,6 +2873,9 @@ const EntityDetail = () => {
                                 {(moduleData.dealers || []).map(d => (
                                   <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
                                 ))}
+                                <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                                  + Add New Property Dealer
+                                </MenuItem>
                               </Select>
                             </FormControl>
                           </Grid>
@@ -2880,6 +2893,39 @@ const EntityDetail = () => {
                               </Select>
                             </FormControl>
                           </Grid>
+
+                          {nestedPropertyData.dealerId === 'Other_Dealer' && (
+                            <Grid item xs={12}>
+                              <Paper sx={{ p: 2.5, border: '1px solid #3B82F6', borderRadius: '12px', backgroundColor: '#EFF6FF', boxShadow: 'none' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#1E3A8A', fontFamily: 'Poppins' }}>
+                                  Create New Property Dealer
+                                </Typography>
+                                <Grid container spacing={2}>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Firm Name" size="small" fullWidth required value={nestedDealerData.firm_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, firm_name: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Person Name" size="small" fullWidth required value={nestedDealerData.person_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, person_name: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Contact Number" size="small" fullWidth required value={nestedDealerData.contact_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contact_num: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Contacted Number" size="small" fullWidth value={nestedDealerData.contacted_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contacted_num: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Area/Sector/Block" size="small" fullWidth required value={nestedDealerData.sector_block || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Address" size="small" fullWidth value={nestedDealerData.address || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, address: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12}>
+                                    <TextField label="Call Notes/Remarks" size="small" fullWidth multiline rows={2} value={nestedDealerData.remarks || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, remarks: e.target.value }))} />
+                                  </Grid>
+                                </Grid>
+                              </Paper>
+                            </Grid>
+                          )}
                         </>
                       )}
 
@@ -3084,8 +3130,20 @@ const EntityDetail = () => {
             if (isCustomerLead) {
               finalCustomerName = record.name || record.person_name;
               if (pitchPropertyId === 'Other_Property') {
+                let finalDealerId = nestedPropertyData.dealerId;
+                if (nestedPropertyData.dealer_owner_booked === 'Dealer' && nestedPropertyData.dealerId === 'Other_Dealer') {
+                  const dealerRes = await createRecord('dealers', {
+                    ...nestedDealerData
+                  });
+                  if (dealerRes.success) {
+                    finalDealerId = dealerRes.data.id;
+                  } else {
+                    return alert(dealerRes.message || "Failed to auto-create property dealer");
+                  }
+                }
                 const propRes = await createRecord('properties', {
                   ...nestedPropertyData,
+                  dealerId: finalDealerId,
                   date: new Date().toLocaleDateString('en-IN')
                 });
                 if (propRes.success) {

@@ -88,7 +88,7 @@
       "phone": 9417094170,
       "source": "Facebook",
       "status": "In-Progress",
-      "assignedEmployeeId": "EMP-004",
+      "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 4500000,
@@ -96,7 +96,13 @@
       "propertyType": "LOI",
       "locality": "Aerotropolis",
       "sector_block": "A",
-      "dateAdded": "2026-07-01"
+      "leadType": "",
+      "demand": "",
+      "size": "",
+      "dateAdded": "2026-07-01",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     },
     {
       "id": "LEAD-002",
@@ -105,7 +111,7 @@
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
-      "assignedEmployeeId": "EMP-003",
+      "assignedEmployeeId": "EMP-004",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 15000000,
@@ -113,7 +119,13 @@
       "propertyType": "",
       "locality": "",
       "sector_block": "",
-      "dateAdded": "2026-07-03"
+      "leadType": "",
+      "demand": "",
+      "size": "",
+      "dateAdded": "2026-07-03",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     }
   ],
   "properties": [
@@ -124,6 +136,9 @@
       "contact_person_name": "Alam",
       "contact_number": 7814992504,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
       "propertyType": "LOI",
@@ -148,6 +163,9 @@
       "contact_person_name": "Alam",
       "contact_number": 7814992504,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
       "propertyType": "LOI",
@@ -172,6 +190,9 @@
       "contact_person_name": "",
       "contact_number": 9646330007,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
       "propertyType": "Kothi",
@@ -196,6 +217,9 @@
       "contact_person_name": "",
       "contact_number": 7009418153,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Sri sai Estate",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -220,6 +244,9 @@
       "contact_person_name": "Mansi",
       "contact_number": 7888737816,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -244,6 +271,9 @@
       "contact_person_name": "Mansi",
       "contact_number": 7888737816,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -268,6 +298,9 @@
       "contact_person_name": "Puneet ",
       "contact_number": 9872575266,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Chugh Estate",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -292,6 +325,9 @@
       "contact_person_name": "Indu",
       "contact_number": 9877316025,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Heritage Group",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -316,6 +352,9 @@
       "contact_person_name": "Varun Sahni ",
       "contact_number": 9216053007,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Sahni Estate",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -340,6 +379,9 @@
       "contact_person_name": "Pushap Bhatia",
       "contact_number": 8872488063,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Chaudhary Real Estate",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -364,6 +406,9 @@
       "contact_person_name": "Pushap Bhatia",
       "contact_number": 8872488063,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Chaudhary Real Estate",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -388,6 +433,9 @@
       "contact_person_name": "        Amit Gupta",
       "contact_number": 7889172381,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Bansal Realtor",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -412,6 +460,9 @@
       "contact_person_name": "Parmvir Singh",
       "contact_number": 9888814607,
       "dealer_owner_booked": "Dealer",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "Pioneer Properties ",
       "r_c_i": "Residential ",
       "propertyType": "Plot",
@@ -436,6 +487,9 @@
       "contact_person_name": "Abhi",
       "contact_number": 828289,
       "dealer_owner_booked": "Owner",
+      "dealerId": "",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential",
       "propertyType": "Kothi",
@@ -1185,7 +1239,10 @@
       "employeeId": "EMP-001",
       "date": "2026-07-04",
       "time": "11:00 AM",
-      "status": "Pending"
+      "status": "Pending",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     },
     {
       "id": "FOLLOW-002",
@@ -1193,7 +1250,10 @@
       "employeeId": "EMP-002",
       "date": "2026-07-04",
       "time": "03:00 PM",
-      "status": "Pending"
+      "status": "Pending",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     },
     {
       "id": "FOLLOW-003",
@@ -1201,7 +1261,10 @@
       "employeeId": "EMP-002",
       "date": "2026-06-06",
       "time": "12:00 PM",
-      "status": "Completed"
+      "status": "Completed",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     }
   ],
   "attendance": [
@@ -1731,24 +1794,6 @@
     },
     {
       "id": "REM-006"
-    },
-    {
-      "id": "REM-1783841183033-lzqb",
-      "targetModule": "leads",
-      "targetId": "LEAD-001",
-      "comment": "System: Lead rotated automatically from Shubham to sakshi due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T07:26:23.134Z"
-    },
-    {
-      "id": "REM-1783841183135-c4di",
-      "targetModule": "leads",
-      "targetId": "LEAD-002",
-      "comment": "System: Lead rotated automatically from sakshi to Shubham due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T07:26:23.135Z"
     }
   ],
   "documents": [
@@ -2414,14 +2459,14 @@
     {
       "id": "CALL-001",
       "dealerId": "DEALER-001",
-      "employeeName": "Vipin",
       "date": "10/07/2026",
       "duration": 5,
+      "callOutcome": "Call Done",
       "budget": 7500000,
       "areas": "Sector 123",
       "followUpDate": "2026-07-15",
       "remarks": "Dealer interested in residential plots. Has a couple of buyer clients.",
-      "callOutcome": "Call Done"
+      "employeeName": "Vipin"
     }
   ],
   "dealer_meetings": [
@@ -2429,12 +2474,23 @@
       "id": "MEET-001",
       "dealerId": "DEALER-001",
       "assignedEmployeeId": "EMP-003",
-      "assignedEmployeeName": "Vipin",
-      "prepRemarks": "Admin instruction: Please visit Sunrise Real Estate office in Sector 123, pitch the new projects and collect registry files of plots.",
-      "date": "12/07/2026",
       "meetingDate": "2026-07-12",
+      "meetingTime": "",
+      "priority": "",
+      "purpose": "",
+      "instructions": "",
       "status": "Assigned",
-      "outcome": ""
+      "start_time": "",
+      "end_time": "",
+      "outcome": "",
+      "interest_level": "",
+      "properties_discussed": "",
+      "new_buyer_leads": "",
+      "new_seller_leads": "",
+      "documents_collected": "",
+      "next_action": "",
+      "followUpDate": "",
+      "remarks": ""
     }
   ],
   "property_pitch_history": [
@@ -2443,14 +2499,19 @@
       "customerId": "CUST-001",
       "customerName": "Rajesh Singhal",
       "propertyId": "PROP-001",
-      "employeeId": "EMP-003",
+      "propertyName": "",
       "employeeName": "Vipin",
+      "pitchDate": "11/07/2026 12:30:00",
       "pitchMethod": "Office Visit",
-      "interestLevel": "Interested",
       "quotedPrice": 14000000,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "",
+      "interestLevel": "Interested",
       "followUpDate": "2026-07-14",
-      "remarks": "Pitched Falcon Homes apartments to Rajesh. He showed great interest.",
-      "pitchDate": "11/07/2026 12:30:00"
+      "remarks": "Pitched Falcon Homes apartments to Rajesh. He showed great interest."
     }
   ],
   "project_history": [],
@@ -2471,7 +2532,10 @@
       "locality": "Aerotropolic",
       "sector_block": "D",
       "size": 200,
-      "remarks": "Want to sell"
+      "remarks": "Want to sell",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     }
   ]
 }

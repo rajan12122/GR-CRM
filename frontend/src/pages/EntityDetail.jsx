@@ -81,6 +81,7 @@ const EntityDetail = () => {
   const [meetingOutcome, setMeetingOutcome] = useState('');
   const [meetingDocCollected, setMeetingDocCollected] = useState('');
   
+  const [pitchCustomerId, setPitchCustomerId] = useState('');
   const [pitchPropertyId, setPitchPropertyId] = useState('');
   const [pitchEmployeeId, setPitchEmployeeId] = useState('');
   const [pitchMethod, setPitchMethod] = useState('Call');
@@ -2566,248 +2567,275 @@ const EntityDetail = () => {
                 {pitchWarning}
               </Alert>
             )}
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>Pitch Item Type</InputLabel>
-                  <Select
-                    value={pitchItemType}
-                    onChange={(e) => {
-                      setPitchItemType(e.target.value);
-                      setPitchPropertyId('');
-                    }}
-                    label="Pitch Item Type"
-                  >
-                    <MenuItem value="Property">Property Listing</MenuItem>
-                    <MenuItem value="Project">Builder Project</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <FormControl fullWidth size="small">
-                  <InputLabel>{pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}</InputLabel>
-                  <Select
-                    value={pitchPropertyId}
-                    onChange={(e) => setPitchPropertyId(e.target.value)}
-                    label={pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}
-                  >
-                    <MenuItem value="">-- None --</MenuItem>
-                    {pitchItemType === 'Property' ? (
-                      (moduleData.properties || []).map(p => (
-                        <MenuItem key={p.id} value={p.id}>
-                          {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
-                        </MenuItem>
-                      ))
-                    ) : (
-                      (moduleData.projects || []).map(p => (
-                        <MenuItem key={p.id} value={p.id}>
-                          {p.name} - {p.locality} ({p.id})
-                        </MenuItem>
-                      ))
-                    )}
-                    <MenuItem value={pitchItemType === 'Property' ? 'Other_Property' : 'Other_Project'} sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
-                      + Create New {pitchItemType === 'Property' ? 'Property' : 'Project'}...
-                    </MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-
-            {/* Inline Nested Property Form */}
-            {pitchPropertyId === 'Other_Property' && (
-              <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#F8FAFC' }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
-                  Create New Property Detail
-                </Typography>
-                <Grid container spacing={1.5}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Contact Person Name" size="small" fullWidth value={nestedPropertyData.contact_person_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_person_name: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Contact Number" size="small" fullWidth value={nestedPropertyData.contact_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_number: e.target.value }))} />
-                  </Grid>
+            {(moduleName === 'customers' || moduleName === 'leads') ? (
+              <>
+                <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth size="small">
-                      <InputLabel>Dealer/Owner/Booked</InputLabel>
+                      <InputLabel>Pitch Item Type</InputLabel>
                       <Select
-                        value={nestedPropertyData.dealer_owner_booked || 'Direct'}
-                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_owner_booked: e.target.value }))}
-                        label="Dealer/Owner/Booked"
+                        value={pitchItemType}
+                        onChange={(e) => {
+                          setPitchItemType(e.target.value);
+                          setPitchPropertyId('');
+                        }}
+                        label="Pitch Item Type"
                       >
-                        <MenuItem value="Dealer">Dealer</MenuItem>
-                        <MenuItem value="Direct">Direct</MenuItem>
-                        <MenuItem value="Booked By Us">Booked By Us</MenuItem>
+                        <MenuItem value="Property">Property Listing</MenuItem>
+                        <MenuItem value="Project">Builder Project</MenuItem>
                       </Select>
                     </FormControl>
                   </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>{pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}</InputLabel>
+                      <Select
+                        value={pitchPropertyId}
+                        onChange={(e) => setPitchPropertyId(e.target.value)}
+                        label={pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}
+                      >
+                        <MenuItem value="">-- None --</MenuItem>
+                        {pitchItemType === 'Property' ? (
+                          (moduleData.properties || []).map(p => (
+                            <MenuItem key={p.id} value={p.id}>
+                              {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
+                            </MenuItem>
+                          ))
+                        ) : (
+                          (moduleData.projects || []).map(p => (
+                            <MenuItem key={p.id} value={p.id}>
+                              {p.name} - {p.locality} ({p.id})
+                            </MenuItem>
+                          ))
+                        )}
+                        <MenuItem value={pitchItemType === 'Property' ? 'Other_Property' : 'Other_Project'} sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                          + Create New {pitchItemType === 'Property' ? 'Property' : 'Project'}...
+                        </MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
 
-                  {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
-                    <>
+                {/* Inline Nested Property Form */}
+                {pitchPropertyId === 'Other_Property' && (
+                  <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#F8FAFC' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
+                      Create New Property Detail
+                    </Typography>
+                    <Grid container spacing={1.5}>
                       <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Associated Dealer</InputLabel>
-                          <Select
-                            value={nestedPropertyData.dealerId || ''}
-                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
-                            label="Associated Dealer"
-                          >
-                            <MenuItem value="">-- Select --</MenuItem>
-                            {(moduleData.dealers || []).map(d => (
-                              <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
-                            ))}
-                          </Select>
-                        </FormControl>
+                        <TextField label="Contact Person Name" size="small" fullWidth value={nestedPropertyData.contact_person_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_person_name: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Contact Number" size="small" fullWidth value={nestedPropertyData.contact_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_number: e.target.value }))} />
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <FormControl fullWidth size="small">
-                          <InputLabel>Dealer Deal Type</InputLabel>
+                          <InputLabel>Dealer/Owner/Booked</InputLabel>
                           <Select
-                            value={nestedPropertyData.dealer_deal_type || ''}
-                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_deal_type: e.target.value }))}
-                            label="Dealer Deal Type"
+                            value={nestedPropertyData.dealer_owner_booked || 'Direct'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_owner_booked: e.target.value }))}
+                            label="Dealer/Owner/Booked"
                           >
-                            <MenuItem value="Dealer To Dealer">Dealer To Dealer</MenuItem>
+                            <MenuItem value="Dealer">Dealer</MenuItem>
                             <MenuItem value="Direct">Direct</MenuItem>
-                            <MenuItem value="Booked">Booked</MenuItem>
+                            <MenuItem value="Booked By Us">Booked By Us</MenuItem>
                           </Select>
                         </FormControl>
                       </Grid>
-                    </>
-                  )}
 
-                  {nestedPropertyData.dealer_owner_booked === 'Booked By Us' && (
-                    <Grid item xs={12} sm={6}>
-                      <FormControl fullWidth size="small">
-                        <InputLabel>Booked By (Customer)</InputLabel>
-                        <Select
-                          value={nestedPropertyData.booked_by_customer_id || ''}
-                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, booked_by_customer_id: e.target.value }))}
-                          label="Booked By (Customer)"
-                        >
-                          <MenuItem value="">-- Select --</MenuItem>
-                          {(moduleData.customers || []).map(c => (
-                            <MenuItem key={c.id} value={c.id}>{c.name} ({c.id})</MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
+                      {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
+                        <>
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Associated Dealer</InputLabel>
+                              <Select
+                                value={nestedPropertyData.dealerId || ''}
+                                onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
+                                label="Associated Dealer"
+                              >
+                                <MenuItem value="">-- Select --</MenuItem>
+                                {(moduleData.dealers || []).map(d => (
+                                  <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
+                                ))}
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Dealer Deal Type</InputLabel>
+                              <Select
+                                value={nestedPropertyData.dealer_deal_type || ''}
+                                onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_deal_type: e.target.value }))}
+                                label="Dealer Deal Type"
+                              >
+                                <MenuItem value="Dealer To Dealer">Dealer To Dealer</MenuItem>
+                                <MenuItem value="Direct">Direct</MenuItem>
+                                <MenuItem value="Booked">Booked</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                        </>
+                      )}
+
+                      {nestedPropertyData.dealer_owner_booked === 'Booked By Us' && (
+                        <Grid item xs={12} sm={6}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>Booked By (Customer)</InputLabel>
+                            <Select
+                              value={nestedPropertyData.booked_by_customer_id || ''}
+                              onChange={(e) => setNestedPropertyData(prev => ({ ...prev, booked_by_customer_id: e.target.value }))}
+                              label="Booked By (Customer)"
+                            >
+                              <MenuItem value="">-- Select --</MenuItem>
+                              {(moduleData.customers || []).map(c => (
+                                <MenuItem key={c.id} value={c.id}>{c.name} ({c.id})</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      )}
+
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Property Type</InputLabel>
+                          <Select
+                            value={nestedPropertyData.propertyType || 'Plot'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
+                            label="Property Type"
+                          >
+                            <MenuItem value="Villa">Luxury Villa</MenuItem>
+                            <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                            <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                            <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                            <MenuItem value="LOI">LOI</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>R/C/I</InputLabel>
+                          <Select
+                            value={nestedPropertyData.r_c_i || 'Residential'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
+                            label="R/C/I"
+                          >
+                            <MenuItem value="Residential">Residential</MenuItem>
+                            <MenuItem value="Commercial">Commercial</MenuItem>
+                            <MenuItem value="Industrial">Industrial</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
                     </Grid>
-                  )}
+                  </Box>
+                )}
 
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Property Type</InputLabel>
-                      <Select
-                        value={nestedPropertyData.propertyType || 'Plot'}
-                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
-                        label="Property Type"
-                      >
-                        <MenuItem value="Villa">Luxury Villa</MenuItem>
-                        <MenuItem value="Plot">Residential Land Plot</MenuItem>
-                        <MenuItem value="Apartment">Multistory Apartment</MenuItem>
-                        <MenuItem value="Commercial">Retail/Office Space</MenuItem>
-                        <MenuItem value="LOI">LOI</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>R/C/I</InputLabel>
-                      <Select
-                        value={nestedPropertyData.r_c_i || 'Residential'}
-                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
-                        label="R/C/I"
-                      >
-                        <MenuItem value="Residential">Residential</MenuItem>
-                        <MenuItem value="Commercial">Commercial</MenuItem>
-                        <MenuItem value="Industrial">Industrial</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
-              </Box>
-            )}
-
-            {/* Inline Nested Project Form */}
-            {pitchPropertyId === 'Other_Project' && (
-              <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#F8FAFC' }}>
-                <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
-                  Create New Project Detail
-                </Typography>
-                <Grid container spacing={1.5}>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Project Name" size="small" fullWidth value={nestedProjectData.name || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, name: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Developer</InputLabel>
-                      <Select
-                        value={nestedProjectData.builder || 'DLF Group'}
-                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, builder: e.target.value }))}
-                        label="Developer"
-                      >
-                        <MenuItem value="Gagan Developers">Gagan Developers & Infra</MenuItem>
-                        <MenuItem value="DLF Group">DLF Group India</MenuItem>
-                        <MenuItem value="Omaxe">Omaxe Construction</MenuItem>
-                        <MenuItem value="Hero Homes">Hero Realty Homes</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Locality" size="small" fullWidth value={nestedProjectData.locality || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, locality: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Sector/Block" size="small" fullWidth value={nestedProjectData.sector_block || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, sector_block: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Type (R/C/I)</InputLabel>
-                      <Select
-                        value={nestedProjectData.type || 'Residential'}
-                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, type: e.target.value }))}
-                        label="Type (R/C/I)"
-                      >
-                        <MenuItem value="Residential">Residential</MenuItem>
-                        <MenuItem value="Commercial">Commercial</MenuItem>
-                        <MenuItem value="Industrial">Industrial</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth size="small">
-                      <InputLabel>Category</InputLabel>
-                      <Select
-                        value={nestedProjectData.property_category || 'Plot'}
-                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, property_category: e.target.value }))}
-                        label="Category"
-                      >
-                        <MenuItem value="Villa">Luxury Villa</MenuItem>
-                        <MenuItem value="Plot">Residential Land Plot</MenuItem>
-                        <MenuItem value="Apartment">Multistory Apartment</MenuItem>
-                        <MenuItem value="Commercial">Retail/Office Space</MenuItem>
-                        <MenuItem value="LOI">LOI</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="Pricing Details" size="small" fullWidth value={nestedProjectData.pricing_details || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, pricing_details: e.target.value }))} />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <TextField label="PLC %" size="small" fullWidth value={nestedProjectData.plc_percent || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, plc_percent: e.target.value }))} />
-                  </Grid>
-                </Grid>
-              </Box>
+                {/* Inline Nested Project Form */}
+                {pitchPropertyId === 'Other_Project' && (
+                  <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#F8FAFC' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
+                      Create New Project Detail
+                    </Typography>
+                    <Grid container spacing={1.5}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Project Name" size="small" fullWidth value={nestedProjectData.name || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, name: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Developer</InputLabel>
+                          <Select
+                            value={nestedProjectData.builder || 'DLF Group'}
+                            onChange={(e) => setNestedProjectData(prev => ({ ...prev, builder: e.target.value }))}
+                            label="Developer"
+                          >
+                            <MenuItem value="Gagan Developers">Gagan Developers & Infra</MenuItem>
+                            <MenuItem value="DLF Group">DLF Group India</MenuItem>
+                            <MenuItem value="Omaxe">Omaxe Construction</MenuItem>
+                            <MenuItem value="Hero Homes">Hero Realty Homes</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Locality" size="small" fullWidth value={nestedProjectData.locality || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, locality: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Sector/Block" size="small" fullWidth value={nestedProjectData.sector_block || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Type (R/C/I)</InputLabel>
+                          <Select
+                            value={nestedProjectData.type || 'Residential'}
+                            onChange={(e) => setNestedProjectData(prev => ({ ...prev, type: e.target.value }))}
+                            label="Type (R/C/I)"
+                          >
+                            <MenuItem value="Residential">Residential</MenuItem>
+                            <MenuItem value="Commercial">Commercial</MenuItem>
+                            <MenuItem value="Industrial">Industrial</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Category</InputLabel>
+                          <Select
+                            value={nestedProjectData.property_category || 'Plot'}
+                            onChange={(e) => setNestedProjectData(prev => ({ ...prev, property_category: e.target.value }))}
+                            label="Category"
+                          >
+                            <MenuItem value="Villa">Luxury Villa</MenuItem>
+                            <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                            <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                            <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                            <MenuItem value="LOI">LOI</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Pricing Details" size="small" fullWidth value={nestedProjectData.pricing_details || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, pricing_details: e.target.value }))} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="PLC %" size="small" fullWidth value={nestedProjectData.plc_percent || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, plc_percent: e.target.value }))} />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+              </>
+            ) : (
+              <FormControl fullWidth size="small">
+                <InputLabel>Select Customer or Lead</InputLabel>
+                <Select
+                  value={pitchCustomerId}
+                  onChange={(e) => setPitchCustomerId(e.target.value)}
+                  label="Select Customer or Lead"
+                >
+                  <MenuItem value="">-- Select Customer/Lead --</MenuItem>
+                  <MenuItem value="" disabled sx={{ fontWeight: 800, color: '#2563EB' }}>CUSTOMERS</MenuItem>
+                  {(moduleData.customers || []).map(c => (
+                    <MenuItem key={c.id} value={c.id}>
+                      {c.name} ({c.id})
+                    </MenuItem>
+                  ))}
+                  <MenuItem value="" disabled sx={{ fontWeight: 800, color: '#2563EB' }}>LEADS</MenuItem>
+                  {(moduleData.leads || []).map(l => (
+                    <MenuItem key={l.id} value={l.id}>
+                      {l.name} ({l.id})
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
             )}
             <FormControl fullWidth>
               <InputLabel>Pitching Employee/RM</InputLabel>
@@ -2843,31 +2871,44 @@ const EntityDetail = () => {
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setPitchDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
           <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
-            let finalPropId = pitchPropertyId;
-            if (pitchPropertyId === 'Other_Property') {
-              const propRes = await createRecord('properties', {
-                ...nestedPropertyData,
-                date: new Date().toLocaleDateString('en-IN')
-              });
-              if (propRes.success) {
-                finalPropId = propRes.data.id;
-              } else {
-                return alert(propRes.message || "Failed to auto-create property");
+            const isCustomerLead = moduleName === 'customers' || moduleName === 'leads';
+            let finalPropId = isCustomerLead ? pitchPropertyId : id;
+            let finalCustomerId = isCustomerLead ? id : pitchCustomerId;
+            let finalCustomerName = '';
+
+            if (isCustomerLead) {
+              finalCustomerName = record.name || record.person_name;
+              if (pitchPropertyId === 'Other_Property') {
+                const propRes = await createRecord('properties', {
+                  ...nestedPropertyData,
+                  date: new Date().toLocaleDateString('en-IN')
+                });
+                if (propRes.success) {
+                  finalPropId = propRes.data.id;
+                } else {
+                  return alert(propRes.message || "Failed to auto-create property");
+                }
+              } else if (pitchPropertyId === 'Other_Project') {
+                const projRes = await createRecord('projects', {
+                  ...nestedProjectData
+                });
+                if (projRes.success) {
+                  finalPropId = projRes.data.id;
+                } else {
+                  return alert(projRes.message || "Failed to auto-create project");
+                }
               }
-            } else if (pitchPropertyId === 'Other_Project') {
-              const projRes = await createRecord('projects', {
-                ...nestedProjectData
-              });
-              if (projRes.success) {
-                finalPropId = projRes.data.id;
-              } else {
-                return alert(projRes.message || "Failed to auto-create project");
+            } else {
+              const selectedCust = (moduleData.customers || []).find(c => c.id === pitchCustomerId) || (moduleData.leads || []).find(l => l.id === pitchCustomerId);
+              finalCustomerName = selectedCust ? (selectedCust.name || selectedCust.person_name) : pitchCustomerId;
+              if (!finalCustomerId) {
+                return alert("Please select a customer or lead to log the pitch against.");
               }
             }
 
             const payload = {
-              customerId: id,
-              customerName: record.name,
+              customerId: finalCustomerId,
+              customerName: finalCustomerName,
               propertyId: finalPropId,
               employeeId: pitchEmployeeId,
               employeeName: (moduleData.employees || []).find(e => e.id === pitchEmployeeId)?.name || pitchEmployeeId,

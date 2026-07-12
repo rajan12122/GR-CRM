@@ -371,6 +371,32 @@ function handleDealerCallInsertion(c, db) {
   }
 }
 
+function handleDealerVisitAssignment(payload, db, req, oldPayload = null) {
+  if (payload.assignedEmployeeId) {
+    const hasChanged = !oldPayload || String(oldPayload.assignedEmployeeId) !== String(payload.assignedEmployeeId);
+    if (hasChanged) {
+      payload.visitStatus = payload.visitStatus || 'Assigned';
+      
+      // Notify the employee
+      setTimeout(() => {
+        notifyUser(payload.assignedEmployeeId, 'visit-assigned', {
+          visitId: payload.id,
+          message: `New Dealer Visit Assigned: ${payload.person_name || 'Dealer'} (${payload.firm_name || 'No Firm'})`
+        });
+      }, 500);
+
+      // Create an activity log
+      db.activity_logs = db.activity_logs || [];
+      db.activity_logs.unshift({
+        id: `LOG-${Date.now()}`,
+        employeeName: req.user ? req.user.name : 'System',
+        action: `Assigned Dealer ${payload.id} to Employee ${payload.assignedEmployeeId} for a visit`,
+        dateTime: new Date().toLocaleString()
+      });
+    }
+  }
+}
+
 function handleDealStatusChange(d, db, req) {
   if (!d.id || d.status !== 'Closed') return;
   
@@ -925,6 +951,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   if (module === 'deals') handleDealStatusChange(payload, db, req);
   if (module === 'leads') handleLeadStatusChange(payload, db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(payload, db);
+  if (module === 'dealers') handleDealerVisitAssignment(payload, db, req);
   if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && payload.pitchedPropertyId) {
     handleAutomatedPitchLogging(payload, db, req);
   }
@@ -980,10 +1007,9 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   const db = readDb();
   const payload = req.body;
 
-  if (!db[module]) return res.status(404).json({ message: `Module ${module} is empty.` });
-  
   const index = db[module].findIndex(rec => String(rec.id) === String(id));
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
+  const oldPayload = { ...db[module][index] };
 
   // Enforce unique phone number on update
   if (payload.phone) {
@@ -1050,6 +1076,7 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
   if (module === 'leads') handleLeadStatusChange(db[module][index], db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(db[module][index], db);
+  if (module === 'dealers') handleDealerVisitAssignment(db[module][index], db, req, oldPayload);
   if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && db[module][index].pitchedPropertyId) {
     handleAutomatedPitchLogging(db[module][index], db, req);
   }

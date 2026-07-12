@@ -1504,29 +1504,120 @@ const EntityDetail = () => {
                     </Grid>
                     <Grid item xs={12} sm={6}>
                       <Paper sx={{ p: 3, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 1, display: 'flex', alignItems: 'center', gap: 1, fontFamily: 'Poppins' }}>
                           <Icons.MapPin size={20} color="#16A34A" />
-                          Physical Visits & Meetings
+                          Physical Visit Assignment
                         </Typography>
-                        <Typography variant="body2" sx={{ color: '#64748B', mb: 2.5 }}>
-                          Report details of physical site visits, document collections, and firm meetings.
+                        <Typography variant="body2" sx={{ color: '#64748B', mb: 2 }}>
+                          Assign an employee to physically visit the dealer. If assigned, they will get a notification to visit.
                         </Typography>
-                        <Button 
-                          variant="contained" 
-                          size="small" 
-                          color="success"
-                          startIcon={<Icons.Users size={16} />}
-                          onClick={() => {
-                            setMeetingOutcome('');
-                            setMeetingDocCollected('');
-                            setSelectedMeetingId((connections?.meetings || []).find(m => m.status === 'Assigned')?.id || '');
-                            setMeetingReportDialogOpen(true);
-                          }}
-                          disabled={!(connections?.meetings || []).some(m => m.status === 'Assigned')}
-                          sx={{ textTransform: 'none', borderRadius: '8px', fontWeight: 700 }}
-                        >
-                          Submit Visit Report
-                        </Button>
+                        
+                        <FormControl fullWidth size="small" sx={{ mb: 2, backgroundColor: 'white' }}>
+                          <InputLabel>Select Employee</InputLabel>
+                          <Select
+                            label="Select Employee"
+                            value={record?.assignedEmployeeId || ''}
+                            onChange={async (e) => {
+                              const selectedVal = e.target.value;
+                              const payload = {
+                                ...record,
+                                assignedEmployeeId: selectedVal || ''
+                              };
+                              const res = await updateRecord('dealers', record.id, payload);
+                              if (res.success) {
+                                loadData();
+                              } else {
+                                alert(res.message || "Failed to assign employee");
+                              }
+                            }}
+                          >
+                            <MenuItem value=""><em>Unassigned</em></MenuItem>
+                            {(moduleData.employees || []).map(emp => (
+                              <MenuItem key={emp.id} value={emp.id}>
+                                {emp.name} ({emp.id})
+                              </MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+
+                        {record?.assignedEmployeeId && (
+                          <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: 'white' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                              <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700 }}>
+                                Visit Status:
+                              </Typography>
+                              <Chip 
+                                label={record.visitStatus || 'Assigned'} 
+                                color={record.visitStatus === 'Completed' ? 'success' : record.visitStatus === 'Cancelled' ? 'error' : 'warning'} 
+                                size="small" 
+                                sx={{ fontWeight: 800, fontSize: '10px', borderRadius: '6px' }}
+                              />
+                            </Box>
+                            
+                            {(!record.visitStatus || record.visitStatus === 'Assigned') ? (
+                              <Box sx={{ mt: 1.5 }}>
+                                <FormControl fullWidth size="small" sx={{ mb: 1.5 }}>
+                                  <InputLabel>Visit Outcome</InputLabel>
+                                  <Select
+                                    label="Visit Outcome"
+                                    value={meetingOutcome}
+                                    onChange={(e) => setMeetingOutcome(e.target.value)}
+                                  >
+                                    <MenuItem value="Completed">Visit Completed</MenuItem>
+                                    <MenuItem value="Dealer Not Interested">Dealer Not Interested to Meet</MenuItem>
+                                  </Select>
+                                </FormControl>
+                                <TextField
+                                  placeholder="Type visit remarks..."
+                                  size="small"
+                                  fullWidth
+                                  multiline
+                                  rows={2}
+                                  value={meetingDocCollected}
+                                  onChange={(e) => setMeetingDocCollected(e.target.value)}
+                                  sx={{ mb: 1.5 }}
+                                />
+                                <Button
+                                  variant="contained"
+                                  color="success"
+                                  size="small"
+                                  fullWidth
+                                  sx={{ fontWeight: 700, textTransform: 'none' }}
+                                  onClick={async () => {
+                                    if (!meetingOutcome) {
+                                      alert("Please select visit outcome");
+                                      return;
+                                    }
+                                    const nextStatus = meetingOutcome === 'Completed' ? 'Completed' : 'Cancelled';
+                                    const finalOutcome = meetingOutcome === 'Completed' 
+                                      ? `Visit Completed: ${meetingDocCollected}` 
+                                      : `Dealer Not Interested: ${meetingDocCollected}`;
+                                    
+                                    const payload = {
+                                      ...record,
+                                      visitStatus: nextStatus,
+                                      remarks: finalOutcome
+                                    };
+                                    const res = await updateRecord('dealers', record.id, payload);
+                                    if (res.success) {
+                                      setMeetingOutcome('');
+                                      setMeetingDocCollected('');
+                                      loadData();
+                                    } else {
+                                      alert(res.message || "Failed to update visit details");
+                                    }
+                                  }}
+                                >
+                                  Save Visit Remarks
+                                </Button>
+                              </Box>
+                            ) : (
+                              <Typography variant="body2" sx={{ color: '#475569', mt: 1, fontStyle: 'italic' }}>
+                                Visit resolved. Remarks: "{record.remarks}"
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
                       </Paper>
                     </Grid>
                   </Grid>
@@ -1538,111 +1629,29 @@ const EntityDetail = () => {
                       Assigned Site Visits & Physical Meetings
                     </Typography>
                     
-                    {(connections?.meetings || []).filter(m => m.status === 'Assigned').length === 0 ? (
+                    {!record?.assignedEmployeeId ? (
                       <Box sx={{ p: 3, textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px dashed #E2E8F0' }}>
                         <Typography variant="body2" sx={{ color: '#94A3B8' }}>
-                          No active physical meeting assigned. Admin can assign meetings via the Meetings module.
+                          No active physical visit assigned. Assign an employee in the card above or on the sheet page.
                         </Typography>
                       </Box>
                     ) : (
-                      (connections.meetings || []).filter(m => m.status === 'Assigned').map(m => (
-                        <Paper key={m.id} sx={{ p: 2.5, mb: 2, border: '1px solid #FEF3C7', backgroundColor: '#FFFBEB', borderRadius: '12px', boxShadow: 'none' }}>
-                          <Box display="flex" justifyContent="space-between" mb={1.5}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#D97706' }}>
-                              Meeting: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/dealer_meetings/${m.id}`)}>{m.purpose || 'Dealer Intro'} ({m.id})</span>
-                            </Typography>
-                            <Chip label="Visit Assigned" color="warning" size="small" sx={{ fontWeight: 800, fontSize: '10px', borderRadius: '6px' }} />
-                          </Box>
-                          <Typography variant="body2" sx={{ mb: 1 }}>
-                            RM Assigned: <strong><span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${m.assignedEmployeeId}`)}>{m.assignedEmployeeName}</span></strong>
+                      <Paper sx={{ p: 2.5, border: '1px solid #FEF3C7', backgroundColor: '#FFFBEB', borderRadius: '12px', boxShadow: 'none' }}>
+                        <Box display="flex" justifyContent="space-between" mb={1.5}>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#D97706' }}>
+                            Visit Assigned To: <strong>{moduleData.employees?.find(e => String(e.id) === String(record.assignedEmployeeId))?.name || record.assignedEmployeeId}</strong>
                           </Typography>
-                          <Typography variant="body2" sx={{ color: '#475569' }}>
-                            <strong>Visit Prep Checklist / Remarks:</strong> {m.prepRemarks || 'Please review past calling remarks below.'}
-                          </Typography>
-                          
-                          {/* Inline Visit Outcome Section */}
-                          <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed #FEF3C7' }}>
-                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#B45309', fontFamily: 'Poppins' }}>
-                              Report Visit Status & Remarks
-                            </Typography>
-                            <Grid container spacing={2} alignItems="center">
-                              <Grid item xs={12} sm={4}>
-                                <FormControl fullWidth size="small" sx={{ backgroundColor: 'white' }}>
-                                  <InputLabel>Visit Outcome</InputLabel>
-                                  <Select
-                                    label="Visit Outcome"
-                                    value={inlineOutcomes[m.id] || ''}
-                                    onChange={(e) => setInlineOutcomes(prev => ({ ...prev, [m.id]: e.target.value }))}
-                                  >
-                                    <MenuItem value="Completed">Visit Completed</MenuItem>
-                                    <MenuItem value="Dealer Not Interested">Dealer Not Interested to Meet</MenuItem>
-                                  </Select>
-                                </FormControl>
-                              </Grid>
-                              <Grid item xs={12} sm={6}>
-                                <TextField
-                                  placeholder="Type visit remarks / outcome summary..."
-                                  size="small"
-                                  fullWidth
-                                  sx={{ backgroundColor: 'white' }}
-                                  value={inlineRemarks[m.id] || ''}
-                                  onChange={(e) => setInlineRemarks(prev => ({ ...prev, [m.id]: e.target.value }))}
-                                />
-                              </Grid>
-                              <Grid item xs={12} sm={2}>
-                                <Button
-                                  variant="contained"
-                                  color="warning"
-                                  fullWidth
-                                  size="medium"
-                                  sx={{ fontWeight: 800, textTransform: 'none' }}
-                                  onClick={async () => {
-                                    const outcomeOption = inlineOutcomes[m.id];
-                                    const outcomeRemarks = inlineRemarks[m.id] || '';
-                                    if (!outcomeOption) {
-                                      alert("Please select visit outcome (Completed / Not Interested)");
-                                      return;
-                                    }
-                                    
-                                    const nextStatus = outcomeOption === 'Completed' ? 'Completed' : 'Cancelled';
-                                    const finalOutcome = outcomeOption === 'Completed' 
-                                      ? `Visit Completed: ${outcomeRemarks}` 
-                                      : `Dealer Not Interested: ${outcomeRemarks}`;
-                                    
-                                    const payload = {
-                                      ...m,
-                                      status: nextStatus,
-                                      outcome: finalOutcome,
-                                      last_updated: new Date().toLocaleString('en-IN')
-                                    };
-                                    
-                                    const res = await updateRecord('dealer_meetings', m.id, payload);
-                                    if (res.success) {
-                                      // Clear inline states
-                                      setInlineOutcomes(prev => {
-                                        const copy = { ...prev };
-                                        delete copy[m.id];
-                                        return copy;
-                                      });
-                                      setInlineRemarks(prev => {
-                                        const copy = { ...prev };
-                                        delete copy[m.id];
-                                        return copy;
-                                      });
-                                      // Trigger reload
-                                      loadData();
-                                    } else {
-                                      alert(res.message || "Failed to update meeting status");
-                                    }
-                                  }}
-                                >
-                                  Save Remarks
-                                </Button>
-                              </Grid>
-                            </Grid>
-                          </Box>
-                        </Paper>
-                      ))
+                          <Chip 
+                            label={record.visitStatus || 'Assigned'} 
+                            color={record.visitStatus === 'Completed' ? 'success' : record.visitStatus === 'Cancelled' ? 'error' : 'warning'} 
+                            size="small" 
+                            sx={{ fontWeight: 800, fontSize: '10px', borderRadius: '6px' }} 
+                          />
+                        </Box>
+                        <Typography variant="body2" sx={{ color: '#475569' }}>
+                          <strong>Last Update / Remarks:</strong> {record.remarks || 'No visit updates logged yet.'}
+                        </Typography>
+                      </Paper>
                     )}
                   </Paper>
 

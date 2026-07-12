@@ -1321,6 +1321,24 @@
           "required": false,
           "showInTable": true,
           "editable": true
+        },
+        {
+          "name": "assignedEmployeeId",
+          "label": "Assigned Employee/Visit",
+          "type": "ref",
+          "refModule": "employees",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "visitStatus",
+          "label": "Visit Status",
+          "type": "select",
+          "chipGroup": "meetingStatus",
+          "required": false,
+          "showInTable": true,
+          "editable": true
         }
       ]
     },

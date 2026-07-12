@@ -69,7 +69,7 @@ const DynamicTable = ({
   onInspectClick,
   onLogCallClick
 }) => {
-  const { metadata } = useApp();
+  const { metadata, moduleData, updateRecord } = useApp();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
@@ -108,6 +108,43 @@ const DynamicTable = ({
   // Render chip for status or ref value
   const renderCellContent = (rec, field) => {
     const val = rec[field.name];
+
+    if (moduleKey === 'dealers' && field.name === 'assignedEmployeeId') {
+      const employees = moduleData.employees || [];
+      return (
+        <FormControl size="small" fullWidth sx={{ minWidth: '150px' }} onClick={(e) => e.stopPropagation()}>
+          <Select
+            value={val || ''}
+            onChange={async (e) => {
+              const selectedVal = e.target.value;
+              const payload = {
+                ...rec,
+                assignedEmployeeId: selectedVal || ''
+              };
+              const res = await updateRecord('dealers', rec.id, payload);
+              if (!res.success) {
+                alert(res.message || "Failed to assign employee");
+              }
+            }}
+            displayEmpty
+            sx={{ 
+              fontSize: '12px', 
+              fontWeight: 700,
+              backgroundColor: 'white',
+              borderRadius: '8px'
+            }}
+          >
+            <MenuItem value=""><em>Unassigned</em></MenuItem>
+            {employees.map(emp => (
+              <MenuItem key={emp.id} value={emp.id} sx={{ fontSize: '12px' }}>
+                {emp.name} ({emp.id})
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      );
+    }
+
     if (val === undefined || val === null) return '';
 
     if (field.name === 'id') {

@@ -1829,6 +1829,12 @@
   ],
   "activity_logs": [
     {
+      "id": "LOG-1783842688796",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record CALL-003 in dealer_calls",
+      "dateTime": "12/7/2026, 1:21:28 pm"
+    },
+    {
       "id": "LOG-1783842312399",
       "employeeName": "Gagan Chopra",
       "action": "Created record CALL-002 in dealer_calls",
@@ -2519,6 +2525,18 @@
       "remarks": "r",
       "callOutcome": "Call Done",
       "id": "CALL-002"
+    },
+    {
+      "dealerId": "DEAL-001",
+      "employeeName": "Sales Representative",
+      "date": "12/7/2026",
+      "duration": "1",
+      "budget": 9417094170,
+      "areas": "12",
+      "followUpDate": "2026-07-31",
+      "remarks": "ni",
+      "callOutcome": "Call Done",
+      "id": "CALL-003"
     }
   ],
   "dealer_meetings": [

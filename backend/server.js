@@ -359,6 +359,18 @@ function handleQueryStageChange(q, db, req) {
   }
 }
 
+function handleDealerCallInsertion(c, db) {
+  if (!c.dealerId) return;
+  db.dealers = db.dealers || [];
+  const dealer = db.dealers.find(d => String(d.id) === String(c.dealerId));
+  if (dealer) {
+    dealer.remarks = c.remarks || '';
+    dealer.callOutcome = c.callOutcome || '';
+    // Automatically trigger sync to dealers sheet
+    try { syncToSheets('dealers'); } catch(e) {}
+  }
+}
+
 function handleDealStatusChange(d, db, req) {
   if (!d.id || d.status !== 'Closed') return;
   
@@ -909,10 +921,10 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   if (!db[module]) db[module] = [];
   db[module].push(payload);
 
-  // Call automation triggers
   if (module === 'queries') handleQueryStageChange(payload, db, req);
   if (module === 'deals') handleDealStatusChange(payload, db, req);
   if (module === 'leads') handleLeadStatusChange(payload, db, req);
+  if (module === 'dealer_calls') handleDealerCallInsertion(payload, db);
   if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && payload.pitchedPropertyId) {
     handleAutomatedPitchLogging(payload, db, req);
   }
@@ -1034,10 +1046,10 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   // Update record preserving fixed identifiers
   db[module][index] = { ...db[module][index], ...payload, id };
 
-  // Call automation triggers
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
   if (module === 'leads') handleLeadStatusChange(db[module][index], db, req);
+  if (module === 'dealer_calls') handleDealerCallInsertion(db[module][index], db);
   if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && db[module][index].pitchedPropertyId) {
     handleAutomatedPitchLogging(db[module][index], db, req);
   }

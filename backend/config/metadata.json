@@ -1307,8 +1307,17 @@
         },
         {
           "name": "remarks",
-          "label": "Remarks",
+          "label": "Call Notes/Remarks",
           "type": "textarea",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "callOutcome",
+          "label": "Call Outcome Status",
+          "type": "select",
+          "chipGroup": "callOutcomes",
           "required": false,
           "showInTable": true,
           "editable": true

@@ -60,6 +60,8 @@ const EntityDetail = () => {
     moduleData,
     fetchModuleData,
     fetchEntity360, 
+    createRecord,
+    updateRecord,
     createRemark, 
     uploadDocument,
     deleteRecord,
@@ -76,6 +78,8 @@ const EntityDetail = () => {
   const [pitchDialogOpen, setPitchDialogOpen] = useState(false);
   const [callDialogOpen, setCallDialogOpen] = useState(false);
   const [meetingReportDialogOpen, setMeetingReportDialogOpen] = useState(false);
+  const [inlineOutcomes, setInlineOutcomes] = useState({});
+  const [inlineRemarks, setInlineRemarks] = useState({});
   
   const [selectedMeetingId, setSelectedMeetingId] = useState('');
   const [meetingOutcome, setMeetingOutcome] = useState('');
@@ -1555,6 +1559,88 @@ const EntityDetail = () => {
                           <Typography variant="body2" sx={{ color: '#475569' }}>
                             <strong>Visit Prep Checklist / Remarks:</strong> {m.prepRemarks || 'Please review past calling remarks below.'}
                           </Typography>
+                          
+                          {/* Inline Visit Outcome Section */}
+                          <Box sx={{ mt: 2, pt: 2, borderTop: '1px dashed #FEF3C7' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#B45309', fontFamily: 'Poppins' }}>
+                              Report Visit Status & Remarks
+                            </Typography>
+                            <Grid container spacing={2} alignItems="center">
+                              <Grid item xs={12} sm={4}>
+                                <FormControl fullWidth size="small" sx={{ backgroundColor: 'white' }}>
+                                  <InputLabel>Visit Outcome</InputLabel>
+                                  <Select
+                                    label="Visit Outcome"
+                                    value={inlineOutcomes[m.id] || ''}
+                                    onChange={(e) => setInlineOutcomes(prev => ({ ...prev, [m.id]: e.target.value }))}
+                                  >
+                                    <MenuItem value="Completed">Visit Completed</MenuItem>
+                                    <MenuItem value="Dealer Not Interested">Dealer Not Interested to Meet</MenuItem>
+                                  </Select>
+                                </FormControl>
+                              </Grid>
+                              <Grid item xs={12} sm={6}>
+                                <TextField
+                                  placeholder="Type visit remarks / outcome summary..."
+                                  size="small"
+                                  fullWidth
+                                  sx={{ backgroundColor: 'white' }}
+                                  value={inlineRemarks[m.id] || ''}
+                                  onChange={(e) => setInlineRemarks(prev => ({ ...prev, [m.id]: e.target.value }))}
+                                />
+                              </Grid>
+                              <Grid item xs={12} sm={2}>
+                                <Button
+                                  variant="contained"
+                                  color="warning"
+                                  fullWidth
+                                  size="medium"
+                                  sx={{ fontWeight: 800, textTransform: 'none' }}
+                                  onClick={async () => {
+                                    const outcomeOption = inlineOutcomes[m.id];
+                                    const outcomeRemarks = inlineRemarks[m.id] || '';
+                                    if (!outcomeOption) {
+                                      alert("Please select visit outcome (Completed / Not Interested)");
+                                      return;
+                                    }
+                                    
+                                    const nextStatus = outcomeOption === 'Completed' ? 'Completed' : 'Cancelled';
+                                    const finalOutcome = outcomeOption === 'Completed' 
+                                      ? `Visit Completed: ${outcomeRemarks}` 
+                                      : `Dealer Not Interested: ${outcomeRemarks}`;
+                                    
+                                    const payload = {
+                                      ...m,
+                                      status: nextStatus,
+                                      outcome: finalOutcome,
+                                      last_updated: new Date().toLocaleString('en-IN')
+                                    };
+                                    
+                                    const res = await updateRecord('dealer_meetings', m.id, payload);
+                                    if (res.success) {
+                                      // Clear inline states
+                                      setInlineOutcomes(prev => {
+                                        const copy = { ...prev };
+                                        delete copy[m.id];
+                                        return copy;
+                                      });
+                                      setInlineRemarks(prev => {
+                                        const copy = { ...prev };
+                                        delete copy[m.id];
+                                        return copy;
+                                      });
+                                      // Trigger reload
+                                      loadData();
+                                    } else {
+                                      alert(res.message || "Failed to update meeting status");
+                                    }
+                                  }}
+                                >
+                                  Save Remarks
+                                </Button>
+                              </Grid>
+                            </Grid>
+                          </Box>
                         </Paper>
                       ))
                     )}

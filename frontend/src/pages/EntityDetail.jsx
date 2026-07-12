@@ -1620,6 +1620,7 @@ const EntityDetail = () => {
                         ))}
                       </Box>
                     )}
+                  </Paper>
                   {/* 5. Associated Properties / Listings */}
                   <Paper sx={{ p: 3, mt: 4, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
                     <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>

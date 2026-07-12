@@ -913,7 +913,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   if (module === 'queries') handleQueryStageChange(payload, db, req);
   if (module === 'deals') handleDealStatusChange(payload, db, req);
   if (module === 'leads') handleLeadStatusChange(payload, db, req);
-  if ((module === 'leads' || module === 'follow_ups') && payload.pitchedPropertyId) {
+  if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && payload.pitchedPropertyId) {
     handleAutomatedPitchLogging(payload, db, req);
   }
 
@@ -922,6 +922,12 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     notifyUser(payload.employeeId, 'visit-assigned', {
       visitId: payload.id,
       message: `New Site Visit ${payload.id} scheduled/assigned to you.`
+    });
+  }
+  if (module === 'dealer_meetings' && payload.assignedEmployeeId) {
+    notifyUser(payload.assignedEmployeeId, 'meeting-assigned', {
+      meetingId: payload.id,
+      message: `New Dealer Meeting ${payload.id} assigned to you.`
     });
   }
   if (module === 'queries' && payload.assignedEmployeeId && payload.status === 'Approved') {
@@ -997,6 +1003,34 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     }
   }
 
+  if (module === 'projects') {
+    const oldProj = db.projects[index];
+    const trackFields = ['pricing_details', 'plc_percent', 'status', 'configurations_sizes', 'total_land_area'];
+    const historyEntries = [];
+    
+    trackFields.forEach(f => {
+      const oldVal = oldProj[f];
+      const newVal = payload[f];
+      if (newVal !== undefined && String(oldVal || '').trim() !== String(newVal || '').trim()) {
+        historyEntries.push({
+          id: `PRJH-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          projectId: id,
+          field: f,
+          fieldName: metadata.modules.projects.fields.find(field => field.name === f)?.label || f,
+          oldValue: oldVal || 'None',
+          newValue: newVal || 'None',
+          date: new Date().toLocaleDateString('en-IN'),
+          employeeName: req.user.name
+        });
+      }
+    });
+    
+    if (historyEntries.length > 0) {
+      db.project_history = db.project_history || [];
+      db.project_history.push(...historyEntries);
+    }
+  }
+
   // Update record preserving fixed identifiers
   db[module][index] = { ...db[module][index], ...payload, id };
 
@@ -1004,7 +1038,7 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
   if (module === 'leads') handleLeadStatusChange(db[module][index], db, req);
-  if ((module === 'leads' || module === 'follow_ups') && db[module][index].pitchedPropertyId) {
+  if ((module === 'leads' || module === 'follow_ups' || module === 'queries') && db[module][index].pitchedPropertyId) {
     handleAutomatedPitchLogging(db[module][index], db, req);
   }
 
@@ -1014,6 +1048,12 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     notifyUser(updatedRec.employeeId, 'visit-assigned', {
       visitId: updatedRec.id,
       message: `Site Visit ${updatedRec.id} has been updated/assigned to you.`
+    });
+  }
+  if (module === 'dealer_meetings' && updatedRec.assignedEmployeeId) {
+    notifyUser(updatedRec.assignedEmployeeId, 'meeting-assigned', {
+      meetingId: updatedRec.id,
+      message: `Dealer Meeting ${updatedRec.id} has been updated/assigned to you.`
     });
   }
   if (module === 'queries' && updatedRec.assignedEmployeeId && updatedRec.status === 'Approved') {
@@ -1596,7 +1636,10 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     data.deals = allDeals.filter(d => String(d.propertyId) === String(id));
     data.buyerHistory = data.deals.map(d => allCustomers.find(c => String(c.id) === String(d.customerId))).filter(Boolean);
     data.sellerHistory = data.deals.map(d => allCustomers.find(c => String(c.id) === String(d.sellerCustomerId))).filter(Boolean);
-    data.pitches = allPitches.filter(p => String(p.propertyId) === String(id));
+    data.pitches = allPitches.filter(p => String(p.propertyId) === String(id)).map(p => ({
+      ...p,
+      customer: allCustomers.find(c => String(c.id) === String(p.customerId)) || (db.leads || []).find(l => String(l.id) === String(p.customerId))
+    }));
   } else if (module === 'dealers') {
     data.remarks = allRemarks.filter(r => r.targetModule === 'dealers' && String(r.targetId) === String(id));
     data.documents = allDocs.filter(d => d.targetModule === 'dealers' && String(d.targetId) === String(id));
@@ -1605,6 +1648,27 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
       ...m,
       assignedEmployeeName: allEmployees.find(e => String(e.id) === String(m.assignedEmployeeId))?.name || m.assignedEmployeeId
     }));
+    data.properties = allProperties.filter(p => String(p.dealerId) === String(id));
+  } else if (module === 'dealer_meetings') {
+    const meeting = allDealerMeetings.find(m => String(m.id) === String(id));
+    data.meeting = meeting;
+    if (meeting) {
+      const dealerId = meeting.dealerId;
+      data.dealer = (db.dealers || []).find(d => String(d.id) === String(dealerId));
+      data.calls = allDealerCalls.filter(c => String(c.dealerId) === String(dealerId));
+      data.remarks = allRemarks.filter(r => (r.targetModule === 'dealers' && String(r.targetId) === String(dealerId)) || (r.targetModule === 'dealer_meetings' && String(r.targetId) === String(id)));
+      data.documents = allDocs.filter(d => (d.targetModule === 'dealers' && String(d.targetId) === String(dealerId)) || (d.targetModule === 'dealer_meetings' && String(d.targetId) === String(id)));
+    }
+  } else if (module === 'projects') {
+    const proj = (db.projects || []).find(p => String(p.id) === String(id));
+    data.project = proj;
+    data.remarks = allRemarks.filter(r => r.targetModule === 'projects' && String(r.targetId) === String(id));
+    data.documents = allDocs.filter(d => d.targetModule === 'projects' && String(d.targetId) === String(id));
+    data.pitches = allPitches.filter(p => String(p.propertyId) === String(id)).map(p => ({
+      ...p,
+      customer: allCustomers.find(c => String(c.id) === String(p.customerId)) || (db.leads || []).find(l => String(l.id) === String(p.customerId))
+    }));
+    data.history = (db.project_history || []).filter(h => String(h.projectId) === String(id));
   } else {
     data.remarks = allRemarks.filter(r => r.targetModule === module && r.targetId === id);
     data.documents = allDocs.filter(d => d.targetModule === module && d.targetId === id);

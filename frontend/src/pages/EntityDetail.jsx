@@ -35,7 +35,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  FormHelperText
+  FormHelperText,
+  InputAdornment
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import { useApp, API_BASE_URL } from '../context/AppContext';
@@ -88,6 +89,33 @@ const EntityDetail = () => {
   const [pitchFollowUp, setPitchFollowUp] = useState('');
   const [pitchRemarks, setPitchRemarks] = useState('');
   const [pitchWarning, setPitchWarning] = useState('');
+  const [pitchItemType, setPitchItemType] = useState('Property');
+  const [nestedPropertyData, setNestedPropertyData] = useState({
+    contact_person_name: '',
+    contact_number: '',
+    dealer_owner_booked: 'Direct',
+    dealerId: '',
+    dealer_deal_type: '',
+    booked_by_customer_id: '',
+    locality: '',
+    sector_block: '',
+    size: '',
+    demand: '',
+    propertyType: 'Plot',
+    r_c_i: 'Residential',
+    status: 'Available'
+  });
+  const [nestedProjectData, setNestedProjectData] = useState({
+    name: '',
+    builder: 'DLF Group',
+    locality: '',
+    sector_block: '',
+    type: 'Residential',
+    property_category: 'Plot',
+    pricing_details: '',
+    plc_percent: '',
+    status: 'Under Construction'
+  });
 
   const [queryEmployeeId, setQueryEmployeeId] = useState('');
   const [queryType, setQueryType] = useState('Buy Property');
@@ -111,6 +139,89 @@ const EntityDetail = () => {
   const [mapOpen, setMapOpen] = useState(false);
   const [activeMapShift, setActiveMapShift] = useState(null);
   const [activeSalarySlip, setActiveSalarySlip] = useState(null);
+
+  const [listSearch, setListSearch] = useState('');
+  const [listSortField, setListSortField] = useState('id');
+  const [listSortDirection, setListSortDirection] = useState('desc');
+
+  const filterAndSortList = (list = [], searchFields = []) => {
+    let result = [...list];
+    
+    if (listSearch.trim() !== '') {
+      const query = listSearch.toLowerCase().trim();
+      result = result.filter(item => {
+        return searchFields.some(field => {
+          const val = item[field];
+          return val !== undefined && val !== null && String(val).toLowerCase().includes(query);
+        });
+      });
+    }
+    
+    result.sort((a, b) => {
+      let aVal = a[listSortField];
+      let bVal = b[listSortField];
+      
+      // Handle numeric comparisons
+      if (typeof aVal === 'number' && typeof bVal === 'number') {
+        return listSortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      }
+      
+      // Handle string/date comparisons
+      aVal = String(aVal || '').toLowerCase();
+      bVal = String(bVal || '').toLowerCase();
+      if (aVal < bVal) return listSortDirection === 'asc' ? -1 : 1;
+      if (aVal > bVal) return listSortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+    
+    return result;
+  };
+
+  const renderListControls = (sortFieldsOpts) => {
+    return (
+      <Box sx={{ display: 'flex', gap: 2, mb: 2, alignItems: 'center', flexWrap: 'wrap' }}>
+        <TextField
+          size="small"
+          placeholder="Search items..."
+          value={listSearch}
+          onChange={(e) => setListSearch(e.target.value)}
+          sx={{ flexGrow: 1, minWidth: '200px' }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Icons.Search size={16} color="#64748B" />
+              </InputAdornment>
+            ),
+          }}
+        />
+        <FormControl size="small" sx={{ minWidth: '150px' }}>
+          <InputLabel>Sort By</InputLabel>
+          <Select
+            value={listSortField}
+            onChange={(e) => setListSortField(e.target.value)}
+            label="Sort By"
+          >
+            {sortFieldsOpts.map(opt => (
+              <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <IconButton
+          size="small"
+          onClick={() => setListSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')}
+          sx={{ border: '1px solid #E2E8F0', borderRadius: '8px', p: 1 }}
+        >
+          {listSortDirection === 'asc' ? <Icons.ArrowUp size={16} /> : <Icons.ArrowDown size={16} />}
+        </IconButton>
+      </Box>
+    );
+  };
+
+  useEffect(() => {
+    setListSearch('');
+    setListSortField('id');
+    setListSortDirection('desc');
+  }, [activeTab, moduleName]);
 
   const travelLogs = useMemo(() => {
     return (connections?.attendance || [])
@@ -137,6 +248,15 @@ const EntityDetail = () => {
       list.push({ label: 'Activity Timeline', icon: 'Clock' });
     } else if (moduleName === 'dealers') {
       list.push({ label: 'Overview & Activity', icon: 'Building' });
+    } else if (moduleName === 'projects') {
+      list.push({ label: 'Project Specifications', icon: 'Home' });
+      list.push({ label: `Pitched & Showings History (${connections.pitches?.length || 0})`, icon: 'Eye' });
+      list.push({ label: `Price/Status History Logs (${connections.history?.length || 0})`, icon: 'Clock' });
+      list.push({ label: `Connected Remarks (${connections.remarks?.length || 0})`, icon: 'MessageSquare' });
+      list.push({ label: `Uploaded Documents (${connections.documents?.length || 0})`, icon: 'FileText' });
+    } else if (moduleName === 'dealer_meetings') {
+      list.push({ label: 'Meeting Overview & Outcome', icon: 'Handshake' });
+      list.push({ label: `Dealer Interaction History (${connections.calls?.length || 0})`, icon: 'PhoneCall' });
     } else {
       list.push({ label: 'Salesforce 360° Connections', icon: 'Layers' });
       list.push({ label: `Remarks History (${connections.remarks?.length || 0})`, icon: 'MessageSquare' });
@@ -327,13 +447,14 @@ const EntityDetail = () => {
   }
 
 
-  const handlePostRemark = async (e) => {
-    e.preventDefault();
-    if (!remarkInput.trim()) return;
+  const handlePostRemark = async (e, customRemarkText = null) => {
+    if (e) e.preventDefault();
+    const txt = customRemarkText || remarkInput;
+    if (!txt.trim()) return;
 
-    const res = await createRemark(moduleName, id, remarkInput);
+    const res = await createRemark(moduleName, id, txt);
     if (res.success) {
-      setRemarkInput('');
+      if (!customRemarkText) setRemarkInput('');
       // Reload connections
       const rels = await fetchEntity360(moduleName, id);
       setConnections(rels);
@@ -1499,11 +1620,45 @@ const EntityDetail = () => {
                         ))}
                       </Box>
                     )}
+                  {/* 5. Associated Properties / Listings */}
+                  <Paper sx={{ p: 3, mt: 4, border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Icons.Home size={22} color="#2563EB" />
+                      Associated Property Listings / Inventories ({connections.properties?.length || 0})
+                    </Typography>
+                    
+                    {renderListControls([
+                      { value: 'id', label: 'Property ID' },
+                      { value: 'locality', label: 'Locality' },
+                      { value: 'propertyType', label: 'Property Type' },
+                      { value: 'demand', label: 'Price' }
+                    ])}
+                    
+                    {!connections.properties || connections.properties.length === 0 ? (
+                      <Box sx={{ p: 3, textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px dashed #E2E8F0' }}>
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                          No properties associated with this dealer.
+                        </Typography>
+                      </Box>
+                    ) : (
+                      <Grid container spacing={2}>
+                        {filterAndSortList(connections.properties || [], ['id', 'locality', 'sector_block', 'propertyType', 'demand', 'size']).map(p => (
+                          <Grid item xs={12} sm={6} md={4} key={p.id}>
+                            <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', cursor: 'pointer', '&:hover': { borderColor: '#2563EB' } }} onClick={() => navigate(`/module/properties/${p.id}`)}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#2563EB' }}>{p.id}</Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''}</Typography>
+                              <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>Type: {p.propertyType} • Size: {p.size}</Typography>
+                              <Typography variant="caption" sx={{ color: '#16A34A', fontWeight: 700, display: 'block', mt: 0.5 }}>Price: ₹{p.demand}</Typography>
+                            </Paper>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    )}
                   </Paper>
                 </Box>
               )}
               {/* 4. OTHER GENERIC BACKWARD COMPATIBLE TABS */}
-              {!(moduleName === 'customers' || moduleName === 'properties' || moduleName === 'dealers') && (
+              {!(moduleName === 'customers' || moduleName === 'properties' || moduleName === 'dealers' || moduleName === 'projects' || moduleName === 'dealer_meetings') && (
                 <Box>
                   {/* Tab 0: 360 Connections */}
                   {activeTab === 0 && (
@@ -1723,6 +1878,281 @@ const EntityDetail = () => {
                             );
                           })}
                         </Box>
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* 5. PROJECTS TABS */}
+              {moduleName === 'projects' && connections && (
+                <Box>
+                  {/* Tab 0: Project Specifications / Overview */}
+                  {activeTab === 0 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Project Information & Specifications</Typography>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Typography variant="caption" sx={{ color: '#64748B' }}>Project Name</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{record.name}</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Typography variant="caption" sx={{ color: '#64748B' }}>Builder/Developer</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{record.builder}</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Typography variant="caption" sx={{ color: '#64748B' }}>Locality / Address</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{record.locality} {record.sector_block ? `(Sector ${record.sector_block})` : ''}</Typography>
+                          </Paper>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Paper sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Typography variant="caption" sx={{ color: '#64748B' }}>Development Category</Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 700 }}>{record.property_category || 'Plot'}</Typography>
+                          </Paper>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  )}
+
+                  {/* Tab 1: Pitched & Showings History */}
+                  {activeTab === 1 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Who was this project pitched to?</Typography>
+                      {renderListControls([
+                        { value: 'id', label: 'Pitch ID' },
+                        { value: 'date', label: 'Date Pitched' },
+                        { value: 'pitchInterest', label: 'Interest Level' }
+                      ])}
+                      
+                      {!connections.pitches || connections.pitches.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pitches found for this builder project.</Typography>
+                      ) : (
+                        filterAndSortList(connections.pitches || [], ['id', 'date', 'pitchInterest', 'pitchRemarks', 'customerId']).map(p => (
+                          <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Box display="flex" justifyContent="space-between" mb={1}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB' }}>Pitch Record: {p.id}</Typography>
+                              <Chip label={p.pitchInterest} size="small" color={p.pitchInterest === 'Interested' ? 'success' : 'warning'} />
+                            </Box>
+                            <Typography variant="body2">
+                              Customer: <strong><span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/${p.customer?.phone ? 'customers' : 'leads'}/${p.customerId}`)}>{p.customer?.name || p.customer?.person_name || p.customerId}</span></strong>
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>Pitched on: {p.date} by {p.employeeName}</Typography>
+                            <Typography variant="body2" sx={{ mt: 1, color: '#475569', fontStyle: 'italic' }}>"{p.pitchRemarks}"</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 2: Price/Status History Logs */}
+                  {activeTab === 2 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Pricing & Development Stage Historical Timeline</Typography>
+                      {renderListControls([
+                        { value: 'date', label: 'Date Changed' },
+                        { value: 'field', label: 'Attribute' }
+                      ])}
+
+                      {!connections.history || connections.history.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No pricing updates or status changes recorded yet.</Typography>
+                      ) : (
+                        filterAndSortList(connections.history || [], ['date', 'field', 'fieldName', 'oldValue', 'newValue', 'employeeName']).map(h => (
+                          <Paper key={h.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Box display="flex" justifyContent="space-between" mb={0.5}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#F59E0B' }}>Attribute Changed: {h.fieldName}</Typography>
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>{h.date}</Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                              Previous Value: <span style={{ textDecoration: 'line-through', color: '#EF4444' }}>{h.oldValue}</span>
+                            </Typography>
+                            <Typography variant="body2" sx={{ mb: 0.5 }}>
+                              New Value: <span style={{ color: '#10B981', fontWeight: 700 }}>{h.newValue}</span>
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Updated by: {h.employeeName}</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 3: Remarks */}
+                  {activeTab === 3 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Project Feedback & Staff Comments</Typography>
+                      <Box component="form" onSubmit={handlePostRemark} sx={{ mb: 3 }}>
+                        <Grid container spacing={1.5}>
+                          <Grid item xs={10}>
+                            <TextField placeholder="Add developer/project remarks..." fullWidth size="small" value={remarkInput} onChange={(e) => setRemarkInput(e.target.value)} />
+                          </Grid>
+                          <Grid item xs={2}>
+                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>Post</Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                      {renderListControls([
+                        { value: 'dateTime', label: 'Date Posted' },
+                        { value: 'employeeName', label: 'Author' }
+                      ])}
+                      {!connections.remarks || connections.remarks.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No feedback logs posted.</Typography>
+                      ) : (
+                        filterAndSortList(connections.remarks || [], ['comment', 'employeeName', 'dateTime']).map((rem, idx) => (
+                          <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#F8FAFC' }}>
+                            <Box display="flex" justifyContent="space-between" mb={0.5}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{rem.employeeName}</Typography>
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>{rem.dateTime}</Typography>
+                            </Box>
+                            <Typography variant="body2" sx={{ fontStyle: 'italic' }}>"{rem.comment}"</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 4: Docs Vault */}
+                  {activeTab === 4 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Layout Maps & Project Brochures</Typography>
+                      <Box component="form" onSubmit={handleUploadDoc} sx={{ mb: 3 }}>
+                        <Grid container spacing={1.5} alignItems="center">
+                          <Grid item xs={12} sm={5}>
+                            <TextField label="Document/File Name" size="small" fullWidth required value={docName} onChange={(e) => setDocName(e.target.value)} />
+                          </Grid>
+                          <Grid item xs={12} sm={5}>
+                            <input type="file" onChange={handleFileSelect} style={{ display: 'none' }} id="nested-project-file" />
+                            <label htmlFor="nested-project-file">
+                              <Button variant="outlined" component="span" fullWidth size="medium" startIcon={uploadingFile ? <CircularProgress size={16} /> : <Icons.Upload size={16} />}>
+                                {docUrl ? "File Ready" : "Choose Brochure/Layout"}
+                              </Button>
+                            </label>
+                          </Grid>
+                          <Grid item xs={12} sm={2}>
+                            <Button type="submit" variant="contained" fullWidth disabled={!docUrl}>Upload</Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                      {renderListControls([
+                        { value: 'name', label: 'Document Name' },
+                        { value: 'date', label: 'Date Added' }
+                      ])}
+                      {!connections.documents || connections.documents.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No layout plans or maps uploaded yet.</Typography>
+                      ) : (
+                        filterAndSortList(connections.documents || [], ['name', 'date']).map((d, idx) => (
+                          <Paper key={idx} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Box>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>{d.name}</Typography>
+                              <Typography variant="caption" sx={{ color: '#94A3B8' }}>Added: {d.date} • By: {d.employeeName}</Typography>
+                            </Box>
+                            <Box display="flex" gap={1}>
+                              <Button size="small" variant="outlined" onClick={() => window.open(d.url, '_blank')}>View File</Button>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteDoc(d.id)}><Icons.Trash2 size={16} /></IconButton>
+                            </Box>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+                </Box>
+              )}
+
+              {/* 6. DEALER MEETINGS TABS */}
+              {moduleName === 'dealer_meetings' && connections && (
+                <Box>
+                  {/* Tab 0: Meeting Overview & Outcome Form */}
+                  {activeTab === 0 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Meeting Overview & Feed Outcome</Typography>
+                      <Paper sx={{ p: 3, mb: 3, border: '1px solid #FEF3C7', backgroundColor: '#FFFBEB', borderRadius: '12px' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#D97706', mb: 1 }}>Purpose & Instructions</Typography>
+                        <Typography variant="body2" sx={{ color: '#475569', mb: 2 }}>{record.prepRemarks || 'No instructions provided.'}</Typography>
+                        <Divider sx={{ my: 1.5 }} />
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>Meeting Scheduled Date: <strong>{record.meetingDate || record.date}</strong></Typography>
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>Meeting Status: <strong>{record.status}</strong></Typography>
+                        <Typography variant="body2" sx={{ mb: 1 }}>Outcome Remarks: <strong>{record.outcome || 'Pending execution.'}</strong></Typography>
+                        {connections.dealer && (
+                          <>
+                            <Divider sx={{ my: 1.5 }} />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 850, color: '#0F172A', mb: 1 }}>Dealer Reference Details</Typography>
+                            <Typography variant="body2">Firm: <strong>{connections.dealer.firm_name}</strong></Typography>
+                            <Typography variant="body2">Dealer Name: <strong>{connections.dealer.person_name}</strong></Typography>
+                            <Typography variant="body2">Dealer Phone: <strong>{connections.dealer.phone}</strong></Typography>
+                            <Typography variant="body2">Sectors / Localities: {connections.dealer.operational_sectors || 'None'}</Typography>
+                          </>
+                        )}
+                      </Paper>
+
+                      {/* Feed Outcome Form inline */}
+                      {record.status !== 'Completed' && (
+                        <Box sx={{ mt: 3, p: 3, border: '1px solid #E2E8F0', borderRadius: '16px' }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Feed Meeting Outcome / Remarks</Typography>
+                          <TextField
+                            label="Outcome / Remark Remarks"
+                            multiline
+                            rows={4}
+                            fullWidth
+                            value={meetingOutcome}
+                            onChange={(e) => setMeetingOutcome(e.target.value)}
+                            sx={{ mb: 2 }}
+                            placeholder="Type details of what was discussed, dealer's response, deals proposed, etc."
+                          />
+                          <Button
+                            variant="contained"
+                            color="success"
+                            onClick={async () => {
+                              if (!meetingOutcome.trim()) return alert("Outcome remarks are required.");
+                              const res = await updateRecord('dealer_meetings', id, {
+                                status: 'Completed',
+                                outcome: meetingOutcome,
+                                actualMeetingDate: new Date().toLocaleDateString('en-IN')
+                              });
+                              if (res.success) {
+                                // Add remark log as well
+                                await handlePostRemark(null, `Completed Meeting Outcome: ${meetingOutcome}`);
+                                const rels = await fetchEntity360(moduleName, id);
+                                setConnections(rels);
+                                window.location.reload();
+                              } else {
+                                alert(res.message || "Failed to submit outcome.");
+                              }
+                            }}
+                          >
+                            Submit Outcome & Complete Meeting
+                          </Button>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 1: Dealer History */}
+                  {activeTab === 1 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins' }}>Past Dealer Phone Conversations & Outreach Remarks</Typography>
+                      {renderListControls([
+                        { value: 'date', label: 'Date' },
+                        { value: 'callOutcome', label: 'Outcome' }
+                      ])}
+                      
+                      {!connections.calls || connections.calls.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No phone conversations logged for this dealer.</Typography>
+                      ) : (
+                        filterAndSortList(connections.calls || [], ['id', 'date', 'callOutcome', 'remarks', 'duration', 'budget']).map(c => (
+                          <Paper key={c.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px' }}>
+                            <Box display="flex" justifyContent="space-between" mb={1}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB' }}>Call Log ID: {c.id}</Typography>
+                              <Chip label={c.callOutcome} size="small" color={c.callOutcome === 'Call Done' ? 'success' : 'warning'} />
+                            </Box>
+                            <Typography variant="body2" sx={{ mb: 1 }}>Remarks: <strong>"{c.remarks}"</strong></Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Discussed Budget: ₹{c.budget} • Sectors/Areas: {c.areas || 'None'}</Typography>
+                            <Typography variant="caption" sx={{ color: '#94A3B8' }}>Date: {c.date} • Duration: {c.duration} mins • Logged by: {c.employeeName}</Typography>
+                          </Paper>
+                        ))
                       )}
                     </Box>
                   )}
@@ -2135,14 +2565,249 @@ const EntityDetail = () => {
                 {pitchWarning}
               </Alert>
             )}
-            <FormControl fullWidth>
-              <InputLabel>Select Property</InputLabel>
-              <Select value={pitchPropertyId} onChange={(e) => setPitchPropertyId(e.target.value)} label="Select Property">
-                {(moduleData.properties || []).map(p => (
-                  <MenuItem key={p.id} value={p.id}>{p.propertyType} - {p.locality} Sector {p.sector_block} ({p.id})</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>Pitch Item Type</InputLabel>
+                  <Select
+                    value={pitchItemType}
+                    onChange={(e) => {
+                      setPitchItemType(e.target.value);
+                      setPitchPropertyId('');
+                    }}
+                    label="Pitch Item Type"
+                  >
+                    <MenuItem value="Property">Property Listing</MenuItem>
+                    <MenuItem value="Project">Builder Project</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}</InputLabel>
+                  <Select
+                    value={pitchPropertyId}
+                    onChange={(e) => setPitchPropertyId(e.target.value)}
+                    label={pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}
+                  >
+                    <MenuItem value="">-- None --</MenuItem>
+                    {pitchItemType === 'Property' ? (
+                      (moduleData.properties || []).map(p => (
+                        <MenuItem key={p.id} value={p.id}>
+                          {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
+                        </MenuItem>
+                      ))
+                    ) : (
+                      (moduleData.projects || []).map(p => (
+                        <MenuItem key={p.id} value={p.id}>
+                          {p.name} - {p.locality} ({p.id})
+                        </MenuItem>
+                      ))
+                    )}
+                    <MenuItem value={pitchItemType === 'Property' ? 'Other_Property' : 'Other_Project'} sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                      + Create New {pitchItemType === 'Property' ? 'Property' : 'Project'}...
+                    </MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+            </Grid>
+
+            {/* Inline Nested Property Form */}
+            {pitchPropertyId === 'Other_Property' && (
+              <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#F8FAFC' }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
+                  Create New Property Detail
+                </Typography>
+                <Grid container spacing={1.5}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Contact Person Name" size="small" fullWidth value={nestedPropertyData.contact_person_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_person_name: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Contact Number" size="small" fullWidth value={nestedPropertyData.contact_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_number: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Dealer/Owner/Booked</InputLabel>
+                      <Select
+                        value={nestedPropertyData.dealer_owner_booked || 'Direct'}
+                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_owner_booked: e.target.value }))}
+                        label="Dealer/Owner/Booked"
+                      >
+                        <MenuItem value="Dealer">Dealer</MenuItem>
+                        <MenuItem value="Direct">Direct</MenuItem>
+                        <MenuItem value="Booked By Us">Booked By Us</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
+                    <>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Associated Dealer</InputLabel>
+                          <Select
+                            value={nestedPropertyData.dealerId || ''}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
+                            label="Associated Dealer"
+                          >
+                            <MenuItem value="">-- Select --</MenuItem>
+                            {(moduleData.dealers || []).map(d => (
+                              <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Dealer Deal Type</InputLabel>
+                          <Select
+                            value={nestedPropertyData.dealer_deal_type || ''}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_deal_type: e.target.value }))}
+                            label="Dealer Deal Type"
+                          >
+                            <MenuItem value="Dealer To Dealer">Dealer To Dealer</MenuItem>
+                            <MenuItem value="Direct">Direct</MenuItem>
+                            <MenuItem value="Booked">Booked</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    </>
+                  )}
+
+                  {nestedPropertyData.dealer_owner_booked === 'Booked By Us' && (
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Booked By (Customer)</InputLabel>
+                        <Select
+                          value={nestedPropertyData.booked_by_customer_id || ''}
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, booked_by_customer_id: e.target.value }))}
+                          label="Booked By (Customer)"
+                        >
+                          <MenuItem value="">-- Select --</MenuItem>
+                          {(moduleData.customers || []).map(c => (
+                            <MenuItem key={c.id} value={c.id}>{c.name} ({c.id})</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  )}
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Property Type</InputLabel>
+                      <Select
+                        value={nestedPropertyData.propertyType || 'Plot'}
+                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
+                        label="Property Type"
+                      >
+                        <MenuItem value="Villa">Luxury Villa</MenuItem>
+                        <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                        <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                        <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                        <MenuItem value="LOI">LOI</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>R/C/I</InputLabel>
+                      <Select
+                        value={nestedPropertyData.r_c_i || 'Residential'}
+                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
+                        label="R/C/I"
+                      >
+                        <MenuItem value="Residential">Residential</MenuItem>
+                        <MenuItem value="Commercial">Commercial</MenuItem>
+                        <MenuItem value="Industrial">Industrial</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
+
+            {/* Inline Nested Project Form */}
+            {pitchPropertyId === 'Other_Project' && (
+              <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#F8FAFC' }}>
+                <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
+                  Create New Project Detail
+                </Typography>
+                <Grid container spacing={1.5}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Project Name" size="small" fullWidth value={nestedProjectData.name || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, name: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Developer</InputLabel>
+                      <Select
+                        value={nestedProjectData.builder || 'DLF Group'}
+                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, builder: e.target.value }))}
+                        label="Developer"
+                      >
+                        <MenuItem value="Gagan Developers">Gagan Developers & Infra</MenuItem>
+                        <MenuItem value="DLF Group">DLF Group India</MenuItem>
+                        <MenuItem value="Omaxe">Omaxe Construction</MenuItem>
+                        <MenuItem value="Hero Homes">Hero Realty Homes</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Locality" size="small" fullWidth value={nestedProjectData.locality || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, locality: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Sector/Block" size="small" fullWidth value={nestedProjectData.sector_block || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Type (R/C/I)</InputLabel>
+                      <Select
+                        value={nestedProjectData.type || 'Residential'}
+                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, type: e.target.value }))}
+                        label="Type (R/C/I)"
+                      >
+                        <MenuItem value="Residential">Residential</MenuItem>
+                        <MenuItem value="Commercial">Commercial</MenuItem>
+                        <MenuItem value="Industrial">Industrial</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth size="small">
+                      <InputLabel>Category</InputLabel>
+                      <Select
+                        value={nestedProjectData.property_category || 'Plot'}
+                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, property_category: e.target.value }))}
+                        label="Category"
+                      >
+                        <MenuItem value="Villa">Luxury Villa</MenuItem>
+                        <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                        <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                        <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                        <MenuItem value="LOI">LOI</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="Pricing Details" size="small" fullWidth value={nestedProjectData.pricing_details || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, pricing_details: e.target.value }))} />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField label="PLC %" size="small" fullWidth value={nestedProjectData.plc_percent || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, plc_percent: e.target.value }))} />
+                  </Grid>
+                </Grid>
+              </Box>
+            )}
             <FormControl fullWidth>
               <InputLabel>Pitching Employee/RM</InputLabel>
               <Select value={pitchEmployeeId} onChange={(e) => setPitchEmployeeId(e.target.value)} label="Pitching Employee/RM">
@@ -2177,10 +2842,32 @@ const EntityDetail = () => {
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setPitchDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
           <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
+            let finalPropId = pitchPropertyId;
+            if (pitchPropertyId === 'Other_Property') {
+              const propRes = await createRecord('properties', {
+                ...nestedPropertyData,
+                date: new Date().toLocaleDateString('en-IN')
+              });
+              if (propRes.success) {
+                finalPropId = propRes.data.id;
+              } else {
+                return alert(propRes.message || "Failed to auto-create property");
+              }
+            } else if (pitchPropertyId === 'Other_Project') {
+              const projRes = await createRecord('projects', {
+                ...nestedProjectData
+              });
+              if (projRes.success) {
+                finalPropId = projRes.data.id;
+              } else {
+                return alert(projRes.message || "Failed to auto-create project");
+              }
+            }
+
             const payload = {
               customerId: id,
               customerName: record.name,
-              propertyId: pitchPropertyId,
+              propertyId: finalPropId,
               employeeId: pitchEmployeeId,
               employeeName: (moduleData.employees || []).find(e => e.id === pitchEmployeeId)?.name || pitchEmployeeId,
               pitchMethod,

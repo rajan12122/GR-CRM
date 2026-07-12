@@ -32,7 +32,12 @@ const DynamicForm = ({
   const [errors, setErrors] = useState({});
   const [customValues, setCustomValues] = useState({});
 
-  // Dynamic field filtering based on leadType or queryType
+  // Inline creation states for property / project pitches
+  const [pitchedItemType, setPitchedItemType] = useState('Property'); // 'Property' or 'Project'
+  const [nestedPropertyData, setNestedPropertyData] = useState({});
+  const [nestedProjectData, setNestedProjectData] = useState({});
+
+  // Dynamic field filtering based on leadType or queryType and dealer conditional checks
   const filteredFields = fields.filter(f => {
     if (moduleKey === 'leads') {
       const type = formData.leadType;
@@ -52,6 +57,14 @@ const DynamicForm = ({
         if (f.name === 'budget') return false;
       }
     }
+    if (moduleKey === 'properties') {
+      if (f.name === 'dealerId' || f.name === 'dealer_deal_type') {
+        return formData.dealer_owner_booked === 'Dealer';
+      }
+      if (f.name === 'booked_by_customer_id') {
+        return formData.dealer_owner_booked === 'Booked By Us';
+      }
+    }
     return true;
   });
 
@@ -64,6 +77,10 @@ const DynamicForm = ({
           fetchModuleData(f.refModule);
         }
       });
+
+      if (moduleKey === 'leads' || moduleKey === 'follow_ups' || moduleKey === 'queries') {
+        fetchModuleData('projects');
+      }
 
       // Populate form data
       if (initialData) {
@@ -95,6 +112,13 @@ const DynamicForm = ({
         });
         setFormData(initialForm);
         setCustomValues(initialCustom);
+        
+        const pitchedVal = initialData.pitchedPropertyId || '';
+        if (pitchedVal.startsWith('PROJ-')) {
+          setPitchedItemType('Project');
+        } else {
+          setPitchedItemType('Property');
+        }
       } else {
         const defaultForm = {};
         fields.forEach(f => {
@@ -102,7 +126,36 @@ const DynamicForm = ({
         });
         setFormData(defaultForm);
         setCustomValues({});
+        setPitchedItemType('Property');
       }
+      
+      setNestedPropertyData({
+        contact_person_name: '',
+        contact_number: '',
+        dealer_owner_booked: 'Direct',
+        dealerId: '',
+        dealer_deal_type: '',
+        booked_by_customer_id: '',
+        locality: '',
+        sector_block: '',
+        size: '',
+        demand: '',
+        propertyType: 'Plot',
+        r_c_i: 'Residential',
+        status: 'Available'
+      });
+      setNestedProjectData({
+        name: '',
+        builder: 'DLF Group',
+        locality: '',
+        sector_block: '',
+        type: 'Residential',
+        property_category: 'Plot',
+        pricing_details: '',
+        plc_percent: '',
+        status: 'Under Construction'
+      });
+      
       setErrors({});
     }
   }, [open, initialData, fields]);
@@ -150,42 +203,78 @@ const DynamicForm = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const resolvePitchedProperty = async (payload) => {
+    if (payload.pitchedPropertyId === 'Other_Property') {
+      const propRes = await createRecord('properties', {
+        ...nestedPropertyData,
+        date: new Date().toLocaleDateString('en-IN')
+      });
+      if (propRes.success) {
+        payload.pitchedPropertyId = propRes.data.id;
+        fetchModuleData('properties');
+      } else {
+        throw new Error(propRes.message || "Failed to auto-create pitched property");
+      }
+    } else if (payload.pitchedPropertyId === 'Other_Project') {
+      const projRes = await createRecord('projects', {
+        ...nestedProjectData
+      });
+      if (projRes.success) {
+        payload.pitchedPropertyId = projRes.data.id;
+        fetchModuleData('projects');
+      } else {
+        throw new Error(projRes.message || "Failed to auto-create pitched project");
+      }
+    }
+    return payload;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
-      const payload = { ...formData };
-      fields.forEach(f => {
-        if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
-          payload[f.name] = customValues[f.name] || '';
-        }
-      });
-      onSubmit(payload);
+      try {
+        let payload = { ...formData };
+        fields.forEach(f => {
+          if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
+            payload[f.name] = customValues[f.name] || '';
+          }
+        });
+        payload = await resolvePitchedProperty(payload);
+        onSubmit(payload);
+      } catch (err) {
+        setErrors({ submit: err.message });
+      }
     }
   };
 
   const handleSaveAndAddAnother = async (e) => {
     e.preventDefault();
     if (validate()) {
-      const payload = { ...formData };
-      fields.forEach(f => {
-        if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
-          payload[f.name] = customValues[f.name] || '';
-        }
-      });
-      
-      const res = await createRecord(moduleKey, payload);
-      if (res.success) {
-        // Clear all fields to let user enter next property
-        const defaultForm = {};
+      try {
+        let payload = { ...formData };
         fields.forEach(f => {
-          defaultForm[f.name] = '';
+          if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
+            payload[f.name] = customValues[f.name] || '';
+          }
         });
-        setFormData(defaultForm);
-        setCustomValues({});
-        setErrors({});
-        fetchModuleData(moduleKey);
-      } else {
-        setErrors({ submit: res.message || 'Failed to save record.' });
+        payload = await resolvePitchedProperty(payload);
+        
+        const res = await createRecord(moduleKey, payload);
+        if (res.success) {
+          // Clear all fields to let user enter next property
+          const defaultForm = {};
+          fields.forEach(f => {
+            defaultForm[f.name] = '';
+          });
+          setFormData(defaultForm);
+          setCustomValues({});
+          setErrors({});
+          fetchModuleData(moduleKey);
+        } else {
+          setErrors({ submit: res.message || 'Failed to save record.' });
+        }
+      } catch (err) {
+        setErrors({ submit: err.message });
       }
     }
   };
@@ -275,6 +364,270 @@ const DynamicForm = ({
 
               // 2. REFERENCE TYPE FIELD (Lookups)
               if (f.type === 'ref' && f.refModule) {
+                if (f.name === 'pitchedPropertyId') {
+                  const propertiesList = moduleData.properties || [];
+                  const projectsList = moduleData.projects || [];
+                  
+                  return (
+                    <Grid item xs={12} key={f.name}>
+                      <Box sx={{ p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', mb: 1, backgroundColor: '#F8FAFC' }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, display: 'flex', alignItems: 'center', gap: 1, color: '#1E293B' }}>
+                          Outreach Property/Project Pitch
+                        </Typography>
+                        
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth size="small">
+                              <InputLabel>Pitch Item Type</InputLabel>
+                              <Select
+                                value={pitchedItemType}
+                                onChange={(e) => {
+                                  setPitchedItemType(e.target.value);
+                                  handleChange('pitchedPropertyId', '');
+                                }}
+                                label="Pitch Item Type"
+                              >
+                                <MenuItem value="Property">Property Listing</MenuItem>
+                                <MenuItem value="Project">Builder Project</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                          
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth size="small">
+                              <InputLabel>{pitchedItemType === 'Property' ? 'Select Property' : 'Select Project'}</InputLabel>
+                              <Select
+                                value={formData.pitchedPropertyId || ''}
+                                onChange={(e) => handleChange('pitchedPropertyId', e.target.value)}
+                                label={pitchedItemType === 'Property' ? 'Select Property' : 'Select Project'}
+                              >
+                                <MenuItem value="">-- None --</MenuItem>
+                                {pitchedItemType === 'Property' ? (
+                                  propertiesList.map(p => (
+                                    <MenuItem key={p.id} value={p.id}>
+                                      {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
+                                    </MenuItem>
+                                  ))
+                                ) : (
+                                  projectsList.map(p => (
+                                    <MenuItem key={p.id} value={p.id}>
+                                      {p.name} - {p.locality} ({p.id})
+                                    </MenuItem>
+                                  ))
+                                )}
+                                <MenuItem value={pitchedItemType === 'Property' ? 'Other_Property' : 'Other_Project'} sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                                  + Create New {pitchedItemType === 'Property' ? 'Property' : 'Project'}...
+                                </MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+
+                          {/* Inline Nested Property Form */}
+                          {formData.pitchedPropertyId === 'Other_Property' && (
+                            <Grid item xs={12}>
+                              <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#FFFFFF' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
+                                  Create New Property Detail
+                                </Typography>
+                                <Grid container spacing={1.5}>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Contact Person Name" size="small" fullWidth value={nestedPropertyData.contact_person_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_person_name: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Contact Number" size="small" fullWidth value={nestedPropertyData.contact_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_number: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>Dealer/Owner/Booked</InputLabel>
+                                      <Select
+                                        value={nestedPropertyData.dealer_owner_booked || 'Direct'}
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_owner_booked: e.target.value }))}
+                                        label="Dealer/Owner/Booked"
+                                      >
+                                        <MenuItem value="Dealer">Dealer</MenuItem>
+                                        <MenuItem value="Direct">Direct</MenuItem>
+                                        <MenuItem value="Booked By Us">Booked By Us</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+
+                                  {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
+                                    <>
+                                      <Grid item xs={12} sm={6}>
+                                        <FormControl fullWidth size="small">
+                                          <InputLabel>Associated Dealer</InputLabel>
+                                          <Select
+                                            value={nestedPropertyData.dealerId || ''}
+                                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
+                                            label="Associated Dealer"
+                                          >
+                                            <MenuItem value="">-- Select --</MenuItem>
+                                            {(moduleData.dealers || []).map(d => (
+                                              <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
+                                            ))}
+                                          </Select>
+                                        </FormControl>
+                                      </Grid>
+                                      <Grid item xs={12} sm={6}>
+                                        <FormControl fullWidth size="small">
+                                          <InputLabel>Dealer Deal Type</InputLabel>
+                                          <Select
+                                            value={nestedPropertyData.dealer_deal_type || ''}
+                                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_deal_type: e.target.value }))}
+                                            label="Dealer Deal Type"
+                                          >
+                                            <MenuItem value="Dealer To Dealer">Dealer To Dealer</MenuItem>
+                                            <MenuItem value="Direct">Direct</MenuItem>
+                                            <MenuItem value="Booked">Booked</MenuItem>
+                                          </Select>
+                                        </FormControl>
+                                      </Grid>
+                                    </>
+                                  )}
+
+                                  {nestedPropertyData.dealer_owner_booked === 'Booked By Us' && (
+                                    <Grid item xs={12} sm={6}>
+                                      <FormControl fullWidth size="small">
+                                        <InputLabel>Booked By (Customer)</InputLabel>
+                                        <Select
+                                          value={nestedPropertyData.booked_by_customer_id || ''}
+                                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, booked_by_customer_id: e.target.value }))}
+                                          label="Booked By (Customer)"
+                                        >
+                                          <MenuItem value="">-- Select --</MenuItem>
+                                          {(moduleData.customers || []).map(c => (
+                                            <MenuItem key={c.id} value={c.id}>{c.name} ({c.id})</MenuItem>
+                                          ))}
+                                        </Select>
+                                      </FormControl>
+                                    </Grid>
+                                  )}
+
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>Property Type</InputLabel>
+                                      <Select
+                                        value={nestedPropertyData.propertyType || 'Plot'}
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
+                                        label="Property Type"
+                                      >
+                                        <MenuItem value="Villa">Luxury Villa</MenuItem>
+                                        <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                                        <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                                        <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                                        <MenuItem value="LOI">LOI</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>R/C/I</InputLabel>
+                                      <Select
+                                        value={nestedPropertyData.r_c_i || 'Residential'}
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
+                                        label="R/C/I"
+                                      >
+                                        <MenuItem value="Residential">Residential</MenuItem>
+                                        <MenuItem value="Commercial">Commercial</MenuItem>
+                                        <MenuItem value="Industrial">Industrial</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+                                </Grid>
+                              </Box>
+                            </Grid>
+                          )}
+
+                          {/* Inline Nested Project Form */}
+                          {formData.pitchedPropertyId === 'Other_Project' && (
+                            <Grid item xs={12}>
+                              <Box sx={{ mt: 1, p: 2, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#FFFFFF' }}>
+                                <Typography variant="caption" sx={{ fontWeight: 800, mb: 1.5, display: 'block', color: '#64748B', textTransform: 'uppercase' }}>
+                                  Create New Project Detail
+                                </Typography>
+                                <Grid container spacing={1.5}>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Project Name" size="small" fullWidth value={nestedProjectData.name || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, name: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>Developer</InputLabel>
+                                      <Select
+                                        value={nestedProjectData.builder || 'DLF Group'}
+                                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, builder: e.target.value }))}
+                                        label="Developer"
+                                      >
+                                        <MenuItem value="Gagan Developers">Gagan Developers & Infra</MenuItem>
+                                        <MenuItem value="DLF Group">DLF Group India</MenuItem>
+                                        <MenuItem value="Omaxe">Omaxe Construction</MenuItem>
+                                        <MenuItem value="Hero Homes">Hero Realty Homes</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Locality" size="small" fullWidth value={nestedProjectData.locality || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, locality: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Sector/Block" size="small" fullWidth value={nestedProjectData.sector_block || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>Type (R/C/I)</InputLabel>
+                                      <Select
+                                        value={nestedProjectData.type || 'Residential'}
+                                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, type: e.target.value }))}
+                                        label="Type (R/C/I)"
+                                      >
+                                        <MenuItem value="Residential">Residential</MenuItem>
+                                        <MenuItem value="Commercial">Commercial</MenuItem>
+                                        <MenuItem value="Industrial">Industrial</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>Category</InputLabel>
+                                      <Select
+                                        value={nestedProjectData.property_category || 'Plot'}
+                                        onChange={(e) => setNestedProjectData(prev => ({ ...prev, property_category: e.target.value }))}
+                                        label="Category"
+                                      >
+                                        <MenuItem value="Villa">Luxury Villa</MenuItem>
+                                        <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                                        <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                                        <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                                        <MenuItem value="LOI">LOI</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Pricing Details" size="small" fullWidth value={nestedProjectData.pricing_details || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, pricing_details: e.target.value }))} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="PLC %" size="small" fullWidth value={nestedProjectData.plc_percent || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, plc_percent: e.target.value }))} />
+                                  </Grid>
+                                </Grid>
+                              </Box>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </Box>
+                    </Grid>
+                  );
+                }
+
                 const options = getReferenceOptions(f.refModule);
                 const isOther = formData[f.name] === 'Other';
                 return (

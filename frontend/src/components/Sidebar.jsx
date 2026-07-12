@@ -31,7 +31,7 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
   if (!metadata) return null;
 
   const modules = Object.keys(metadata.modules)
-    .filter(key => hasPermission(key, 'view') && key !== 'property_pitch_history' && key !== 'dealer_calls' && key !== 'dealer_meetings')
+    .filter(key => hasPermission(key, 'view'))
     .map(key => ({
       id: key,
       label: metadata.modules[key].label,

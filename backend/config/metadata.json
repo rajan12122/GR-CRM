@@ -426,6 +426,33 @@
           "chipGroup": "dealtype"
         },
         {
+          "name": "dealerId",
+          "label": "Associated Dealer",
+          "type": "ref",
+          "refModule": "dealers",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "dealer_deal_type",
+          "label": "Dealer Deal Type",
+          "type": "select",
+          "chipGroup": "dealerDealTypes",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "booked_by_customer_id",
+          "label": "Booked By (Customer)",
+          "type": "ref",
+          "refModule": "customers",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "dealer_firm_name",
           "label": "Dealer Firm Name",
           "type": "text",
@@ -1715,6 +1742,31 @@
           "required": false,
           "showInTable": true,
           "editable": true
+        },
+        {
+          "name": "pitchedPropertyId",
+          "label": "Did you pitch any property?",
+          "type": "ref",
+          "refModule": "properties",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "pitchPrice",
+          "label": "Quoted Pitch Price (INR)",
+          "type": "number",
+          "required": false,
+          "showInTable": false,
+          "editable": true
+        },
+        {
+          "name": "pitchRemarks",
+          "label": "Pitch Remarks",
+          "type": "textarea",
+          "required": false,
+          "showInTable": false,
+          "editable": true
         }
       ]
     },
@@ -2006,89 +2058,40 @@
         },
         {
           "name": "duration",
-          "label": "Duration (sec)",
+          "label": "Call Duration (minutes)",
           "type": "number",
           "required": false,
           "showInTable": true,
           "editable": true
         },
         {
-          "name": "interest",
-          "label": "Dealer Interest",
+          "name": "callOutcome",
+          "label": "Call Outcome Status",
           "type": "select",
-          "chipGroup": "priorities",
+          "chipGroup": "callOutcomes",
           "required": true,
           "showInTable": true,
           "editable": true
         },
         {
-          "name": "propertiesDiscussed",
-          "label": "Properties Discussed",
-          "type": "text",
+          "name": "budget",
+          "label": "Discussed Budget expectation",
+          "type": "number",
           "required": false,
           "showInTable": true,
           "editable": true
         },
         {
-          "name": "buyerRequirements",
-          "label": "Buyer Requirements",
-          "type": "textarea",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "sellerRequirements",
-          "label": "Seller Requirements",
-          "type": "textarea",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "areasOfInterest",
-          "label": "Areas of Interest",
+          "name": "areas",
+          "label": "Discussed Sectors/Areas",
           "type": "text",
           "required": false,
-          "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "budgetRange",
-          "label": "Budget Range",
-          "type": "text",
-          "required": false,
-          "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "expectedInventory",
-          "label": "Expected Inventory",
-          "type": "text",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "preferredPropertyType",
-          "label": "Preferred Prop Type",
-          "type": "select",
-          "chipGroup": "propertyTypes",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "meetingRequired",
-          "label": "Meeting Required?",
-          "type": "text",
-          "required": true,
           "showInTable": true,
           "editable": true
         },
         {
           "name": "followUpDate",
-          "label": "Next Follow-up Date",
+          "label": "Next Followup Date",
           "type": "date",
           "required": false,
           "showInTable": true,
@@ -2096,7 +2099,7 @@
         },
         {
           "name": "remarks",
-          "label": "Detailed Remarks",
+          "label": "Call Notes/Remarks",
           "type": "textarea",
           "required": false,
           "showInTable": true,
@@ -2740,13 +2743,52 @@
         "color": "#2563EB"
       },
       {
-        "value": "Owner",
-        "label": "Owner",
+        "value": "Direct",
+        "label": "Direct",
+        "color": "#10B981"
+      },
+      {
+        "value": "Booked By Us",
+        "label": "Booked By Us",
+        "color": "#F59E0B"
+      }
+    ],
+    "dealerDealTypes": [
+      {
+        "value": "Dealer To Dealer",
+        "label": "Dealer To Dealer",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Direct",
+        "label": "Direct",
         "color": "#10B981"
       },
       {
         "value": "Booked",
         "label": "Booked",
+        "color": "#F59E0B"
+      }
+    ],
+    "callOutcomes": [
+      {
+        "value": "Call Done",
+        "label": "Call Done",
+        "color": "#10B981"
+      },
+      {
+        "value": "Not Picked the Call",
+        "label": "Not Picked the Call",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Switch Off",
+        "label": "Switch Off",
+        "color": "#6B7280"
+      },
+      {
+        "value": "Not Reachable",
+        "label": "Not Reachable",
         "color": "#F59E0B"
       }
     ],

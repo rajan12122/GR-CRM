@@ -137,6 +137,13 @@ const LeadNotificationListener = () => {
         } catch (err) { console.error(err); }
       });
 
+      es.addEventListener('meeting-assigned', (e) => {
+        try {
+          const data = JSON.parse(e.data);
+          showToast(`🤝 MEETING ASSIGNED: ${data.message}`);
+        } catch (err) { console.error(err); }
+      });
+
       es.addEventListener('query-approved', (e) => {
         try {
           const data = JSON.parse(e.data);

@@ -933,6 +933,15 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     }
   }
 
+  // Prevent duplicate dealers by returning existing matching record
+  if (module === 'dealers' && payload.contact_num) {
+    const cleanContact = String(payload.contact_num).trim();
+    const existingDealer = (db.dealers || []).find(r => r.contact_num && String(r.contact_num).trim() === cleanContact);
+    if (existingDealer) {
+      return res.status(201).json(existingDealer);
+    }
+  }
+
   if (module === 'leads') {
     payload.assignmentStatus = payload.assignmentStatus || 'pending';
     payload.assignmentTime = payload.assignmentTime || new Date().toISOString();

@@ -285,6 +285,15 @@ const ModuleManager = () => {
     fields.forEach(f => {
       if (f.name === 'id' || f.name === 'last_updated') return;
       
+      // If select type with chipGroup options, populate statically
+      if (f.type === 'select' && f.chipGroup && metadata?.chipGroups?.[f.chipGroup]) {
+        options[f.name] = metadata.chipGroups[f.chipGroup].map(item => ({
+          value: item.value,
+          label: item.label
+        }));
+        return;
+      }
+      
       const distinctValues = Array.from(new Set(
         records
           .map(r => r[f.name])
@@ -299,7 +308,7 @@ const ModuleManager = () => {
       }
     });
     return options;
-  }, [fields, records]);
+  }, [fields, records, metadata]);
 
   const [activeFilterFields, setActiveFilterFields] = useState([]);
 

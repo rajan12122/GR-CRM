@@ -88,7 +88,7 @@
       "phone": 9417094170,
       "source": "Facebook",
       "status": "In-Progress",
-      "assignedEmployeeId": "EMP-003",
+      "assignedEmployeeId": "EMP-004",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 4500000,
@@ -111,7 +111,7 @@
       "phone": 9888877777,
       "source": "Referral",
       "status": "Open",
-      "assignedEmployeeId": "EMP-004",
+      "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "",
       "enableRotation": "",
       "budget": 15000000,
@@ -519,7 +519,7 @@
       "property_category": "Apartments",
       "total_land_area": "14 acres",
       "configurations_sizes": "2 BHK, 3 BHK, 4 BHK",
-      "pricing_details": "2 BHK: 74.90-76.90 lac, 3 BHK: 38.90-40.90 lac, 4 BHK: 61.90-66.90 lac",
+      "pricing_details": "2 BHK: 75.90-76.90 lac, 3 BHK: 38.90-40.90 lac, 4 BHK: 61.90-66.90 lac",
       "slab": "10%",
       "status": "September 2026",
       "rera_approved": "YES",
@@ -1794,6 +1794,24 @@
     },
     {
       "id": "REM-006"
+    },
+    {
+      "id": "REM-1783842073051-hvo8",
+      "targetModule": "leads",
+      "targetId": "LEAD-001",
+      "comment": "System: Lead rotated automatically from Shubham to sakshi due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "12/7/2026",
+      "timestamp": "2026-07-12T07:41:13.052Z"
+    },
+    {
+      "id": "REM-1783842073053-jodd",
+      "targetModule": "leads",
+      "targetId": "LEAD-002",
+      "comment": "System: Lead rotated automatically from sakshi to Shubham due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "12/7/2026",
+      "timestamp": "2026-07-12T07:41:13.053Z"
     }
   ],
   "documents": [
@@ -1810,6 +1828,28 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783842312399",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record CALL-002 in dealer_calls",
+      "dateTime": "12/7/2026, 1:15:12 pm"
+    },
+    {
+      "id": "LOG-1783842177969",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record PROJ-001 in projects",
+      "dateTime": "12/7/2026, 1:12:57 pm"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Shubham (inactivity)",
+      "timestamp": "2026-07-12T07:41:13.053Z"
+    },
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Amit Pathak\" to sakshi (inactivity)",
+      "timestamp": "2026-07-12T07:41:13.053Z"
+    },
     {
       "user": "System",
       "action": "Auto-rotated Lead \"Gaurav Malhotra\" to Shubham (inactivity)",
@@ -2467,6 +2507,18 @@
       "followUpDate": "2026-07-15",
       "remarks": "Dealer interested in residential plots. Has a couple of buyer clients.",
       "employeeName": "Vipin"
+    },
+    {
+      "dealerId": "DEAL-001",
+      "employeeName": "Sales Representative",
+      "date": "12/7/2026",
+      "duration": "10",
+      "budget": 1,
+      "areas": "70",
+      "followUpDate": "2026-07-26",
+      "remarks": "r",
+      "callOutcome": "Call Done",
+      "id": "CALL-002"
     }
   ],
   "dealer_meetings": [
@@ -2514,7 +2566,18 @@
       "remarks": "Pitched Falcon Homes apartments to Rajesh. He showed great interest."
     }
   ],
-  "project_history": [],
+  "project_history": [
+    {
+      "id": "PRJH-1783842177969-7a93",
+      "projectId": "PROJ-001",
+      "field": "pricing_details",
+      "fieldName": "Pricing Details",
+      "oldValue": "2 BHK: 74.90-76.90 lac, 3 BHK: 38.90-40.90 lac, 4 BHK: 61.90-66.90 lac",
+      "newValue": "2 BHK: 75.90-76.90 lac, 3 BHK: 38.90-40.90 lac, 4 BHK: 61.90-66.90 lac",
+      "date": "12/7/2026",
+      "employeeName": "Gagan Chopra"
+    }
+  ],
   "active_paths": {},
   "queries": [
     {

@@ -601,32 +601,12 @@ function handleFollowUpPipelineAction(f, db, req) {
 
   const action = f.pipelineAction;
   const customerId = f.customerId; // This can be LEAD-... or CUST-...
-  
-  if (action === 'Lead_Contacted' || action === 'Lead_VisitScheduled' || action === 'Lead_Negotiation') {
-    if (customerId && String(customerId).startsWith('LEAD-')) {
-      const lead = (db.leads || []).find(l => String(l.id) === String(customerId));
-      if (lead) {
-        const targetStatusMap = {
-          'Lead_Contacted': 'Contacted',
-          'Lead_VisitScheduled': 'Visit Scheduled',
-          'Lead_Negotiation': 'Negotiation'
-        };
-        lead.status = targetStatusMap[action];
-        // Skip calling handleLeadStatusChange directly since they aren't 'Converted' yet.
-        try { syncToSheets('leads'); } catch(e) {}
-      }
-    }
-  } else if (action === 'Query_Approved') {
-    // Find matching buyer query
-    const q = (db.queries || []).find(x => String(x.customerId) === String(customerId) && x.status !== 'Approved');
-    if (q) {
-      q.status = 'Approved';
-      q.stage = 'Available For Sale';
-      handleQueryStageChange(q, db, req);
-      try { syncToSheets('queries'); } catch(e) {}
-    }
-  } else if (action === 'Query_ClosedWon') {
-    // Close Deal Successfully
+  const queryId = f.queryId;
+
+  // Check if we should trigger deal conversion (e.g. stage is Closed or Booked)
+  const isClosedDeal = action === 'Closed' || action === 'Booked' || action === 'Query_ClosedWon' || action === 'Deal Closed' || action === 'Property Booked';
+
+  if (isClosedDeal) {
     // 1. If customerId is a Lead, convert to Customer first
     let finalCustomerId = customerId;
     if (customerId && String(customerId).startsWith('LEAD-')) {
@@ -674,6 +654,34 @@ function handleFollowUpPipelineAction(f, db, req) {
     db.deals.push(newDeal);
     handleDealStatusChange(newDeal, db, req);
     try { syncToSheets('deals'); } catch(e) {}
+  }
+
+  // Always update linked lead or query stage dynamically
+  if (queryId) {
+    const q = (db.queries || []).find(x => String(x.id) === String(queryId));
+    if (q) {
+      q.stage = action;
+      // If it is closed won/approved, normalize statuses
+      if (action === 'Closed' || action === 'Deal Closed' || action === 'Query_ClosedWon') {
+        q.status = 'Closed';
+      } else if (action === 'Requirement Verified' || action === 'Query_Approved') {
+        q.status = 'Approved';
+      }
+      handleQueryStageChange(q, db, req);
+      try { syncToSheets('queries'); } catch(e) {}
+    }
+  } else if (customerId && String(customerId).startsWith('LEAD-')) {
+    const lead = (db.leads || []).find(l => String(l.id) === String(customerId));
+    if (lead) {
+      if (action === 'Lost' || action === 'Lost Lead') {
+        lead.status = 'Junk';
+      } else if (action === 'Closed' || action === 'Deal Closed' || action === 'Booked' || action === 'Property Booked') {
+        lead.status = 'Converted';
+      } else {
+        lead.status = action;
+      }
+      try { syncToSheets('leads'); } catch(e) {}
+    }
   }
 }
 

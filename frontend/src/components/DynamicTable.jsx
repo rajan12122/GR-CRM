@@ -178,6 +178,28 @@ const DynamicTable = ({
       );
     }
 
+    if (field.name === 'pipelineAction') {
+      const allChips = [
+        ...(metadata?.chips?.customerStages || []),
+        ...(metadata?.chips?.buyerQueryStages || [])
+      ];
+      const chipConfig = allChips.find(c => c.value === val);
+      return (
+        <Chip 
+          label={chipConfig?.label || val} 
+          size="small"
+          sx={{ 
+            backgroundColor: chipConfig?.color ? `${chipConfig.color}15` : '#F1F5F9',
+            color: chipConfig?.color || '#475569',
+            border: `1px solid ${chipConfig?.color ? `${chipConfig.color}30` : '#E2E8F0'}`,
+            fontWeight: 600,
+            fontSize: '11px',
+            borderRadius: '6px'
+          }}
+        />
+      );
+    }
+
     // If it's a chip dropdown option, look up color in metadata
     if (field.type === 'select' && field.chipGroup && metadata?.chips[field.chipGroup]) {
       const chipConfig = metadata.chips[field.chipGroup].find(c => c.value === val);

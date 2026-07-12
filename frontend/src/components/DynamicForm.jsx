@@ -365,9 +365,15 @@ const DynamicForm = ({
                 if (f.name === 'pipelineAction' && moduleKey === 'follow_ups') {
                   const isQuery = !!(formData.queryId || formData.remarks?.toLowerCase().includes('query'));
                   if (isQuery) {
-                    options = options.filter(opt => opt.value.startsWith('Query_') || opt.value === 'None');
+                    options = [
+                      { value: 'None', label: 'Keep Current Stage' },
+                      ...(metadata?.chips?.buyerQueryStages || [])
+                    ];
                   } else {
-                    options = options.filter(opt => opt.value.startsWith('Lead_') || opt.value === 'None');
+                    options = [
+                      { value: 'None', label: 'Keep Current Stage' },
+                      ...(metadata?.chips?.customerStages || [])
+                    ];
                   }
                 }
                 const isOther = formData[f.name] === 'Other';

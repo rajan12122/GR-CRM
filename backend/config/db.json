@@ -134,6 +134,32 @@
       "pitchedPropertyId": "",
       "pitchPrice": "",
       "pitchRemarks": ""
+    },
+    {
+      "name": "Dynamic Stage Test Lead",
+      "phone": "9988423012",
+      "email": "dynamicstage@test.com",
+      "leadType": "Buyer",
+      "status": "Negotiation",
+      "assignmentStatus": "accepted",
+      "assignedEmployeeId": "EMP-001",
+      "id": "LEAD-005",
+      "dateAdded": "2026-07-12",
+      "assignmentTime": "2026-07-12T14:44:00.597Z",
+      "droppedBy": []
+    },
+    {
+      "name": "Dynamic Stage Test Lead",
+      "phone": "9988859591",
+      "email": "dynamicstage@test.com",
+      "leadType": "Buyer",
+      "status": "Negotiation",
+      "assignmentStatus": "accepted",
+      "assignedEmployeeId": "EMP-001",
+      "id": "LEAD-006",
+      "dateAdded": "2026-07-12",
+      "assignmentTime": "2026-07-12T14:44:15.527Z",
+      "droppedBy": []
     }
   ],
   "properties": [
@@ -1252,6 +1278,26 @@
       "pitchPrice": 10,
       "pitchRemarks": "weq",
       "pipelineAction": "Lead_Contacted"
+    },
+    {
+      "id": "FOLLOW-002",
+      "customerId": "LEAD-005",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "remarks": "Auto-scheduled follow up for accepted Lead LEAD-005: No notes",
+      "pipelineAction": "Negotiation"
+    },
+    {
+      "id": "FOLLOW-003",
+      "customerId": "LEAD-006",
+      "employeeId": "EMP-001",
+      "date": "12/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "remarks": "Auto-scheduled follow up for accepted Lead LEAD-006: No notes",
+      "pipelineAction": "Negotiation"
     }
   ],
   "attendance": [
@@ -1797,6 +1843,30 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783867455583",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-003 in follow_ups",
+      "dateTime": "12/7/2026, 8:14:15 pm"
+    },
+    {
+      "id": "LOG-1783867455533",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-006 in leads",
+      "dateTime": "12/7/2026, 8:14:15 pm"
+    },
+    {
+      "id": "LOG-1783867440750",
+      "employeeName": "Gagan Chopra",
+      "action": "Updated record FOLLOW-002 in follow_ups",
+      "dateTime": "12/7/2026, 8:14:00 pm"
+    },
+    {
+      "id": "LOG-1783867440697",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-005 in leads",
+      "dateTime": "12/7/2026, 8:14:00 pm"
+    },
     {
       "user": "System",
       "action": "Auto-rotated Lead \"d\" to sakshi (inactivity)",
@@ -2894,7 +2964,7 @@
       "paymentTerms": "",
       "status": "Interested",
       "interestLevel": "Interested",
-      "followUpDate": "",
+      "followUpDate": "2026-07-31",
       "remarks": "weq"
     },
     {

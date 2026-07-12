@@ -1134,7 +1134,12 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     try { syncToSheets('follow_ups'); } catch(e) {}
   }
   if (module === 'deals') handleDealStatusChange(payload, db, req);
-  if (module === 'leads') handleLeadStatusChange(payload, db, req);
+  if (module === 'leads') {
+    handleLeadStatusChange(payload, db, req);
+    if (payload.assignmentStatus === 'accepted') {
+      createFollowUpForLead(payload, db);
+    }
+  }
   if (module === 'follow_ups') handleFollowUpPipelineAction(payload, db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(payload, db);
   if (module === 'dealers') handleDealerVisitAssignment(payload, db, req);
@@ -1288,7 +1293,12 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
 
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
-  if (module === 'leads') handleLeadStatusChange(db[module][index], db, req);
+  if (module === 'leads') {
+    handleLeadStatusChange(db[module][index], db, req);
+    if (db[module][index].assignmentStatus === 'accepted') {
+      createFollowUpForLead(db[module][index], db);
+    }
+  }
   if (module === 'follow_ups') handleFollowUpPipelineAction(db[module][index], db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(db[module][index], db);
   if (module === 'dealers') handleDealerVisitAssignment(db[module][index], db, req, oldPayload);
@@ -2472,6 +2482,25 @@ app.get('/api/leads/pending', authenticateToken, (req, res) => {
   res.json(pendingLeads);
 });
 
+function createFollowUpForLead(lead, db) {
+  db.follow_ups = db.follow_ups || [];
+  const exists = db.follow_ups.some(f => String(f.customerId) === String(lead.id));
+  if (!exists) {
+    const followUpId = `FOLLOW-${String(db.follow_ups.length + 1).padStart(3, '0')}`;
+    const newFollowUp = {
+      id: followUpId,
+      customerId: lead.id,
+      employeeId: lead.assignedEmployeeId || 'EMP-001',
+      date: new Date().toLocaleDateString('en-IN'),
+      time: '12:00 PM',
+      status: 'Pending Call',
+      remarks: `Auto-scheduled follow up for accepted Lead ${lead.id}: ${lead.remarks || 'No notes'}`
+    };
+    db.follow_ups.push(newFollowUp);
+    try { syncToSheets('follow_ups'); } catch(e) {}
+  }
+}
+
 // Accept Lead
 app.post('/api/leads/:id/accept', authenticateToken, (req, res) => {
   const { id } = req.params;
@@ -2481,6 +2510,7 @@ app.post('/api/leads/:id/accept', authenticateToken, (req, res) => {
 
   db.leads[leadIndex].assignmentStatus = 'accepted';
   db.leads[leadIndex].assignmentTime = null;
+  createFollowUpForLead(db.leads[leadIndex], db);
   writeDb(db);
   syncToSheets('leads');
 
@@ -2524,6 +2554,7 @@ app.post('/api/leads/:id/drop', authenticateToken, (req, res) => {
     lead.assignedEmployeeId = 'EMP-001';
     lead.assignmentStatus = 'accepted';
     lead.assignmentTime = null;
+    createFollowUpForLead(lead, db);
   }
 
   writeDb(db);
@@ -2573,6 +2604,7 @@ function checkLeadAssignmentTimeouts() {
               lead.assignedEmployeeId = 'EMP-001';
               lead.assignmentStatus = 'accepted';
               lead.assignmentTime = null;
+              createFollowUpForLead(lead, db);
             }
             updated = true;
           }

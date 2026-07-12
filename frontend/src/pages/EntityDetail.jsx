@@ -410,9 +410,16 @@ const EntityDetail = () => {
     if (item) {
       const rels = await fetchEntity360(moduleName, id);
       setConnections(rels);
-      if (moduleName === 'leads') {
-        await fetchModuleData('properties');
-      }
+      
+      // Fetch pitch lookup dependencies
+      await Promise.all([
+        fetchModuleData('properties').catch(() => {}),
+        fetchModuleData('projects').catch(() => {}),
+        fetchModuleData('dealers').catch(() => {}),
+        fetchModuleData('employees').catch(() => {}),
+        fetchModuleData('customers').catch(() => {}),
+        fetchModuleData('leads').catch(() => {})
+      ]);
     }
     setLoading(false);
   };

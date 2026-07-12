@@ -136,8 +136,8 @@
       "contact_person_name": "Alam",
       "contact_number": 7814992504,
       "dealer_owner_booked": "Dealer",
-      "dealerId": "",
-      "dealer_deal_type": "",
+      "dealerId": "DEAL-001",
+      "dealer_deal_type": "Direct",
       "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
@@ -163,8 +163,8 @@
       "contact_person_name": "Alam",
       "contact_number": 7814992504,
       "dealer_owner_booked": "Dealer",
-      "dealerId": "",
-      "dealer_deal_type": "",
+      "dealerId": "DEAL-001",
+      "dealer_deal_type": "Dealer To Dealer",
       "booked_by_customer_id": "",
       "dealer_firm_name": "",
       "r_c_i": "Residential ",
@@ -1240,9 +1240,9 @@
       "date": "2026-07-04",
       "time": "11:00 AM",
       "status": "Pending",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": ""
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 18500000,
+      "pitchRemarks": "Follow up pitch for PROP-003 corner plot."
     },
     {
       "id": "FOLLOW-002",
@@ -2527,12 +2527,36 @@
       "contact_num": 1456132132,
       "contacted_num": 13213215,
       "remarks": "dsaDs"
+    },
+    {
+      "id": "DEAL-002",
+      "firm_name": "Apex Builders & Realty",
+      "address": "SCO 24, Sector 70",
+      "sector_block": "Sector 70",
+      "person_name": "Arun Sharma",
+      "contact_num": "9876543210",
+      "contacted_num": "9876543211",
+      "remarks": "Reputable sourcing agent for residential plots in Sector 70.",
+      "assignedEmployeeId": "EMP-003",
+      "visitStatus": "Assigned"
+    },
+    {
+      "id": "DEAL-003",
+      "firm_name": "Royal Property Group",
+      "address": "Kabir Towers, Sector 82",
+      "sector_block": "Sector 82",
+      "person_name": "Karan Johar",
+      "contact_num": "9988776655",
+      "contacted_num": "9988776656",
+      "remarks": "Specializes in premium commercial properties.",
+      "assignedEmployeeId": "EMP-004",
+      "visitStatus": "Assigned"
     }
   ],
   "dealer_calls": [
     {
       "id": "CALL-001",
-      "dealerId": "DEALER-001",
+      "dealerId": "DEAL-001",
       "date": "10/07/2026",
       "duration": 5,
       "callOutcome": "Call Done",
@@ -2565,12 +2589,36 @@
       "remarks": "ni",
       "callOutcome": "Call Done",
       "id": "CALL-003"
+    },
+    {
+      "id": "CALL-004",
+      "dealerId": "DEAL-002",
+      "date": "12/07/2026",
+      "duration": 8,
+      "callOutcome": "Call Done",
+      "budget": 18000000,
+      "areas": "Aerotropolis",
+      "followUpDate": "2026-07-20",
+      "remarks": "Discussed residential plot listing options in Aerotropolis. Sourced PROP-003.",
+      "employeeName": "sakshi"
+    },
+    {
+      "id": "CALL-005",
+      "dealerId": "DEAL-003",
+      "date": "12/07/2026",
+      "duration": 4,
+      "callOutcome": "Call Done",
+      "budget": 25000000,
+      "areas": "Sector 82",
+      "followUpDate": "2026-07-18",
+      "remarks": "Gathered details about upcoming commercial units. Sourced PROP-004.",
+      "employeeName": "Shubham"
     }
   ],
   "dealer_meetings": [
     {
       "id": "MEET-001",
-      "dealerId": "DEALER-001",
+      "dealerId": "DEAL-001",
       "assignedEmployeeId": "EMP-003",
       "meetingDate": "2026-07-12",
       "meetingTime": "",
@@ -2588,6 +2636,16 @@
       "documents_collected": "",
       "next_action": "",
       "followUpDate": "",
+      "remarks": ""
+    },
+    {
+      "id": "MEET-002",
+      "dealerId": "DEAL-002",
+      "assignedEmployeeId": "EMP-003",
+      "meetingDate": "2026-07-15",
+      "meetingTime": "11:30 AM",
+      "status": "Assigned",
+      "purpose": "Verify papers for PROP-003 corner plot.",
       "remarks": ""
     }
   ],
@@ -2610,6 +2668,30 @@
       "interestLevel": "Interested",
       "followUpDate": "2026-07-14",
       "remarks": "Pitched Falcon Homes apartments to Rajesh. He showed great interest."
+    },
+    {
+      "id": "PITCH-002",
+      "customerId": "CUST-002",
+      "customerName": "Simran Jeet",
+      "propertyId": "PROP-003",
+      "employeeName": "Shubham",
+      "pitchDate": "12/07/2026 14:30:00",
+      "pitchMethod": "Call",
+      "quotedPrice": 18500000,
+      "interestLevel": "Interested",
+      "remarks": "Simran showed high interest in the Aerotropolis 200 Sq.Yd. plot."
+    },
+    {
+      "id": "PITCH-003",
+      "customerId": "LEAD-001",
+      "customerName": "Amit Pathak",
+      "propertyId": "PROP-004",
+      "employeeName": "sakshi",
+      "pitchDate": "12/07/2026 15:45:00",
+      "pitchMethod": "Office Visit",
+      "quotedPrice": 26000000,
+      "interestLevel": "Interested",
+      "remarks": "Amit wants to inspect the property site on Monday."
     }
   ],
   "project_history": [
@@ -2642,9 +2724,9 @@
       "sector_block": "D",
       "size": 200,
       "remarks": "Want to sell",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": ""
+      "pitchedPropertyId": "PROP-004",
+      "pitchPrice": 26000000,
+      "pitchRemarks": "Query pitch for PROP-004 commercial space."
     }
   ]
 }

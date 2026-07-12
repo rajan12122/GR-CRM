@@ -1894,6 +1894,63 @@ const EntityDetail = () => {
                               </Grid>
                             </>
                           )}
+
+                          {(moduleName === 'follow_ups' || moduleName === 'queries' || moduleName === 'leads') && (
+                            <>
+                              <Grid item xs={12} sm={6}>
+                                <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins', color: '#0F172A' }}>
+                                  Pitched Properties & Details ({connections.pitches?.length || 0})
+                                </Typography>
+                                {connections.pitches?.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>No property pitches logged for this client yet.</Typography>
+                                ) : (
+                                  connections.pitches.map(p => (
+                                    <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
+                                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
+                                            Property: {p.propertyId}
+                                          </Typography>
+                                          <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
+                                        </Box>
+                                        <Chip 
+                                          label={p.interestLevel} 
+                                          color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
+                                          size="small"
+                                          sx={{ fontWeight: 700 }}
+                                        />
+                                      </Box>
+                                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                                        Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: {p.employeeName}
+                                      </Typography>
+                                      <Typography variant="body2" sx={{ fontWeight: 600 }}>Quoted Offer Price: ₹{formatCurrency(p.quotedPrice)}</Typography>
+                                      <Typography variant="body2" sx={{ color: '#475569', mt: 0.5 }}>Remarks: {p.remarks}</Typography>
+                                    </Paper>
+                                  ))
+                                )}
+                              </Grid>
+
+                              <Grid item xs={12} sm={6}>
+                                <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins', color: '#0F172A' }}>
+                                  Site Visits & Showings ({connections.site_visits?.length || 0})
+                                </Typography>
+                                {connections.site_visits?.length === 0 ? (
+                                  <Typography variant="body2" sx={{ color: '#94A3B8' }}>No site visits registered for this client.</Typography>
+                                ) : (
+                                  connections.site_visits.map((sv, idx) => (
+                                    <Paper key={idx} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                                        Property: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/properties/${sv.propertyId}`)}>{sv.propertyId}</span>
+                                      </Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>
+                                        Visited on: {sv.date} • Conducted by: {sv.employeeId} • Outcome: <strong>{sv.result}</strong>
+                                      </Typography>
+                                    </Paper>
+                                  ))
+                                )}
+                              </Grid>
+                            </>
+                          )}
                         </Grid>
                       ) : (
                         <Typography variant="body2" sx={{ color: '#94A3B8' }}>Loading...</Typography>

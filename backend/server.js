@@ -1720,6 +1720,21 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
   } else {
     data.remarks = allRemarks.filter(r => r.targetModule === module && r.targetId === id);
     data.documents = allDocs.filter(d => d.targetModule === module && d.targetId === id);
+    
+    if (module === 'follow_ups' || module === 'queries' || module === 'leads') {
+      const rec = (db[module] || []).find(r => String(r.id) === String(id));
+      if (rec) {
+        const custId = rec.customerId || rec.id;
+        data.pitches = allPitches.filter(p => String(p.customerId) === String(custId)).map(p => ({
+          ...p,
+          property: allProperties.find(pr => String(pr.id) === String(p.propertyId))
+        }));
+        data.site_visits = allSiteVisits.filter(sv => String(sv.customerId) === String(custId)).map(sv => ({
+          ...sv,
+          property: allProperties.find(pr => String(pr.id) === String(sv.propertyId))
+        }));
+      }
+    }
   }
 
   res.json(data);

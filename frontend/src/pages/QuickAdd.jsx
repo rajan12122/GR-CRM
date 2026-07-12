@@ -80,7 +80,7 @@ const QuickAdd = () => {
     );
   }
 
-  const allowedModuleIds = ['customers', 'leads', 'properties', 'projects', 'daily_prices', 'dealers'];
+  const allowedModuleIds = ['customers', 'leads', 'properties', 'projects', 'daily_prices', 'dealers', 'queries'];
   const modulesList = metadata 
     ? Object.values(metadata.modules).filter(m => allowedModuleIds.includes(m.id)) 
     : [];

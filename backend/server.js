@@ -2005,11 +2005,38 @@ app.post('/api/public/lead-intake', (req, res) => {
   
   if (!db.leads) db.leads = [];
 
-  // Enforce Phone uniqueness across leads and customers
-  const phoneExists = db.leads.some(l => String(l.phone).trim() === String(phone).trim()) || 
-                      (db.customers && db.customers.some(c => String(c.phone).trim() === String(phone).trim()));
-  if (phoneExists) {
-    return res.status(400).json({ error: "A lead or customer with this phone number already exists." });
+  // Enforce Phone uniqueness across leads and customers - if duplicate, auto-create Query!
+  const cleanPhone = String(phone).trim();
+  const existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
+  const existingLead = (db.leads || []).find(l => l.phone && String(l.phone).trim() === cleanPhone);
+  
+  if (existingCust || existingLead) {
+    const matchedId = existingCust ? existingCust.id : existingLead.id;
+    const queryId = `QRY-${String((db.queries || []).length + 1).padStart(3, '0')}`;
+    const newQuery = {
+      id: queryId,
+      customerId: matchedId,
+      assignedEmployeeId: existingCust ? (existingCust.assignedEmployeeId || 'EMP-001') : (existingLead.assignedEmployeeId || 'EMP-001'),
+      date: new Date().toLocaleDateString('en-IN'),
+      status: 'Pending Approval',
+      queryType: 'Buy Property',
+      stage: 'New Query',
+      budget: budget || '',
+      demand: '',
+      r_c_i: propertyType || '',
+      propertyType: optionType || '',
+      locality: locality || '',
+      sector_block: sector || '',
+      size: size || '',
+      remarks: `Auto-created query from public requirement form (Duplicate check match). PLC preferred: ${plc || 'None'}`
+    };
+    
+    if (!db.queries) db.queries = [];
+    db.queries.push(newQuery);
+    writeDb(db);
+    try { syncToSheets('queries'); } catch(e) {}
+    
+    return res.json({ success: true, message: "Welcome back! Your new requirements query has been registered under your profile.", query: newQuery });
   }
 
   // Find max number among existing IDs starting with LEAD prefix
@@ -2095,6 +2122,48 @@ app.post('/api/public/quick-add', (req, res) => {
   const nextNum = maxNum > 0 ? maxNum + 1 : (db[module] || []).length + 1;
   payload.id = `${prefix}-${String(nextNum).padStart(3, '0')}`;
   
+  // Enforce unique phone number / Master Customer record duplicate prevention
+  if (payload.phone && (module === 'customers' || module === 'leads')) {
+    const cleanPhone = String(payload.phone).trim();
+    const existingCust = (db.customers || []).find(r => r.phone && String(r.phone).trim() === cleanPhone);
+    const existingLead = (db.leads || []).find(r => r.phone && String(r.phone).trim() === cleanPhone);
+    
+    if (existingCust || existingLead) {
+      const matchedId = existingCust ? existingCust.id : existingLead.id;
+      const queryId = `QRY-${String((db.queries || []).length + 1).padStart(3, '0')}`;
+      const queryType = payload.leadType === 'Seller' ? 'Sell Property' : 'Buy Property';
+      
+      const newQuery = {
+        id: queryId,
+        customerId: matchedId,
+        assignedEmployeeId: payload.assignedEmployeeId || (existingCust ? existingCust.assignedEmployeeId : existingLead.assignedEmployeeId) || 'EMP-001',
+        date: new Date().toLocaleDateString('en-IN'),
+        status: 'Pending Approval',
+        queryType: queryType,
+        stage: 'New Query',
+        budget: payload.budget || '',
+        demand: payload.demand || '',
+        r_c_i: payload.r_c_i || '',
+        propertyType: payload.propertyType || '',
+        locality: payload.locality || '',
+        sector_block: payload.sector_block || '',
+        size: payload.size || '',
+        remarks: payload.remarks || payload.initial_notes || 'Auto-created query due to duplicate lead/customer submission via Quick-Add portal.'
+      };
+      
+      if (!db.queries) db.queries = [];
+      db.queries.push(newQuery);
+      writeDb(db);
+      try { syncToSheets('queries'); } catch(e) {}
+      
+      return res.json({
+        success: true,
+        message: `Customer already exists. Created Query (${queryId}) linked to customer profile instead.`,
+        record: newQuery
+      });
+    }
+  }
+
   // Normalize default date added keys if not present
   if (module === 'leads' && !payload.dateAdded) {
     payload.dateAdded = new Date().toISOString().split('T')[0];

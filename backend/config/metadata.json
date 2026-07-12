@@ -2480,6 +2480,21 @@
         "color": "#F59E0B"
       },
       {
+        "value": "Contacted",
+        "label": "Contacted",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Visit Scheduled",
+        "label": "Visit Scheduled",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Negotiation",
+        "label": "Under Negotiation",
+        "color": "#10B981"
+      },
+      {
         "value": "Converted",
         "label": "Moved to Customers",
         "color": "#22C55E"

@@ -177,6 +177,31 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
           </ListItem>
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
+              onClick={() => handleNavClick('/pipeline/property_pitches')}
+              selected={activePath === '/pipeline/property_pitches'}
+              sx={{
+                borderRadius: '8px',
+                py: 1.2,
+                px: 2,
+                backgroundColor: activePath === '/pipeline/property_pitches' ? 'rgba(37, 99, 235, 0.15) !important' : 'transparent',
+                color: activePath === '/pipeline/property_pitches' ? '#3B82F6' : '#94A3B8',
+                '&:hover': {
+                  backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                  color: '#FFFFFF'
+                }
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: 'inherit' }}>
+                <Icons.CheckSquare size={20} />
+              </ListItemIcon>
+              <ListItemText 
+                primary="Property Interest Pipeline" 
+                primaryTypographyProps={{ fontSize: '14px', fontWeight: 600 }} 
+              />
+            </ListItemButton>
+          </ListItem>
+          <ListItem disablePadding sx={{ mb: 0.5 }}>
+            <ListItemButton
               onClick={() => handleNavClick('/pipeline/customers')}
               selected={activePath === '/pipeline/customers'}
               sx={{

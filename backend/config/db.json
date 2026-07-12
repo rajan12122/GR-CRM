@@ -113,17 +113,27 @@
       "pitchRemarks": ""
     },
     {
-      "name": "Accept Test Lead",
-      "phone": "9988781440",
-      "email": "acceptlead@test.com",
-      "leadType": "Buyer",
-      "status": "New Lead",
-      "assignedEmployeeId": "EMP-003",
-      "assignmentStatus": "accepted",
-      "assignmentTime": null,
       "id": "LEAD-004",
-      "dateAdded": "2026-07-12",
-      "droppedBy": []
+      "name": "d",
+      "email": "ds",
+      "phone": "ds",
+      "source": "Facebook",
+      "status": "In-Progress",
+      "assignedEmployeeId": "EMP-001",
+      "preferredEmployees": "EMP-001",
+      "enableRotation": "",
+      "budget": 0,
+      "r_c_i": "Residential",
+      "propertyType": "Plot",
+      "locality": "s",
+      "sector_block": "d",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "d",
+      "dateAdded": "2026-07-07",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     }
   ],
   "properties": [
@@ -1233,11 +1243,15 @@
     {
       "id": "FOLLOW-001",
       "customerId": "LEAD-004",
-      "employeeId": "EMP-003",
-      "date": "12/7/2026",
+      "queryId": "",
+      "employeeId": "EMP-001",
+      "date": "2026-07-11",
       "time": "12:00 PM",
-      "status": "Pending Call",
-      "remarks": "Auto-scheduled follow up for accepted Lead LEAD-004: No notes"
+      "status": "Completed",
+      "pitchedPropertyId": "PROP-003",
+      "pitchPrice": 10,
+      "pitchRemarks": "weq",
+      "pipelineAction": "Lead_Contacted"
     }
   ],
   "attendance": [
@@ -1767,15 +1781,6 @@
     },
     {
       "id": "REM-006"
-    },
-    {
-      "id": "REM-1783865636404-ss0i",
-      "targetModule": "leads",
-      "targetId": "LEAD-003",
-      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T14:13:56.504Z"
     }
   ],
   "documents": [
@@ -1792,6 +1797,12 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783866572604",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record PITCH-002 in property_pitch_history",
+      "dateTime": "12/7/2026, 7:59:32 pm"
+    },
     {
       "id": "LOG-1783865641400",
       "employeeName": "Gagan Chopra",
@@ -2861,7 +2872,40 @@
       "remarks": ""
     }
   ],
-  "property_pitch_history": [],
+  "property_pitch_history": [
+    {
+      "id": "PITCH-001",
+      "customerId": "LEAD-004",
+      "customerName": "d",
+      "propertyId": "PROP-003",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "12/7/2026",
+      "pitchMethod": "Call",
+      "quotedPrice": 10,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "Interested",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": "weq"
+    },
+    {
+      "customerId": "LEAD-001",
+      "customerName": "Rajan Gupta",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "employeeName": "Gagan Chopra",
+      "pitchMethod": "Call",
+      "interestLevel": "Interested",
+      "status": "Site Visit Scheduled",
+      "quotedPrice": 9000000,
+      "remarks": "Kanban board test pitch",
+      "id": "PITCH-002"
+    }
+  ],
   "project_history": [
     {
       "id": "PRJH-1783842177969-7a93",

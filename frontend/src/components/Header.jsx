@@ -42,8 +42,11 @@ const Header = ({ onSearchClick, onMenuClick, onReload }) => {
       const mod = path.split('/')[2];
       return metadata?.modules[mod]?.label || 'Module Viewer';
     }
-    if (path === '/pipeline/properties') return 'Property Kanban Pipeline';
+    if (path === '/pipeline/properties') return 'Property Inventory Pipeline';
+    if (path === '/pipeline/property_pitches') return 'Property Interest Pipeline';
     if (path === '/pipeline/customers') return 'Customer Kanban Pipeline';
+    if (path === '/pipeline/buyer_query') return 'Buyer Query Pipeline';
+    if (path === '/pipeline/seller_query') return 'Seller Query Pipeline';
     if (path === '/settings') return 'Admin Control Center';
     return 'System Portal';
   };

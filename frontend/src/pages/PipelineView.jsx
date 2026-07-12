@@ -43,6 +43,12 @@ const PipelineView = () => {
     chipGroup = 'propertyStatus';
     title = 'Property Pipeline (Kanban)';
     subtitle = 'Track inventory status updates (Available, Booked, Agreement, Sold) in real time.';
+  } else if (pipelineType === 'property_pitches') {
+    targetModule = 'property_pitch_history';
+    stageField = 'status';
+    chipGroup = 'pitchStatus';
+    title = 'Property Interest Pipeline';
+    subtitle = 'Track prospective client interest stages for pitched property listings.';
   } else if (pipelineType === 'customers') {
     targetModule = 'customers';
     stageField = 'stage';
@@ -72,19 +78,76 @@ const PipelineView = () => {
   }
 
   const stages = metadata.chips[chipGroup] || [];
-  const records = (moduleData[targetModule] || []).filter(filterFn);
+  
+  let records = [];
+  if (pipelineType === 'customers') {
+    const mapLeadStatusToStage = (status) => {
+      if (status === 'Open' || status === 'New Lead') return 'New Lead';
+      if (status === 'Contacted') return 'Contacted';
+      if (status === 'Visit Scheduled' || status === 'Site Visit Scheduled') return 'Site Visit';
+      if (status === 'Negotiation') return 'Negotiation';
+      if (status === 'Junk') return 'Lost';
+      if (status === 'Converted') return 'Closed';
+      return 'New Lead';
+    };
+
+    const activeLeads = (moduleData.leads || [])
+      .filter(l => l.status !== 'Converted' && l.status !== 'Junk')
+      .map(l => ({
+        ...l,
+        stage: mapLeadStatusToStage(l.status)
+      }));
+
+    const customers = (moduleData.customers || []);
+    records = [...activeLeads, ...customers];
+  } else {
+    records = (moduleData[targetModule] || []).filter(filterFn);
+  }
 
   const handleCardMove = async (cardId, targetStageValue) => {
-    const allRecords = moduleData[targetModule] || [];
-    const record = allRecords.find(r => r.id === cardId);
-    if (!record) return;
+    if (pipelineType === 'customers') {
+      if (String(cardId).startsWith('LEAD-')) {
+        const lead = (moduleData.leads || []).find(l => l.id === cardId);
+        if (!lead) return;
+        
+        const mapStageToLeadStatus = (stage) => {
+          if (stage === 'New Lead') return 'Open';
+          if (stage === 'Contacted') return 'Contacted';
+          if (stage === 'Site Visit') return 'Visit Scheduled';
+          if (stage === 'Negotiation') return 'Negotiation';
+          if (stage === 'Lost') return 'Junk';
+          if (stage === 'Closed') return 'Converted';
+          return 'In-Progress';
+        };
 
-    const payload = { ...record, [stageField]: targetStageValue };
-    await updateRecord(targetModule, cardId, payload);
+        const payload = { ...lead, status: mapStageToLeadStatus(targetStageValue) };
+        await updateRecord('leads', cardId, payload);
+      } else {
+        const customer = (moduleData.customers || []).find(c => c.id === cardId);
+        if (!customer) return;
+        const payload = { ...customer, stage: targetStageValue };
+        await updateRecord('customers', cardId, payload);
+      }
+    } else {
+      const allRecords = moduleData[targetModule] || [];
+      const record = allRecords.find(r => r.id === cardId);
+      if (!record) return;
+
+      const payload = { ...record, [stageField]: targetStageValue };
+      await updateRecord(targetModule, cardId, payload);
+    }
   };
 
   const handleInspectClick = (id) => {
-    navigate(`/module/${targetModule}/${id}`);
+    if (pipelineType === 'customers') {
+      if (String(id).startsWith('LEAD-')) {
+        navigate(`/module/leads/${id}`);
+      } else {
+        navigate(`/module/customers/${id}`);
+      }
+    } else {
+      navigate(`/module/${targetModule}/${id}`);
+    }
   };
 
   return (

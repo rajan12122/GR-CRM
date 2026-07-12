@@ -361,7 +361,15 @@ const DynamicForm = ({
 
               // 1. SELECT TYPE FIELD
               if (f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup]) {
-                const options = metadata.chips[f.chipGroup];
+                let options = metadata.chips[f.chipGroup];
+                if (f.name === 'pipelineAction' && moduleKey === 'follow_ups') {
+                  const isQuery = !!(formData.queryId || formData.remarks?.toLowerCase().includes('query'));
+                  if (isQuery) {
+                    options = options.filter(opt => opt.value.startsWith('Query_') || opt.value === 'None');
+                  } else {
+                    options = options.filter(opt => opt.value.startsWith('Lead_') || opt.value === 'None');
+                  }
+                }
                 const isOther = formData[f.name] === 'Other';
                 return (
                   <Grid item xs={12} key={f.name}>

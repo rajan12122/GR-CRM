@@ -156,6 +156,19 @@ const KanbanBoard = ({
                     cardTitle = item.name || item.id;
                     cardSubtitle = item.id;
                     detailsText = item.requirements || '';
+                  } else if (String(item.id).startsWith('PITCH-')) {
+                    const cust = (moduleData.customers || []).find(c => String(c.id) === String(item.customerId)) || 
+                                 (moduleData.leads || []).find(l => String(l.id) === String(item.customerId));
+                    const custName = cust ? (cust.name || cust.person_name) : (item.customerName || `Client: ${item.customerId}`);
+                    cardTitle = `${custName} (${item.id})`;
+                    cardSubtitle = `Pitched Property Pipeline`;
+                    
+                    const prop = (moduleData.properties || []).find(p => String(p.id) === String(item.propertyId));
+                    if (prop) {
+                      detailsText = `Pitched Property: ${prop.locality} ${prop.sector_block ? `Sec ${prop.sector_block}` : ''} (${prop.id})`;
+                    } else {
+                      detailsText = `Pitched Property ID: ${item.propertyId}`;
+                    }
                   }
 
                   return (
@@ -199,7 +212,7 @@ const KanbanBoard = ({
 
                         <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={0.5}>
                           <Typography variant="caption" sx={{ fontWeight: 700, color: '#0F172A' }}>
-                            {item.demand ? `₹${item.demand}` : item.price ? `₹${(item.price/100000).toFixed(1)} Lacs` : item.budget ? `Budget: ₹${item.budget}` : ''}
+                            {item.quotedPrice ? `Offered: ₹${item.quotedPrice}` : item.demand ? `₹${item.demand}` : item.price ? `₹${(item.price/100000).toFixed(1)} Lacs` : item.budget ? `Budget: ₹${item.budget}` : ''}
                           </Typography>
                           {item.assignedEmployeeId && (
                             <EntityTooltip moduleName="employees" id={item.assignedEmployeeId}>

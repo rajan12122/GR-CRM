@@ -2851,7 +2851,17 @@ const EntityDetail = () => {
                         onChange={(e) => setPitchPropertyId(e.target.value)}
                         label={pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}
                       >
-                        <Box sx={{ px: 2, py: 1 }}>
+                        <MenuItem
+                          disableRipple
+                          onClick={(e) => e.stopPropagation()}
+                          onKeyDown={(e) => e.stopPropagation()}
+                          sx={{ 
+                            backgroundColor: 'transparent !important', 
+                            cursor: 'default',
+                            p: '4px 16px',
+                            '&:hover': { backgroundColor: 'transparent' }
+                          }}
+                        >
                           <TextField
                             size="small"
                             placeholder={pitchItemType === 'Property' ? "Search properties..." : "Search projects..."}
@@ -2861,7 +2871,7 @@ const EntityDetail = () => {
                             onClick={(e) => e.stopPropagation()}
                             onKeyDown={(e) => e.stopPropagation()}
                           />
-                        </Box>
+                        </MenuItem>
                         <MenuItem value="">-- None --</MenuItem>
                         {pitchItemType === 'Property' ? (
                           (moduleData.properties || []).filter(p => {
@@ -2930,7 +2940,17 @@ const EntityDetail = () => {
                                 onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
                                 label="Associated Dealer"
                               >
-                                <Box sx={{ px: 2, py: 1 }}>
+                                <MenuItem
+                                  disableRipple
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  sx={{ 
+                                    backgroundColor: 'transparent !important', 
+                                    cursor: 'default',
+                                    p: '4px 16px',
+                                    '&:hover': { backgroundColor: 'transparent' }
+                                  }}
+                                >
                                   <TextField
                                     size="small"
                                     placeholder="Search dealers..."
@@ -2940,7 +2960,7 @@ const EntityDetail = () => {
                                     onClick={(e) => e.stopPropagation()}
                                     onKeyDown={(e) => e.stopPropagation()}
                                   />
-                                </Box>
+                                </MenuItem>
                                 <MenuItem value="">-- Select --</MenuItem>
                                 {(moduleData.dealers || []).filter(d => {
                                   if (!dealerSearch) return true;

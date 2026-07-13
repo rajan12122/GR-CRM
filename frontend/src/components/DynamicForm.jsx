@@ -455,7 +455,17 @@ const DynamicForm = ({
                                 onChange={(e) => handleChange('pitchedPropertyId', e.target.value)}
                                 label={pitchedItemType === 'Property' ? 'Select Property' : 'Select Project'}
                               >
-                                <Box sx={{ px: 2, py: 1 }}>
+                                <MenuItem
+                                  disableRipple
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  sx={{ 
+                                    backgroundColor: 'transparent !important', 
+                                    cursor: 'default',
+                                    p: '4px 16px',
+                                    '&:hover': { backgroundColor: 'transparent' }
+                                  }}
+                                >
                                   <TextField
                                     size="small"
                                     placeholder={pitchedItemType === 'Property' ? "Search properties..." : "Search projects..."}
@@ -465,7 +475,7 @@ const DynamicForm = ({
                                     onClick={(e) => e.stopPropagation()}
                                     onKeyDown={(e) => e.stopPropagation()}
                                   />
-                                </Box>
+                                </MenuItem>
                                 <MenuItem value="">-- None --</MenuItem>
                                 {pitchedItemType === 'Property' ? (
                                   propertiesList.filter(p => {
@@ -754,7 +764,17 @@ const DynamicForm = ({
                         disabled={isReadOnly}
                       >
                         {f.refModule === 'dealers' && (
-                          <Box sx={{ px: 2, py: 1 }}>
+                          <MenuItem
+                            disableRipple
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                            sx={{ 
+                              backgroundColor: 'transparent !important', 
+                              cursor: 'default',
+                              p: '4px 16px',
+                              '&:hover': { backgroundColor: 'transparent' }
+                            }}
+                          >
                             <TextField
                               size="small"
                               placeholder="Search dealers..."
@@ -764,7 +784,7 @@ const DynamicForm = ({
                               onClick={(e) => e.stopPropagation()}
                               onKeyDown={(e) => e.stopPropagation()}
                             />
-                          </Box>
+                          </MenuItem>
                         )}
                         {options.filter(opt => {
                           if (f.refModule !== 'dealers' || !dealerSearch) return true;

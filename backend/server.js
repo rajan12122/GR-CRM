@@ -603,6 +603,29 @@ function handleFollowUpPipelineAction(f, db, req) {
   const customerId = f.customerId; // This can be LEAD-... or CUST-...
   const queryId = f.queryId;
 
+  // Auto-create Site Visit if stage is Site Visit Arranged / Scheduled
+  const isSiteVisitStage = action === 'Site Visit Arranged' || action === 'Site Visit' || action === 'Site Visit Scheduled' || action === 'Lead_VisitScheduled';
+  if (isSiteVisitStage) {
+    const hasExistingVisit = (db.site_visits || []).some(sv => sv.linkedFollowUpId === f.id);
+    if (!hasExistingVisit) {
+      const visitId = `VISIT-${String((db.site_visits || []).length + 1).padStart(3, '0')}`;
+      const newVisit = {
+        id: visitId,
+        customerId: customerId,
+        propertyId: f.pitchedPropertyId || 'PROP-001',
+        employeeId: f.employeeId || 'EMP-001',
+        date: f.date || new Date().toLocaleDateString('en-IN'),
+        time: f.time || '12:00 PM',
+        result: 'Scheduled',
+        remarks: f.remarks || `Automatically created from Follow-Up ${f.id} stage: ${action}.`,
+        linkedFollowUpId: f.id
+      };
+      db.site_visits = db.site_visits || [];
+      db.site_visits.push(newVisit);
+      try { syncToSheets('site_visits'); } catch(e) {}
+    }
+  }
+
   // Check if we should trigger deal conversion (e.g. stage is Closed or Booked)
   const isClosedDeal = action === 'Closed' || action === 'Booked' || action === 'Query_ClosedWon' || action === 'Deal Closed' || action === 'Property Booked';
 

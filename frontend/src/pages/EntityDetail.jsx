@@ -267,6 +267,9 @@ const EntityDetail = () => {
       list.push({ label: 'Activity Timeline', icon: 'Clock' });
     } else if (moduleName === 'dealers') {
       list.push({ label: 'Overview & Activity', icon: 'Building' });
+      list.push({ label: `Pitches & Showings (${connections?.pitches?.length || 0})`, icon: 'Eye' });
+      list.push({ label: `Dealer Interaction History (${connections?.calls?.length || 0})`, icon: 'PhoneCall' });
+      list.push({ label: `Docs Vault (${connections?.documents?.length || 0})`, icon: 'FolderOpen' });
     } else if (moduleName === 'projects') {
       list.push({ label: 'Project Specifications', icon: 'Home' });
       list.push({ label: `Pitched & Showings History (${connections.pitches?.length || 0})`, icon: 'Eye' });
@@ -1510,13 +1513,14 @@ const EntityDetail = () => {
                 </Box>
               )}
 
-              {/* 3. DEALER PROFILE & ACTIVITY FEED */}
               {moduleName === 'dealers' && (
                 <Box>
-                  <Typography variant="h5" sx={{ fontWeight: 850, mb: 1.5, fontFamily: 'Poppins', color: '#0F172A' }}>
-                    Dealer Dashboard & Outreach Log
-                  </Typography>
-                  <Divider sx={{ mb: 3 }} />
+                  {activeTab === 0 && (
+                    <Box>
+                      <Typography variant="h5" sx={{ fontWeight: 850, mb: 1.5, fontFamily: 'Poppins', color: '#0F172A' }}>
+                        Dealer Dashboard & Outreach Log
+                      </Typography>
+                      <Divider sx={{ mb: 3 }} />
 
                   {/* 1. Quick Outreach Log Actions */}
                   <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -1857,6 +1861,127 @@ const EntityDetail = () => {
                       </Grid>
                     )}
                   </Paper>
+                </Box>
+              )}
+                  {activeTab === 1 && (
+                    <Box>
+                      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Poppins', color: '#0F172A' }}>
+                          Pitched Properties & Showings ({connections?.pitches?.length || 0})
+                        </Typography>
+                        <Button 
+                          variant="outlined" 
+                          size="small" 
+                          startIcon={<Icons.Plus size={16} />}
+                          onClick={() => {
+                            setPitchPropertyId('');
+                            setPitchEmployeeId(record.assignedEmployeeId || record.employeeId || '');
+                            setPitchCustomerId('');
+                            setPitchPrice('');
+                            setPitchRemarks('');
+                            setPitchWarning('');
+                            setPitchDialogOpen(true);
+                          }}
+                        >
+                          + Log Pitch
+                        </Button>
+                      </Box>
+                      
+                      {!connections.pitches || connections.pitches.length === 0 ? (
+                        <Box sx={{ p: 3, textAlign: 'center', backgroundColor: '#F8FAFC', borderRadius: '12px', border: '1px dashed #E2E8F0' }}>
+                          <Typography variant="body2" sx={{ color: '#94A3B8' }}>
+                            No property pitches associated with this dealer.
+                          </Typography>
+                        </Box>
+                      ) : (
+                        connections.pitches.map(p => (
+                          <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
+                                  Property: {p.propertyId}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
+                              </Box>
+                              <Chip 
+                                label={p.interestLevel} 
+                                color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
+                                size="small"
+                                sx={{ fontWeight: 700 }}
+                              />
+                            </Box>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
+                              Pitch Date: {p.pitchDate} • Method: {p.pitchMethod} • Quoted: ₹{Number(p.quotedPrice || 0).toLocaleString('en-IN')}
+                            </Typography>
+                            {p.customerId && (
+                              <Typography variant="body2" sx={{ mb: 1 }}>
+                                Client: <a href={`/module/customers/${p.customerId}`} style={{ color: '#2563EB', fontWeight: 600 }} onClick={(e) => { e.preventDefault(); navigate(p.customerId.startsWith('LEAD-') ? `/module/leads/${p.customerId}` : `/module/customers/${p.customerId}`); }}>{p.customerId}</a>
+                              </Typography>
+                            )}
+                            <Typography variant="body2" sx={{ color: '#475569' }}>
+                              Remarks: {p.remarks || '---'}
+                            </Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+                  {activeTab === 2 && (
+                    <Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Calls History ({connections?.calls?.length || 0})</Typography>
+                      {connections?.calls?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8', mb: 3 }}>No calls logged.</Typography>
+                      ) : (
+                        connections.calls.map(c => (
+                          <Paper key={c.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Call ID: {c.id} • RM: {c.employeeName}</Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>Date: {c.date} • Duration: {c.duration} mins • Budget: {c.budget}</Typography>
+                            <Typography variant="body2" sx={{ color: '#475569', mt: 1 }}>Remarks: {c.remarks}</Typography>
+                          </Paper>
+                        ))
+                      )}
+
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, mt: 3 }}>Meetings History ({connections?.meetings?.length || 0})</Typography>
+                      {connections?.meetings?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No meetings scheduled.</Typography>
+                      ) : (
+                        connections.meetings.map(m => (
+                          <Paper key={m.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Meeting ID: {m.id} • RM: {m.assignedEmployeeName}</Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>Date: {m.date} • Time: {m.time} • Status: {m.status}</Typography>
+                            <Typography variant="body2" sx={{ color: '#475569', mt: 1 }}>Remarks: {m.outcome || '---'}</Typography>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
+                  {activeTab === 3 && (
+                    <Box>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                        <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>Docs Vault</Typography>
+                        <Button variant="outlined" component="label" size="small" startIcon={<Icons.Upload size={16} />}>
+                          Upload Document
+                          <input type="file" hidden onChange={handleUploadDoc} />
+                        </Button>
+                      </Box>
+                      {connections?.documents?.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No documents uploaded.</Typography>
+                      ) : (
+                        connections.documents.map(d => (
+                          <Paper key={d.id} sx={{ p: 2, mb: 1.5, border: '1px solid #E2E8F0', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'white' }}>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{d.name}</Typography>
+                              <Typography variant="caption" sx={{ color: '#64748B' }}>Uploaded: {d.dateAdded} • By: {d.uploadedBy}</Typography>
+                            </Box>
+                            <Box display="flex" gap={1}>
+                              <Button size="small" variant="text" href={d.fileUrl} target="_blank" rel="noreferrer">View</Button>
+                              <IconButton size="small" color="error" onClick={() => handleDeleteDoc(d.id)}><Icons.Trash2 size={16} /></IconButton>
+                            </Box>
+                          </Paper>
+                        ))
+                      )}
+                    </Box>
+                  )}
                 </Box>
               )}
               {/* 4. OTHER GENERIC BACKWARD COMPATIBLE TABS */}
@@ -2843,9 +2968,31 @@ const EntityDetail = () => {
                 {pitchWarning}
               </Alert>
             )}
-            {(moduleName === 'customers' || moduleName === 'leads' || moduleName === 'follow_ups' || moduleName === 'queries') ? (
+            {(moduleName === 'customers' || moduleName === 'leads' || moduleName === 'follow_ups' || moduleName === 'queries' || moduleName === 'dealers') ? (
               <>
                 <Grid container spacing={2}>
+                  {moduleName === 'dealers' && (
+                    <Grid item xs={12}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Select Customer / Lead</InputLabel>
+                        <Select
+                          value={pitchCustomerId || ''}
+                          onChange={(e) => setPitchCustomerId(e.target.value)}
+                          label="Select Customer / Lead"
+                        >
+                          <MenuItem value="">-- Select --</MenuItem>
+                          {[
+                            ...(moduleData.customers || []).map(c => ({ id: c.id, name: c.name, type: 'Customer' })),
+                            ...(moduleData.leads || []).map(l => ({ id: l.id, name: l.name, type: 'Lead' }))
+                          ].map(client => (
+                            <MenuItem key={client.id} value={client.id}>
+                              {client.name} ({client.id} - {client.type})
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  )}
                   <Grid item xs={12} sm={6}>
                     <FormControl fullWidth size="small">
                       <InputLabel>Pitch Item Type</InputLabel>
@@ -3254,28 +3401,30 @@ const EntityDetail = () => {
           <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
             const isCustomerLead = moduleName === 'customers' || moduleName === 'leads';
             const isFollowUpQuery = moduleName === 'follow_ups' || moduleName === 'queries';
-            let finalPropId = isCustomerLead || isFollowUpQuery ? pitchPropertyId : id;
+            const isDealer = moduleName === 'dealers';
+            let finalPropId = isCustomerLead || isFollowUpQuery || isDealer ? pitchPropertyId : id;
             let finalCustomerId = isCustomerLead ? id : (isFollowUpQuery ? (record.customerId || record.id) : pitchCustomerId);
+            let finalDealerId = isDealer ? id : '';
             let finalCustomerName = '';
 
-            if (isCustomerLead || isFollowUpQuery) {
+            if (isCustomerLead || isFollowUpQuery || isDealer) {
               const matchedRecord = isCustomerLead ? record : ((moduleData.customers || []).find(c => c.id === finalCustomerId) || (moduleData.leads || []).find(l => l.id === finalCustomerId));
               finalCustomerName = matchedRecord ? (matchedRecord.name || matchedRecord.person_name) : finalCustomerId;
               if (pitchPropertyId === 'Other_Property') {
-                let finalDealerId = nestedPropertyData.dealerId;
-                if (nestedPropertyData.dealer_owner_booked === 'Dealer' && nestedPropertyData.dealerId === 'Other_Dealer') {
+                let finalDealerIdVal = isDealer ? id : nestedPropertyData.dealerId;
+                if (!isDealer && nestedPropertyData.dealer_owner_booked === 'Dealer' && nestedPropertyData.dealerId === 'Other_Dealer') {
                   const dealerRes = await createRecord('dealers', {
                     ...nestedDealerData
                   });
                   if (dealerRes.success) {
-                    finalDealerId = dealerRes.data.id;
+                    finalDealerIdVal = dealerRes.data.id;
                   } else {
                     return alert(dealerRes.message || "Failed to auto-create property dealer");
                   }
                 }
                 const propRes = await createRecord('properties', {
                   ...nestedPropertyData,
-                  dealerId: finalDealerId,
+                  dealerId: finalDealerIdVal,
                   date: new Date().toLocaleDateString('en-IN')
                 });
                 if (propRes.success) {
@@ -3293,6 +3442,9 @@ const EntityDetail = () => {
                   return alert(projRes.message || "Failed to auto-create project");
                 }
               }
+              if (isDealer && !finalCustomerId) {
+                return alert("Please select a customer or lead to log the pitch against.");
+              }
             } else {
               const selectedCust = (moduleData.customers || []).find(c => c.id === pitchCustomerId) || (moduleData.leads || []).find(l => l.id === pitchCustomerId);
               finalCustomerName = selectedCust ? (selectedCust.name || selectedCust.person_name) : pitchCustomerId;
@@ -3305,6 +3457,7 @@ const EntityDetail = () => {
               customerId: finalCustomerId,
               customerName: finalCustomerName,
               propertyId: finalPropId,
+              dealerId: finalDealerId,
               employeeId: pitchEmployeeId,
               employeeName: (moduleData.employees || []).find(e => e.id === pitchEmployeeId)?.name || pitchEmployeeId,
               pitchMethod,

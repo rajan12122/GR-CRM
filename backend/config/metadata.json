@@ -2068,6 +2068,15 @@
           "required": false,
           "showInTable": true,
           "editable": true
+        },
+        {
+          "name": "dealerId",
+          "label": "Associated Dealer",
+          "type": "ref",
+          "refModule": "dealers",
+          "required": false,
+          "showInTable": true,
+          "editable": true
         }
       ]
     },

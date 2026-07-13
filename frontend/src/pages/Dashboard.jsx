@@ -904,7 +904,10 @@ const Dashboard = () => {
         </Grid>
 
         <Grid item xs={12} md={4}>
-          <Card sx={{ height: '380px', display: 'flex', flexDirection: 'column', p: 1 }}>
+          <Card 
+            onClick={() => navigate('/module/properties')}
+            sx={{ height: '380px', display: 'flex', flexDirection: 'column', p: 1, cursor: 'pointer', '&:hover': { boxShadow: '0 4px 20px rgba(0,0,0,0.08)' } }}
+          >
             <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 2, fontFamily: 'Poppins' }}>
                 Property Pipeline Status
@@ -951,7 +954,10 @@ const Dashboard = () => {
         
         {/* Today's Agenda Checklist */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
+          <Card 
+            onClick={() => navigate('/module/follow_ups')}
+            sx={{ height: '400px', display: 'flex', flexDirection: 'column', cursor: 'pointer', '&:hover': { boxShadow: '0 4px 20px rgba(0,0,0,0.08)' } }}
+          >
             <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', fontFamily: 'Poppins' }}>
@@ -996,7 +1002,10 @@ const Dashboard = () => {
 
         {/* Site Visits */}
         <Grid item xs={12} md={4}>
-          <Card sx={{ height: '400px', display: 'flex', flexDirection: 'column' }}>
+          <Card 
+            onClick={() => navigate('/module/site_visits')}
+            sx={{ height: '400px', display: 'flex', flexDirection: 'column', cursor: 'pointer', '&:hover': { boxShadow: '0 4px 20px rgba(0,0,0,0.08)' } }}
+          >
             <CardContent sx={{ p: 3, display: 'flex', flexDirection: 'column', height: '100%' }}>
               <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                 <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', fontFamily: 'Poppins' }}>
@@ -1014,13 +1023,14 @@ const Dashboard = () => {
                 ) : (
                   <List disablePadding>
                     {siteVisits.slice(0, 5).map(sv => {
-                      const client = customers.find(c => c.id === sv.customerId) || { name: sv.customerId };
-                      const prop = properties.find(p => p.id === sv.propertyId) || { name: sv.propertyId };
+                      const client = customers.find(c => c.id === sv.customerId) || leads.find(l => l.id === sv.customerId) || { name: sv.customerId };
+                      const prop = properties.find(p => p.id === sv.propertyId);
+                      const propDesc = prop ? `${prop.locality || ''} ${prop.sector_block ? `Sector ${prop.sector_block}` : ''} (${prop.id})`.trim() : sv.propertyId;
                       return (
                         <ListItem key={sv.id} disablePadding sx={{ py: 1.5, borderBottom: '1px solid #F1F5F9' }}>
                           <ListItemText 
                             primary={client.name}
-                            secondary={`Property: ${prop.name} • Visit Date: ${sv.date}`}
+                            secondary={`Property: ${propDesc} • Visit Date: ${sv.date}`}
                             primaryTypographyProps={{ fontWeight: 600, fontSize: '14px' }}
                             secondaryTypographyProps={{ fontSize: '12px' }}
                           />

@@ -1220,6 +1220,25 @@ const Attendance = () => {
 
                   return myMonthLogs.map(log => {
                     const finalKm = Math.max(0, (Number(log.odometerEnd) || 0) - (Number(log.odometerStart) || 0) - (Number(log.personalUseKm) || 0));
+                    const workHours = log.inTime && log.outTime ? getShiftHours(log.inTime, log.outTime) : 0;
+                    let displayStatus = log.status;
+                    if (log.status !== 'Absent' && log.status !== 'Leave' && log.status !== '--') {
+                      const dayName = new Date(log.date).toLocaleDateString('en-IN', { weekday: 'short' });
+                      if (dayName === 'Sun' || log.status === 'Extra Day') {
+                        if (workHours > 0 && workHours < 7) {
+                          displayStatus = 'Half Extra Day';
+                        } else {
+                          displayStatus = 'Extra Day';
+                        }
+                      } else {
+                        if (workHours > 0 && workHours < 7) {
+                          displayStatus = 'Half Day';
+                        } else {
+                          displayStatus = 'Present';
+                        }
+                      }
+                    }
+
                     return (
                       <TableRow key={log.id} hover>
                         <TableCell sx={{ fontWeight: 600 }}>{log.date}</TableCell>
@@ -1255,11 +1274,11 @@ const Attendance = () => {
                         </TableCell>
                         <TableCell>
                           <Chip 
-                            label={log.status} 
+                            label={displayStatus} 
                             size="small" 
                             sx={{ 
-                              backgroundColor: log.status === 'Present' ? 'rgba(34,197,94,0.1)' : log.status === 'Late' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
-                              color: log.status === 'Present' ? '#22C55E' : log.status === 'Late' ? '#F59E0B' : '#EF4444',
+                              backgroundColor: displayStatus === 'Present' || displayStatus === 'Extra Day' ? 'rgba(34,197,94,0.1)' : displayStatus === 'Half Day' || displayStatus === 'Half Extra Day' || displayStatus === 'Late' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                              color: displayStatus === 'Present' || displayStatus === 'Extra Day' ? '#22C55E' : displayStatus === 'Half Day' || displayStatus === 'Half Extra Day' || displayStatus === 'Late' ? '#F59E0B' : '#EF4444',
                               fontWeight: 700,
                               fontSize: '10px'
                             }} 

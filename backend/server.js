@@ -955,8 +955,21 @@ app.get('/api/data/:module', authenticateToken, (req, res, next) => {
   const { role } = req.user;
   const db = readDb();
   let records = db[module] || [];
-  if (module === 'salaries' && role !== 'Admin' && role !== 'Manager') {
-    records = records.filter(r => String(r.employeeId) === String(req.user.id));
+  
+  if (role !== 'Admin') {
+    if (module === 'leads') {
+      records = records.filter(r => String(r.assignedEmployeeId) === String(req.user.id));
+    } else if (module === 'follow_ups') {
+      records = records.filter(r => String(r.employeeId) === String(req.user.id));
+    } else if (module === 'queries') {
+      records = records.filter(r => String(r.assignedEmployeeId) === String(req.user.id));
+    } else if (module === 'property_pitch_history') {
+      records = records.filter(r => String(r.employeeId) === String(req.user.id));
+    } else if (module === 'site_visits') {
+      records = records.filter(r => String(r.employeeId) === String(req.user.id));
+    } else if (module === 'salaries') {
+      records = records.filter(r => String(r.employeeId) === String(req.user.id));
+    }
   }
   
   // Apply field-level filtering for non-Admin roles
@@ -1394,6 +1407,19 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
 
   db[module].splice(index, 1);
+
+  // Automatically delete all linked child records if a lead or customer is deleted
+  if (module === 'leads' || module === 'customers') {
+    db.follow_ups = (db.follow_ups || []).filter(f => String(f.customerId) !== String(id));
+    db.queries = (db.queries || []).filter(q => String(q.customerId) !== String(id));
+    db.site_visits = (db.site_visits || []).filter(s => String(s.customerId) !== String(id));
+    db.property_pitch_history = (db.property_pitch_history || []).filter(p => String(p.customerId) !== String(id));
+    
+    try { syncToSheets('follow_ups'); } catch(e) {}
+    try { syncToSheets('queries'); } catch(e) {}
+    try { syncToSheets('site_visits'); } catch(e) {}
+    try { syncToSheets('property_pitch_history'); } catch(e) {}
+  }
 
   // Auto-shift sequential IDs to close the gap and update references globally
   const prefixMap = {

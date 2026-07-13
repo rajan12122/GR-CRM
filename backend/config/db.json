@@ -24,7 +24,7 @@
       "joinDate": "2026-05-18",
       "salary": 20000,
       "dutyHours": 8,
-      "holidaysAllotted": 1,
+      "holidaysAllotted": 0,
       "password": "rajan1212"
     },
     {
@@ -134,52 +134,6 @@
       "pitchedPropertyId": "",
       "pitchPrice": "",
       "pitchRemarks": ""
-    },
-    {
-      "id": "LEAD-005",
-      "name": "Dynamic Stage Test Lead",
-      "email": "dynamicstage@test.com",
-      "phone": 9988423012,
-      "source": "",
-      "status": "Negotiation",
-      "assignedEmployeeId": "EMP-003",
-      "preferredEmployees": "",
-      "enableRotation": "",
-      "budget": "",
-      "r_c_i": "",
-      "propertyType": "",
-      "locality": "",
-      "sector_block": "",
-      "leadType": "Buyer",
-      "demand": "",
-      "size": "",
-      "dateAdded": "2026-07-12",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": ""
-    },
-    {
-      "id": "LEAD-006",
-      "name": "Dynamic Stage Test Lead",
-      "email": "dynamicstage@test.com",
-      "phone": 9988859591,
-      "source": "",
-      "status": "New Lead",
-      "assignedEmployeeId": "EMP-003",
-      "preferredEmployees": "",
-      "enableRotation": "",
-      "budget": "",
-      "r_c_i": "",
-      "propertyType": "",
-      "locality": "",
-      "sector_block": "",
-      "leadType": "Buyer",
-      "demand": "",
-      "size": "",
-      "dateAdded": "2026-07-12",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": ""
     }
   ],
   "properties": [
@@ -206,7 +160,7 @@
       "facing": "",
       "white": "50 %",
       "time": "15-20 days",
-      "demand": "1.40 Cr",
+      "demand": "1.47 Cr",
       "lead_source": "Whatsapp",
       "initial_notes": "Direct Deal"
     },
@@ -1324,6 +1278,19 @@
       "pitchPrice": "",
       "pitchRemarks": "",
       "pipelineAction": "Negotiation"
+    },
+    {
+      "id": "FOLLOW-004",
+      "customerId": "LEAD-001",
+      "queryId": "",
+      "employeeId": "EMP-001",
+      "date": "13/7/2026",
+      "time": "02:30 PM",
+      "status": "Call Done",
+      "pitchedPropertyId": "PROP-002",
+      "pitchPrice": "",
+      "pitchRemarks": "",
+      "pipelineAction": "Site Visit"
     }
   ],
   "attendance": [
@@ -1869,6 +1836,42 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783928052650",
+      "employeeName": "Gagan Chopra",
+      "action": "Deleted record LEAD-TST-1783928052546 in leads",
+      "dateTime": "13/7/2026, 1:04:12 pm"
+    },
+    {
+      "id": "LOG-1783928052608",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record FOLLOW-TST-1783928052568 in follow_ups",
+      "dateTime": "13/7/2026, 1:04:12 pm"
+    },
+    {
+      "id": "LOG-1783928052560",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-TST-1783928052546 in leads",
+      "dateTime": "13/7/2026, 1:04:12 pm"
+    },
+    {
+      "id": "LOG-1783928019695",
+      "employeeName": "Gagan Chopra",
+      "action": "Deleted record LEAD-TST-1783928019492 in leads",
+      "dateTime": "13/7/2026, 1:03:39 pm"
+    },
+    {
+      "id": "LOG-1783928019652",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record FOLLOW-TST-1783928019614 in follow_ups",
+      "dateTime": "13/7/2026, 1:03:39 pm"
+    },
+    {
+      "id": "LOG-1783928019511",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-TST-1783928019492 in leads",
+      "dateTime": "13/7/2026, 1:03:39 pm"
+    },
     {
       "id": "LOG-1783926236256",
       "employeeName": "Gagan Chopra",
@@ -3050,19 +3053,6 @@
       "interestLevel": "Interested",
       "followUpDate": "",
       "remarks": "Kanban board test pitch"
-    },
-    {
-      "id": "PITCH-003",
-      "customerId": "LEAD-001",
-      "customerName": "Amit Pathak",
-      "propertyId": "PROP-002",
-      "employeeId": "EMP-001",
-      "employeeName": "Gagan Chopra",
-      "pitchMethod": "Call",
-      "interestLevel": "Interested",
-      "quotedPrice": 0,
-      "remarks": "Automatically logged from lead/follow-up entry.",
-      "pitchDate": "13/7/2026"
     }
   ],
   "project_history": [

@@ -119,6 +119,7 @@ const Dashboard = () => {
   const dealerMeetings = moduleData.dealer_meetings || [];
   const dealerCalls = moduleData.dealer_calls || [];
   const documents = moduleData.documents || [];
+  const propertyPitches = moduleData.property_pitch_history || [];
 
   // Upgraded deals-driven revenue intelligence calculations
   const closedDeals = deals.filter(d => d.status === 'Closed');
@@ -148,6 +149,26 @@ const Dashboard = () => {
   
   // Today's site visits (ref date 2026-07-04 or 2026-07-08)
   const todaysVisitsCount = siteVisits.filter(sv => sv.date === '2026-07-04' || sv.date === '2026-07-08').length;
+
+  const pipelineChartData = useMemo(() => {
+    const stages = metadata?.configs?.customerStages || [
+      'Fresh Lead / Scheduled',
+      'Contacted',
+      'Interested / Nurture',
+      'Site Visit Arranged',
+      'Under Negotiation',
+      'Property Booked',
+      'Deal Closed',
+      'Lost Lead'
+    ];
+    return stages.map(stage => {
+      const count = followUps.filter(f => f.pipelineAction === stage || f.status === stage).length;
+      return {
+        name: stage,
+        "Active Deals": count
+      };
+    });
+  }, [followUps, metadata]);
 
   // Outreach Leaderboard Map
   const leaderboardMap = {};
@@ -754,29 +775,22 @@ const Dashboard = () => {
 
       </Grid>
 
-      {/* Graphs/Analytics Row */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
           <Card sx={{ height: '380px', display: 'flex', flexDirection: 'column', p: 1 }}>
             <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 2, fontFamily: 'Poppins' }}>
-                Sales Bookings Overview (INR Lacs)
+                Lead & Query Nurturing Pipelines (Active Follow-ups)
               </Typography>
               <Box sx={{ flex: 1, minHeight: 0 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={salesChartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2}/>
-                        <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
+                  <BarChart data={pipelineChartData} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={12} />
-                    <YAxis stroke="#94A3B8" fontSize={12} />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="Sales" stroke="#2563EB" strokeWidth={2.5} fillOpacity={1} fill="url(#colorSales)" />
-                  </AreaChart>
+                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} interval={0} tickFormatter={(value) => value.split(' / ')[0]} />
+                    <YAxis stroke="#94A3B8" fontSize={12} allowDecimals={false} />
+                    <Tooltip cursor={{ fill: 'rgba(37, 99, 235, 0.04)' }} />
+                    <Bar dataKey="Active Deals" fill="#2563EB" radius={[4, 4, 0, 0]} barSize={35} />
+                  </BarChart>
                 </ResponsiveContainer>
               </Box>
             </CardContent>
@@ -955,32 +969,32 @@ const Dashboard = () => {
           <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', height: '100%' }}>
             <CardContent sx={{ p: 3 }}>
               <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Icons.HelpCircle size={20} style={{ color: '#2563EB' }} />
-                ERP Query Pipelines & Leads
+                <Icons.PhoneCall size={20} style={{ color: '#2563EB' }} />
+                CRM Activity & Outreach Overview
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
                   <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>TODAY'S NEW LEADS</Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#0F172A', mt: 0.5 }}>{todayLeadsCount}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>DEALER CALLS LOGGED</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#2563EB', mt: 0.5 }}>{dealerCalls.length}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6}>
                   <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>PENDING DOCS VERIFICATION</Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#EF4444', mt: 0.5 }}>{pendingDocsCount}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>DEALER MEETINGS</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#F59E0B', mt: 0.5 }}>{dealerMeetings.length}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6}>
                   <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>BUYERS WAITING (QUERIES)</Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#2563EB', mt: 0.5 }}>{activeBuyerQueries}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>SITE VISITS ARRANGED</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#16A34A', mt: 0.5 }}>{siteVisits.length}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6}>
                   <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
-                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>SELLERS WAITING (QUERIES)</Typography>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#16A34A', mt: 0.5 }}>{activeSellerQueries}</Typography>
+                    <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>PROPERTY PITCHES</Typography>
+                    <Typography variant="h4" sx={{ fontWeight: 800, color: '#8B5CF6', mt: 0.5 }}>{propertyPitches.length}</Typography>
                   </Paper>
                 </Grid>
               </Grid>

@@ -28,6 +28,7 @@ const PublicIntake = () => {
   const [size, setSize] = useState('');
   const [plc, setPlc] = useState('');
   const [budget, setBudget] = useState('');
+  const [queryType, setQueryType] = useState('Buy Property');
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -59,7 +60,8 @@ const PublicIntake = () => {
         optionType,
         size,
         plc,
-        budget
+        budget,
+        queryType
       });
 
       if (res.data.success) {
@@ -107,6 +109,7 @@ const PublicIntake = () => {
                 setSize('');
                 setPlc('');
                 setBudget('');
+                setQueryType('Buy Property');
                 setSuccess(false);
               }}
               sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' }, borderRadius: '12px', py: 1.5, textTransform: 'none', fontWeight: 700 }}
@@ -168,6 +171,20 @@ const PublicIntake = () => {
                   fullWidth
                   required
                 />
+              </Grid>
+              
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>Query Type (Requirement)</InputLabel>
+                  <Select
+                    value={queryType}
+                    label="Query Type (Requirement)"
+                    onChange={(e) => setQueryType(e.target.value)}
+                  >
+                    <MenuItem value="Buy Property">Buy Property (Looking to Purchase)</MenuItem>
+                    <MenuItem value="Sell Property">Sell Property (Looking to List/Sell)</MenuItem>
+                  </Select>
+                </FormControl>
               </Grid>
               
               <Grid item xs={12} sm={6}>

@@ -2225,7 +2225,7 @@ app.get('/api/public/lookup/:module', (req, res) => {
 
 // Public Customer Intake Form Submission
 app.post('/api/public/lead-intake', (req, res) => {
-  const { name, phone, locality, sector, propertyType, optionType, size, plc, budget } = req.body;
+  const { name, phone, locality, sector, propertyType, optionType, size, plc, budget, queryType = 'Buy Property' } = req.body;
   const db = readDb();
   
   if (!db.leads) db.leads = [];
@@ -2244,7 +2244,7 @@ app.post('/api/public/lead-intake', (req, res) => {
       assignedEmployeeId: existingCust ? (existingCust.assignedEmployeeId || 'EMP-001') : (existingLead.assignedEmployeeId || 'EMP-001'),
       date: new Date().toLocaleDateString('en-IN'),
       status: 'Pending Approval',
-      queryType: 'Buy Property',
+      queryType: queryType,
       stage: 'New Query',
       budget: budget || '',
       demand: '',
@@ -2281,7 +2281,7 @@ app.post('/api/public/lead-intake', (req, res) => {
     return res.json({ success: true, message: "Welcome back! Your new requirements query has been registered under your profile.", query: newQuery });
   }
 
-  // Find max number among existing IDs starting with LEAD prefix
+  // Else, create a new Lead
   const existingIds = (db.leads || []).map(r => r.id).filter(id => id && String(id).startsWith('LEAD'));
   let maxNum = 0;
   existingIds.forEach(id => {
@@ -2291,30 +2291,70 @@ app.post('/api/public/lead-intake', (req, res) => {
       maxNum = num;
     }
   });
+  
   const nextNum = maxNum > 0 ? maxNum + 1 : (db.leads || []).length + 1;
   const leadId = `LEAD-${String(nextNum).padStart(3, '0')}`;
-
+  
   const newLead = {
     id: leadId,
     name,
-    phone,
-    email: "",
-    source: "Self-Service QR",
-    status: "New",
-    assignedEmployeeId: "",
-    enableRotation: true,
-    budget: budget,
-    r_c_i: propertyType,
-    propertyType: optionType,
+    phone: cleanPhone,
     locality,
     sector_block: sector,
-    requirements: `Intake Demand - Property Option: ${optionType}, Size: ${size}, Preferred PLC: ${plc}`,
+    propertyType: optionType,
+    r_c_i: propertyType,
+    size,
+    budget,
+    status: 'Open',
+    leadType: queryType === 'Sell Property' ? 'Seller' : 'Buyer',
+    assignedEmployeeId: 'EMP-001',
     dateAdded: new Date().toISOString().split('T')[0]
   };
-
+  
   db.leads.push(newLead);
+  try { syncToSheets('leads'); } catch(e) {}
+
+  // Automatically create a Query for the new lead
+  const queryId = `QRY-${String((db.queries || []).length + 1).padStart(3, '0')}`;
+  const newQuery = {
+    id: queryId,
+    customerId: leadId,
+    assignedEmployeeId: 'EMP-001',
+    date: new Date().toLocaleDateString('en-IN'),
+    status: 'Pending Approval',
+    queryType: queryType,
+    stage: 'New Query',
+    budget: budget || '',
+    demand: '',
+    r_c_i: propertyType || '',
+    propertyType: optionType || '',
+    locality: locality || '',
+    sector_block: sector || '',
+    size: size || '',
+    remarks: `Auto-created query from public requirement form. PLC preferred: ${plc || 'None'}`
+  };
+  if (!db.queries) db.queries = [];
+  db.queries.push(newQuery);
+  try { syncToSheets('queries'); } catch(e) {}
+
+  // Automatically schedule follow-up
+  db.follow_ups = db.follow_ups || [];
+  const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
+  const newFollowUp = {
+    id: followUpId,
+    customerId: leadId,
+    queryId: queryId,
+    employeeId: 'EMP-001',
+    date: new Date().toLocaleDateString('en-IN'),
+    time: '12:00 PM',
+    status: 'Pending Call',
+    remarks: `Auto-scheduled follow up for requirement form Lead/Query ${queryId}.`
+  };
+  db.follow_ups.push(newFollowUp);
+  try { syncToSheets('follow_ups'); } catch(e) {}
+
   writeDb(db);
-  res.json({ success: true, lead: newLead });
+  res.json({ success: true, lead: newLead, query: newQuery });
 });
 
 // Public Employee Quick-Add Intake Portal Form Submission
@@ -2429,6 +2469,11 @@ app.post('/api/public/quick-add', (req, res) => {
   }
 
   db[module].push(payload);
+  if (module === 'follow_ups') {
+    handleFollowUpPipelineAction(payload, db, req);
+  } else if (module === 'queries') {
+    handleQueryStageChange(payload, db, req);
+  }
   writeDb(db);
   syncToSheets(module);
   

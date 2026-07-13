@@ -325,10 +325,28 @@ const Dashboard = () => {
                 Daily Price List
               </MenuItem>
             )}
-            {hasPermission('dealers', 'create') && (
+             {hasPermission('dealers', 'create') && (
               <MenuItem onClick={() => handleAddOption('dealers')}>
                 <Icons.Building size={16} style={{ marginRight: 8, color: '#64748B' }} />
                 Property Dealer
+              </MenuItem>
+            )}
+            {hasPermission('queries', 'create') && (
+              <MenuItem onClick={() => handleAddOption('queries')}>
+                <Icons.HelpCircle size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Query
+              </MenuItem>
+            )}
+            {hasPermission('follow_ups', 'create') && (
+              <MenuItem onClick={() => handleAddOption('follow_ups')}>
+                <Icons.PhoneCall size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Follow Up
+              </MenuItem>
+            )}
+            {hasPermission('property_pitch_history', 'create') && (
+              <MenuItem onClick={() => handleAddOption('property_pitch_history')}>
+                <Icons.Target size={16} style={{ marginRight: 8, color: '#64748B' }} />
+                Property Pitch
               </MenuItem>
             )}
           </Menu>

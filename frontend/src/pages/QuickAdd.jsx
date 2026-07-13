@@ -80,7 +80,7 @@ const QuickAdd = () => {
     );
   }
 
-  const allowedModuleIds = ['customers', 'leads', 'properties', 'projects', 'daily_prices', 'dealers', 'queries'];
+  const allowedModuleIds = ['customers', 'leads', 'properties', 'projects', 'daily_prices', 'dealers', 'queries', 'follow_ups', 'property_pitch_history'];
   const modulesList = metadata 
     ? Object.values(metadata.modules).filter(m => allowedModuleIds.includes(m.id)) 
     : [];
@@ -248,13 +248,16 @@ const QuickAdd = () => {
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
                               }}
                             >
-                              {metadata.chips[f.chipGroup].map(choice => {
-                                const choiceVal = typeof choice === 'object' ? choice.value : choice;
-                                const choiceLabel = typeof choice === 'object' ? choice.label : choice;
-                                return (
-                                  <MenuItem key={choiceVal} value={choiceVal}>{choiceLabel}</MenuItem>
-                                );
-                              })}
+                               {((f.name === 'pipelineAction' && selectedModule === 'follow_ups')
+                                 ? (metadata?.chips?.customerStages || [])
+                                 : metadata.chips[f.chipGroup]
+                               ).map(choice => {
+                                 const choiceVal = typeof choice === 'object' ? choice.value : choice;
+                                 const choiceLabel = typeof choice === 'object' ? choice.label : choice;
+                                 return (
+                                   <MenuItem key={choiceVal} value={choiceVal}>{choiceLabel}</MenuItem>
+                                 );
+                               })}
                               <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
                                 Other (Specify...)
                               </MenuItem>

@@ -180,6 +180,21 @@
       "pitchedPropertyId": "",
       "pitchPrice": "",
       "pitchRemarks": ""
+    },
+    {
+      "id": "LEAD-007",
+      "name": "Public Scanner Test Lead",
+      "phone": "9977531544",
+      "locality": "Aerocity",
+      "sector_block": "Sector 82",
+      "propertyType": "Kothi",
+      "r_c_i": "Residential",
+      "size": "250 Sq Yd",
+      "budget": "1.5 Crore",
+      "status": "Open",
+      "leadType": "Buyer",
+      "assignedEmployeeId": "EMP-001",
+      "dateAdded": "2026-07-13"
     }
   ],
   "properties": [
@@ -1324,6 +1339,16 @@
       "pitchPrice": "",
       "pitchRemarks": "",
       "pipelineAction": "Negotiation"
+    },
+    {
+      "id": "FOLLOW-004",
+      "customerId": "LEAD-007",
+      "queryId": "QRY-002",
+      "employeeId": "EMP-001",
+      "date": "13/7/2026",
+      "time": "12:00 PM",
+      "status": "Pending Call",
+      "remarks": "Auto-scheduled follow up for requirement form Lead/Query QRY-002."
     }
   ],
   "attendance": [
@@ -3036,7 +3061,37 @@
     }
   ],
   "active_paths": {},
-  "queries": [],
+  "queries": [
+    {
+      "customerId": "LEAD-004",
+      "assignedEmployeeId": "EMP-001",
+      "date": "13/7/2026",
+      "status": "Pending Approval",
+      "queryType": "Buy Property",
+      "stage": "New Query",
+      "budget": "50 Lakhs",
+      "locality": "Sector 82",
+      "remarks": "Quick added query via scan test.",
+      "id": "QRY-001"
+    },
+    {
+      "id": "QRY-002",
+      "customerId": "LEAD-007",
+      "assignedEmployeeId": "EMP-001",
+      "date": "13/7/2026",
+      "status": "Pending Approval",
+      "queryType": "Buy Property",
+      "stage": "New Query",
+      "budget": "1.5 Crore",
+      "demand": "",
+      "r_c_i": "Residential",
+      "propertyType": "Kothi",
+      "locality": "Aerocity",
+      "sector_block": "Sector 82",
+      "size": "250 Sq Yd",
+      "remarks": "Auto-created query from public requirement form. PLC preferred: Corner"
+    }
+  ],
   "notices": [],
   "deals": [
     {

@@ -75,6 +75,33 @@ const MainLayout = () => {
     requestLocationPermissionOnStartup();
   }, []);
 
+  // Handle Android hardware back button for native mobile app
+  React.useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+
+    let activeListener;
+    const setupBackButton = async () => {
+      const { App: CapApp } = await import('@capacitor/app');
+      activeListener = await CapApp.addListener('backButton', () => {
+        // If we are at the dashboard home page, exit the app
+        if (window.location.pathname === '/' || window.location.pathname === '') {
+          CapApp.exitApp();
+        } else {
+          // Go back in the React Router / browser history stack
+          window.history.back();
+        }
+      });
+    };
+
+    setupBackButton();
+
+    return () => {
+      if (activeListener) {
+        activeListener.then(l => l.remove()).catch(() => {});
+      }
+    };
+  }, []);
+
   // Keyboard shortcut listener for Global Search (⌘K / Ctrl+K)
   React.useEffect(() => {
     const handleKeyDown = (e) => {

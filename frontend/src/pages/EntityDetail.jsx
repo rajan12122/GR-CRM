@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Box, 
@@ -71,7 +71,14 @@ const EntityDetail = () => {
   const [record, setRecord] = useState(null);
   const [connections, setConnections] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = parseInt(searchParams.get('tab') || '0', 10);
+  const setActiveTab = (val) => {
+    setSearchParams(prev => {
+      prev.set('tab', String(val));
+      return prev;
+    });
+  };
   
   // Custom dialogs & form states for ERP features
   const [queryDialogOpen, setQueryDialogOpen] = useState(false);
@@ -439,7 +446,10 @@ const EntityDetail = () => {
 
   // Reset tab to 0 on route change
   useEffect(() => {
-    setActiveTab(0);
+    setSearchParams(prev => {
+      prev.delete('tab');
+      return prev;
+    }, { replace: true });
   }, [moduleName, id]);
 
   useEffect(() => {

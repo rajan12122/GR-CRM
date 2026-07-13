@@ -1060,6 +1060,15 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     if (f.name === 'date' && !payload[f.name]) {
       payload[f.name] = new Date().toLocaleDateString('en-IN');
     }
+    if (f.name === 'pipelineAction' && !payload[f.name] && module === 'follow_ups') {
+      payload[f.name] = 'Fresh Lead';
+    }
+    if (f.name === 'stage' && !payload[f.name] && module === 'queries') {
+      payload[f.name] = 'New Query';
+    }
+    if (f.name === 'status' && !payload[f.name] && module === 'property_pitch_history') {
+      payload[f.name] = 'Pitched';
+    }
   });
 
   // Enforce unique phone number / Master Customer record duplicate prevention
@@ -1102,6 +1111,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
         date: new Date().toLocaleDateString('en-IN'),
         time: '12:00 PM',
         status: 'Pending Call',
+        pipelineAction: 'Fresh Lead',
         remarks: `Auto-scheduled follow up for auto-created duplicate check Query ${queryId}.`
       };
       db.follow_ups.push(newFollowUp);
@@ -1172,6 +1182,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       date: new Date().toLocaleDateString('en-IN'),
       time: '12:00 PM',
       status: 'Pending Call',
+      pipelineAction: 'Fresh Lead',
       remarks: `Auto-scheduled follow up for new Query ${payload.id}: ${payload.remarks || 'No notes'}`
     };
     db.follow_ups.push(newFollowUp);
@@ -2405,6 +2416,7 @@ app.post('/api/public/lead-intake', (req, res) => {
       date: new Date().toLocaleDateString('en-IN'),
       time: '12:00 PM',
       status: 'Pending Call',
+      pipelineAction: 'Fresh Lead',
       remarks: `Auto-scheduled follow up for requirements form Query ${queryId}.`
     };
     db.follow_ups.push(newFollowUp);
@@ -2483,6 +2495,7 @@ app.post('/api/public/lead-intake', (req, res) => {
     date: new Date().toLocaleDateString('en-IN'),
     time: '12:00 PM',
     status: 'Pending Call',
+    pipelineAction: 'Fresh Lead',
     remarks: `Auto-scheduled follow up for requirement form Lead/Query ${queryId}.`
   };
   db.follow_ups.push(newFollowUp);
@@ -2582,6 +2595,7 @@ app.post('/api/public/quick-add', (req, res) => {
         date: new Date().toLocaleDateString('en-IN'),
         time: '12:00 PM',
         status: 'Pending Call',
+        pipelineAction: 'Fresh Lead',
         remarks: `Auto-scheduled follow up for Quick-Add Query ${queryId}.`
       };
       db.follow_ups.push(newFollowUp);
@@ -2682,6 +2696,7 @@ function createFollowUpForLead(lead, db) {
       date: new Date().toLocaleDateString('en-IN'),
       time: '12:00 PM',
       status: 'Pending Call',
+      pipelineAction: 'Fresh Lead',
       remarks: `Auto-scheduled follow up for accepted Lead ${lead.id}: ${lead.remarks || 'No notes'}`
     };
     db.follow_ups.push(newFollowUp);

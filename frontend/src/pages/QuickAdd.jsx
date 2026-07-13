@@ -308,7 +308,7 @@ const QuickAdd = () => {
                               renderValue={(selected) => (
                                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                                   {selected.map((itemVal) => {
-                                    const opt = lookups[f.refModule].find(o => String(o.id) === String(itemVal));
+                                    const opt = (lookups[f.refModule] || []).find(o => String(o.id) === String(itemVal));
                                     return (
                                       <Chip 
                                         key={itemVal} 

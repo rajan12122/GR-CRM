@@ -156,6 +156,7 @@ const MainLayout = () => {
           <PullToRefresh>
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/quick-add" element={<QuickAdd />} />
               <Route path="/module/attendance" element={<ModuleRouteGuard element={<Attendance />} moduleName="attendance" />} />
               <Route path="/module/salary" element={<ModuleRouteGuard element={<Salary />} moduleName="salaries" />} />
               <Route path="/module/location_tracker" element={<ModuleRouteGuard element={<LocationTracker />} moduleName="location_tracker" />} />

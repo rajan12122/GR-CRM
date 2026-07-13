@@ -1188,7 +1188,7 @@ const Attendance = () => {
           </Typography>
           <Divider sx={{ mb: 2.5 }} />
 
-          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '12px', overflow: 'hidden' }}>
+          <TableContainer component={Paper} variant="outlined" sx={{ borderRadius: '12px', overflowX: 'auto' }}>
             <Table size="small">
               <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
                 <TableRow>

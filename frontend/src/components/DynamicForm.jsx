@@ -33,6 +33,8 @@ const DynamicForm = ({
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [customValues, setCustomValues] = useState({});
+  const [propSearch, setPropSearch] = useState('');
+  const [dealerSearch, setDealerSearch] = useState('');
 
   // Inline creation states for property / project pitches
   const [nestedDealerData, setNestedDealerData] = useState({});
@@ -74,6 +76,8 @@ const DynamicForm = ({
   // Trigger references fetches on form open
   useEffect(() => {
     if (open) {
+      setPropSearch('');
+      setDealerSearch('');
       // Find all ref fields and load their databases
       fields.forEach(f => {
         if (f.type === 'ref' && f.refModule) {
@@ -451,15 +455,34 @@ const DynamicForm = ({
                                 onChange={(e) => handleChange('pitchedPropertyId', e.target.value)}
                                 label={pitchedItemType === 'Property' ? 'Select Property' : 'Select Project'}
                               >
+                                <Box sx={{ px: 2, py: 1 }}>
+                                  <TextField
+                                    size="small"
+                                    placeholder={pitchedItemType === 'Property' ? "Search properties..." : "Search projects..."}
+                                    fullWidth
+                                    value={propSearch}
+                                    onChange={(e) => setPropSearch(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                  />
+                                </Box>
                                 <MenuItem value="">-- None --</MenuItem>
                                 {pitchedItemType === 'Property' ? (
-                                  propertiesList.map(p => (
+                                  propertiesList.filter(p => {
+                                    if (!propSearch) return true;
+                                    const searchStr = `${p.locality} {p.sector_block ? \`Sector \${p.sector_block}\` : ''} \${p.id}`.toLowerCase();
+                                    return searchStr.includes(propSearch.toLowerCase());
+                                  }).map(p => (
                                     <MenuItem key={p.id} value={p.id}>
                                       {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
                                     </MenuItem>
                                   ))
                                 ) : (
-                                  projectsList.map(p => (
+                                  projectsList.filter(p => {
+                                    if (!propSearch) return true;
+                                    const searchStr = `${p.name} \${p.locality} \${p.id}`.toLowerCase();
+                                    return searchStr.includes(propSearch.toLowerCase());
+                                  }).map(p => (
                                     <MenuItem key={p.id} value={p.id}>
                                       {p.name} - {p.locality} ({p.id})
                                     </MenuItem>
@@ -730,7 +753,25 @@ const DynamicForm = ({
                         onChange={(e) => handleChange(f.name, e.target.value)}
                         disabled={isReadOnly}
                       >
-                        {options.map(opt => (
+                        {f.refModule === 'dealers' && (
+                          <Box sx={{ px: 2, py: 1 }}>
+                            <TextField
+                              size="small"
+                              placeholder="Search dealers..."
+                              fullWidth
+                              value={dealerSearch}
+                              onChange={(e) => setDealerSearch(e.target.value)}
+                              onClick={(e) => e.stopPropagation()}
+                              onKeyDown={(e) => e.stopPropagation()}
+                            />
+                          </Box>
+                        )}
+                        {options.filter(opt => {
+                          if (f.refModule !== 'dealers' || !dealerSearch) return true;
+                          const name = opt.name || opt.firm_name || opt.person_name || '';
+                          const searchStr = `${name} ${opt.id}`.toLowerCase();
+                          return searchStr.includes(dealerSearch.toLowerCase());
+                        }).map(opt => (
                           <MenuItem key={opt.id} value={opt.id}>
                             {opt.name ? `${opt.name} (${opt.id})` : opt.id}
                           </MenuItem>

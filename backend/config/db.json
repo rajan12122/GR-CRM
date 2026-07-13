@@ -193,7 +193,7 @@
       "budget": "1.5 Crore",
       "status": "Open",
       "leadType": "Buyer",
-      "assignedEmployeeId": "EMP-001",
+      "assignedEmployeeId": "EMP-003",
       "dateAdded": "2026-07-13"
     }
   ],
@@ -1878,6 +1878,15 @@
     },
     {
       "id": "REM-006"
+    },
+    {
+      "id": "REM-1783925611974-gfhj",
+      "targetModule": "leads",
+      "targetId": "LEAD-007",
+      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
+      "author": "System Rotation Engine",
+      "date": "13/7/2026",
+      "timestamp": "2026-07-13T06:53:31.990Z"
     }
   ],
   "documents": [
@@ -1894,6 +1903,11 @@
     }
   ],
   "activity_logs": [
+    {
+      "user": "System",
+      "action": "Auto-rotated Lead \"Public Scanner Test Lead\" to sakshi (inactivity)",
+      "timestamp": "2026-07-13T06:53:31.991Z"
+    },
     {
       "user": "System",
       "action": "Auto-rotated Lead \"Dynamic Stage Test Lead\" to sakshi (inactivity)",

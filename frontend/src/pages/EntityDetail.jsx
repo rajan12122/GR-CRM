@@ -96,6 +96,8 @@ const EntityDetail = () => {
   const [pitchRemarks, setPitchRemarks] = useState('');
   const [pitchWarning, setPitchWarning] = useState('');
   const [pitchItemType, setPitchItemType] = useState('Property');
+  const [propSearch, setPropSearch] = useState('');
+  const [dealerSearch, setDealerSearch] = useState('');
   const [nestedDealerData, setNestedDealerData] = useState({
     firm_name: '',
     address: '',
@@ -2849,15 +2851,34 @@ const EntityDetail = () => {
                         onChange={(e) => setPitchPropertyId(e.target.value)}
                         label={pitchItemType === 'Property' ? 'Select Property' : 'Select Project'}
                       >
+                        <Box sx={{ px: 2, py: 1 }}>
+                          <TextField
+                            size="small"
+                            placeholder={pitchItemType === 'Property' ? "Search properties..." : "Search projects..."}
+                            fullWidth
+                            value={propSearch}
+                            onChange={(e) => setPropSearch(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            onKeyDown={(e) => e.stopPropagation()}
+                          />
+                        </Box>
                         <MenuItem value="">-- None --</MenuItem>
                         {pitchItemType === 'Property' ? (
-                          (moduleData.properties || []).map(p => (
+                          (moduleData.properties || []).filter(p => {
+                            if (!propSearch) return true;
+                            const searchStr = `${p.locality} ${p.sector_block ? `Sector ${p.sector_block}` : ''} ${p.id}`.toLowerCase();
+                            return searchStr.includes(propSearch.toLowerCase());
+                          }).map(p => (
                             <MenuItem key={p.id} value={p.id}>
                               {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
                             </MenuItem>
                           ))
                         ) : (
-                          (moduleData.projects || []).map(p => (
+                          (moduleData.projects || []).filter(p => {
+                            if (!propSearch) return true;
+                            const searchStr = `${p.name} ${p.locality} ${p.id}`.toLowerCase();
+                            return searchStr.includes(propSearch.toLowerCase());
+                          }).map(p => (
                             <MenuItem key={p.id} value={p.id}>
                               {p.name} - {p.locality} ({p.id})
                             </MenuItem>
@@ -2909,8 +2930,24 @@ const EntityDetail = () => {
                                 onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
                                 label="Associated Dealer"
                               >
+                                <Box sx={{ px: 2, py: 1 }}>
+                                  <TextField
+                                    size="small"
+                                    placeholder="Search dealers..."
+                                    fullWidth
+                                    value={dealerSearch}
+                                    onChange={(e) => setDealerSearch(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                  />
+                                </Box>
                                 <MenuItem value="">-- Select --</MenuItem>
-                                {(moduleData.dealers || []).map(d => (
+                                {(moduleData.dealers || []).filter(d => {
+                                  if (!dealerSearch) return true;
+                                  const name = d.name || d.firm_name || d.person_name || '';
+                                  const searchStr = `${name} ${d.id}`.toLowerCase();
+                                  return searchStr.includes(dealerSearch.toLowerCase());
+                                }).map(d => (
                                   <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
                                 ))}
                                 <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>

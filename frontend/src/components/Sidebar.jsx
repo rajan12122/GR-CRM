@@ -56,27 +56,13 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
       <Box sx={{ overflowY: 'auto', flex: 1, '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { backgroundColor: '#334155', borderRadius: '4px' } }}>
         {/* Brand Header */}
-        <Box sx={{ p: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <Box sx={{ 
-            backgroundColor: '#2563EB', 
-            borderRadius: '8px', 
-            width: 36, 
-            height: 36, 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center',
-            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
-          }}>
-            <Typography variant="h6" sx={{ color: 'white', fontWeight: 800, fontFamily: 'Poppins' }}>G</Typography>
-          </Box>
-          <Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.2, color: '#FFFFFF', fontFamily: 'Poppins' }}>
-              Gagan Realtech
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#94A3B8', fontWeight: 500 }}>
-              Enterprise ERP + CRM
-            </Typography>
-          </Box>
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Box component="img" src="/logo.jpg" alt="Gagan Realtech Logo" sx={{ 
+            maxWidth: '100%', 
+            height: 55,
+            objectFit: 'contain',
+            borderRadius: '6px'
+          }} />
         </Box>
 
         <Divider sx={{ borderColor: '#1E293B', mb: 2 }} />

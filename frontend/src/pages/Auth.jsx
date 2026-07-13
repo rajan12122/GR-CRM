@@ -91,22 +91,12 @@ const Auth = () => {
           p: 6,
           color: '#FFFFFF'
         }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-            <Box sx={{ 
-              backgroundColor: '#2563EB', 
-              borderRadius: '8px', 
-              width: 40, 
-              height: 40, 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              boxShadow: '0 4px 12px rgba(37, 99, 235, 0.3)'
-            }}>
-              <Typography variant="h5" sx={{ color: 'white', fontWeight: 800 }}>G</Typography>
-            </Box>
-            <Typography variant="h4" sx={{ fontWeight: 800, fontSize: '24px', fontFamily: 'Poppins' }}>
-              Gagan Realtech
-            </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Box component="img" src="/logo.jpg" alt="Gagan Realtech Logo" sx={{ 
+              height: 70, 
+              objectFit: 'contain',
+              borderRadius: '8px'
+            }} />
           </Box>
 
           <Box my={4}>

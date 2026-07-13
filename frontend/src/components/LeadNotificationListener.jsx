@@ -37,25 +37,11 @@ const LeadNotificationListener = () => {
   const startRinging = (lead) => {
     setActiveLead(lead);
     setRingDialogOpen(true);
-    setTimeLeft(30);
     
     // Play telephone ring
     if (audioRef.current) {
       audioRef.current.play().catch(err => console.log("Audio play failed:", err));
     }
-
-    // Start 30 seconds countdown
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(timerRef.current);
-          handleDrop(lead.id); // Auto-drop when timer expires!
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
 
   const stopRinging = () => {
@@ -231,9 +217,6 @@ const LeadNotificationListener = () => {
           <Typography variant="body1" sx={{ color: '#94A3B8', fontWeight: 600 }}>
             {activeLead?.name || 'New Lead Intake'} ({activeLead?.id})
           </Typography>
-          <Alert severity="warning" icon={false} sx={{ width: '100%', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', border: '1px solid rgba(245, 158, 11, 0.2)', display: 'flex', justifyContent: 'center' }}>
-            Auto-dropping in: <strong>{timeLeft}s</strong>
-          </Alert>
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'center', gap: 2, mt: 1 }}>
           <Button 

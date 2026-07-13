@@ -2689,13 +2689,13 @@ const EntityDetail = () => {
                                     </TableCell>
                                     <TableCell sx={{ py: 0.2, fontSize: '9px', color: '#64748B' }}>{log.remarks}</TableCell>
                                   </TableRow>
-                                  {(log.odometerStart !== undefined || log.odometerEnd !== undefined) && (
+                                  {((log.odometerStart !== undefined && log.odometerStart !== "") || (log.odometerEnd !== undefined && log.odometerEnd !== "")) && (
                                     <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
                                       <TableCell colSpan={6} sx={{ py: 0.3, pl: 2, fontSize: '9px', color: '#475569' }}>
-                                        🏍️ Bike Odometer: Start: <strong>{log.odometerStart || 0} KM</strong>
-                                        {log.odometerEnd ? ` | End: ${log.odometerEnd} KM` : ''}
-                                        {log.personalUseKm ? ` | Personal Use: ${log.personalUseKm} KM` : ''}
-                                        {log.netKm !== undefined ? ` | Final Reading: ${log.netKm} KM` : ''}
+                                        🏍️ Bike Odometer: Start: <strong>{(log.odometerStart !== undefined && log.odometerStart !== "") ? `${log.odometerStart} KM` : '0 KM'}</strong>
+                                        {(log.odometerEnd !== undefined && log.odometerEnd !== "") ? ` | End: ${log.odometerEnd} KM` : ''}
+                                        {(log.personalUseKm !== undefined && log.personalUseKm !== "") ? ` | Personal Use: ${log.personalUseKm} KM` : ''}
+                                        {(log.netKm !== undefined && log.netKm !== "") ? ` | Final Reading: ${log.netKm} KM` : ''}
                                       </TableCell>
                                     </TableRow>
                                   )}

@@ -1049,18 +1049,18 @@ const Salary = () => {
                               />
                             </TableCell>
                             <TableCell sx={{ fontWeight: 700, color: (Number(log.netKm) || 0) > 0 ? '#16A34A' : '#0F172A' }}>
-                              {log.netKm !== undefined ? `${log.netKm} KM` : '---'}
+                              {(log.netKm !== undefined && log.netKm !== "") ? `${log.netKm} KM` : '---'}
                             </TableCell>
                             <TableCell sx={{ color: '#64748B', fontSize: '12px' }}>{log.remarks}</TableCell>
                           </TableRow>
-                          {(log.odometerStart !== undefined || log.odometerEnd !== undefined) && (
+                          {((log.odometerStart !== undefined && log.odometerStart !== "") || (log.odometerEnd !== undefined && log.odometerEnd !== "")) && (
                             <TableRow sx={{ backgroundColor: '#F8FAFC' }}>
                               <TableCell colSpan={8} align="left" sx={{ py: 0.5, pl: 4 }}>
                                 <Typography variant="caption" sx={{ color: '#475569', fontWeight: 600 }}>
-                                  🏍️ Bike Odometer: Start: <strong>{log.odometerStart || 0} KM</strong>
-                                  {log.odometerEnd ? ` | End: ${log.odometerEnd} KM` : ''}
-                                  {log.personalUseKm ? ` | Personal Use: ${log.personalUseKm} KM` : ''}
-                                  {log.netKm !== undefined ? ` | Final Reading: ${log.netKm} KM` : ''}
+                                  🏍️ Bike Odometer: Start: <strong>{(log.odometerStart !== undefined && log.odometerStart !== "") ? `${log.odometerStart} KM` : '0 KM'}</strong>
+                                  {(log.odometerEnd !== undefined && log.odometerEnd !== "") ? ` | End: ${log.odometerEnd} KM` : ''}
+                                  {(log.personalUseKm !== undefined && log.personalUseKm !== "") ? ` | Personal Use: ${log.personalUseKm} KM` : ''}
+                                  {(log.netKm !== undefined && log.netKm !== "") ? ` | Final Reading: ${log.netKm} KM` : ''}
                                   {log.odometerStartPhoto && (
                                     <span> | <a href={log.odometerStartPhoto} target="_blank" rel="noreferrer" style={{ color: '#2563EB', textDecoration: 'underline' }}>View Start Pic</a></span>
                                   )}

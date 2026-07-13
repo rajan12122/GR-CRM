@@ -118,7 +118,7 @@
       "email": "ds",
       "phone": "ds",
       "source": "Facebook",
-      "status": "Contacted",
+      "status": "Interested",
       "assignedEmployeeId": "EMP-003",
       "preferredEmployees": "EMP-001",
       "enableRotation": "",
@@ -136,30 +136,50 @@
       "pitchRemarks": ""
     },
     {
-      "name": "Dynamic Stage Test Lead",
-      "phone": "9988423012",
-      "email": "dynamicstage@test.com",
-      "leadType": "Buyer",
-      "status": "Negotiation",
-      "assignmentStatus": "accepted",
-      "assignedEmployeeId": "EMP-003",
       "id": "LEAD-005",
+      "name": "Dynamic Stage Test Lead",
+      "email": "dynamicstage@test.com",
+      "phone": 9988423012,
+      "source": "",
+      "status": "Negotiation",
+      "assignedEmployeeId": "EMP-003",
+      "preferredEmployees": "",
+      "enableRotation": "",
+      "budget": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "",
       "dateAdded": "2026-07-12",
-      "assignmentTime": "2026-07-12T14:44:00.597Z",
-      "droppedBy": []
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     },
     {
-      "name": "Dynamic Stage Test Lead",
-      "phone": "9988859591",
-      "email": "dynamicstage@test.com",
-      "leadType": "Buyer",
-      "status": "Negotiation",
-      "assignmentStatus": "accepted",
-      "assignedEmployeeId": "EMP-003",
       "id": "LEAD-006",
+      "name": "Dynamic Stage Test Lead",
+      "email": "dynamicstage@test.com",
+      "phone": 9988859591,
+      "source": "",
+      "status": "New Lead",
+      "assignedEmployeeId": "EMP-003",
+      "preferredEmployees": "",
+      "enableRotation": "",
+      "budget": "",
+      "r_c_i": "",
+      "propertyType": "",
+      "locality": "",
+      "sector_block": "",
+      "leadType": "Buyer",
+      "demand": "",
+      "size": "",
       "dateAdded": "2026-07-12",
-      "assignmentTime": "2026-07-12T14:44:15.527Z",
-      "droppedBy": []
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": ""
     }
   ],
   "properties": [
@@ -219,10 +239,10 @@
     },
     {
       "id": "PROP-003",
-      "status": "",
+      "status": "Sold",
       "date": "06/02/2026",
-      "contact_person_name": "",
-      "contact_number": 7009418153,
+      "contact_person_name": "d",
+      "contact_number": "ds",
       "dealer_owner_booked": "Dealer",
       "dealerId": "",
       "dealer_deal_type": "",
@@ -1277,26 +1297,32 @@
       "pitchedPropertyId": "PROP-003",
       "pitchPrice": 10,
       "pitchRemarks": "weq",
-      "pipelineAction": "Lead_Contacted"
+      "pipelineAction": "Booked"
     },
     {
       "id": "FOLLOW-002",
       "customerId": "LEAD-005",
+      "queryId": "",
       "employeeId": "EMP-001",
       "date": "12/7/2026",
       "time": "12:00 PM",
       "status": "Pending Call",
-      "remarks": "Auto-scheduled follow up for accepted Lead LEAD-005: No notes",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": "",
       "pipelineAction": "Negotiation"
     },
     {
       "id": "FOLLOW-003",
       "customerId": "LEAD-006",
+      "queryId": "",
       "employeeId": "EMP-001",
       "date": "12/7/2026",
       "time": "12:00 PM",
       "status": "Pending Call",
-      "remarks": "Auto-scheduled follow up for accepted Lead LEAD-006: No notes",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": "",
       "pipelineAction": "Negotiation"
     }
   ],
@@ -1827,24 +1853,6 @@
     },
     {
       "id": "REM-006"
-    },
-    {
-      "id": "REM-1783867724612-zbyh",
-      "targetModule": "leads",
-      "targetId": "LEAD-005",
-      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T14:48:44.630Z"
-    },
-    {
-      "id": "REM-1783867724637-z4tn",
-      "targetModule": "leads",
-      "targetId": "LEAD-006",
-      "comment": "System: Lead rotated automatically from unassigned to sakshi due to inactivity.",
-      "author": "System Rotation Engine",
-      "date": "12/7/2026",
-      "timestamp": "2026-07-12T14:48:44.637Z"
     }
   ],
   "documents": [
@@ -3030,7 +3038,22 @@
   "active_paths": {},
   "queries": [],
   "notices": [],
-  "deals": [],
+  "deals": [
+    {
+      "id": "DEAL-001",
+      "customerId": "CUST-001",
+      "sellerCustomerId": "",
+      "propertyId": "PROP-003",
+      "employeeId": "EMP-001",
+      "registrationDate": "2026-07-13",
+      "salePrice": 10,
+      "purchasePrice": "",
+      "brokerage": "",
+      "commission": "",
+      "status": "Closed",
+      "documents": ""
+    }
+  ],
   "property_history": [
     {
       "id": "PROPH-1783863424606-5hfv",

@@ -53,9 +53,7 @@ const PipelineView = () => {
     stageField = 'pipelineAction';
     stages = [
       { value: 'None', label: 'Fresh Lead / Scheduled', color: '#3B82F6' },
-      { value: 'Lead_Contacted', label: 'Lead -> Contacted', color: '#8B5CF6' },
-      { value: 'Lead_VisitScheduled', label: 'Lead -> Site Visit Scheduled', color: '#EC4899' },
-      { value: 'Lead_Negotiation', label: 'Lead -> Negotiation', color: '#10B981' }
+      ...(metadata?.chips?.customerStages || [])
     ];
     title = 'Client Deal Nurturing Pipeline';
     subtitle = 'Track customer pathways from fresh leads to negotiation and booking closeouts.';
@@ -64,8 +62,7 @@ const PipelineView = () => {
     stageField = 'pipelineAction';
     stages = [
       { value: 'None', label: 'New Query / Scheduled', color: '#3B82F6' },
-      { value: 'Query_Approved', label: 'Query -> Approve Requirement', color: '#10B981' },
-      { value: 'Query_ClosedWon', label: 'Query -> Close Deal Successfully', color: '#111827' }
+      ...(metadata?.chips?.customerStages || [])
     ];
     title = 'Buyer Query Pipeline';
     subtitle = 'Track prospective buyer query progression from Verified to Closed.';
@@ -86,7 +83,7 @@ const PipelineView = () => {
   let records = [];
   if (pipelineType === 'customers') {
     records = (moduleData.follow_ups || [])
-      .filter(f => String(f.customerId).startsWith('LEAD-') && !f.queryId)
+      .filter(f => (String(f.customerId).startsWith('LEAD-') || String(f.customerId).startsWith('CUST-')) && !f.queryId)
       .map(f => ({
         ...f,
         pipelineAction: f.pipelineAction || 'None'

@@ -1950,9 +1950,28 @@ const EntityDetail = () => {
                           {(moduleName === 'follow_ups' || moduleName === 'queries' || moduleName === 'leads') && (
                             <>
                               <Grid item xs={12} sm={6}>
-                                <Typography variant="h6" sx={{ fontWeight: 800, mb: 2, fontFamily: 'Poppins', color: '#0F172A' }}>
-                                  Pitched Properties & Details ({connections.pitches?.length || 0})
-                                </Typography>
+                                <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                                  <Typography variant="h6" sx={{ fontWeight: 800, fontFamily: 'Poppins', color: '#0F172A' }}>
+                                    Pitched Properties & Details ({connections.pitches?.length || 0})
+                                  </Typography>
+                                  <Button 
+                                    variant="outlined" 
+                                    size="small" 
+                                    startIcon={<Icons.Plus size={16} />}
+                                    onClick={() => {
+                                      setPitchPropertyId('');
+                                      setPitchEmployeeId(record.assignedEmployeeId || record.employeeId || '');
+                                      const mappedCustId = record.customerId || record.id;
+                                      setPitchCustomerId(mappedCustId);
+                                      setPitchPrice('');
+                                      setPitchRemarks('');
+                                      setPitchWarning('');
+                                      setPitchDialogOpen(true);
+                                    }}
+                                  >
+                                    + Log Pitch
+                                  </Button>
+                                </Box>
                                 {connections.pitches?.length === 0 ? (
                                   <Typography variant="body2" sx={{ color: '#94A3B8' }}>No property pitches logged for this client yet.</Typography>
                                 ) : (
@@ -2824,7 +2843,7 @@ const EntityDetail = () => {
                 {pitchWarning}
               </Alert>
             )}
-            {(moduleName === 'customers' || moduleName === 'leads') ? (
+            {(moduleName === 'customers' || moduleName === 'leads' || moduleName === 'follow_ups' || moduleName === 'queries') ? (
               <>
                 <Grid container spacing={2}>
                   <Grid item xs={12} sm={6}>
@@ -3234,12 +3253,14 @@ const EntityDetail = () => {
           <Button onClick={() => setPitchDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
           <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
             const isCustomerLead = moduleName === 'customers' || moduleName === 'leads';
-            let finalPropId = isCustomerLead ? pitchPropertyId : id;
-            let finalCustomerId = isCustomerLead ? id : pitchCustomerId;
+            const isFollowUpQuery = moduleName === 'follow_ups' || moduleName === 'queries';
+            let finalPropId = isCustomerLead || isFollowUpQuery ? pitchPropertyId : id;
+            let finalCustomerId = isCustomerLead ? id : (isFollowUpQuery ? (record.customerId || record.id) : pitchCustomerId);
             let finalCustomerName = '';
 
-            if (isCustomerLead) {
-              finalCustomerName = record.name || record.person_name;
+            if (isCustomerLead || isFollowUpQuery) {
+              const matchedRecord = isCustomerLead ? record : ((moduleData.customers || []).find(c => c.id === finalCustomerId) || (moduleData.leads || []).find(l => l.id === finalCustomerId));
+              finalCustomerName = matchedRecord ? (matchedRecord.name || matchedRecord.person_name) : finalCustomerId;
               if (pitchPropertyId === 'Other_Property') {
                 let finalDealerId = nestedPropertyData.dealerId;
                 if (nestedPropertyData.dealer_owner_booked === 'Dealer' && nestedPropertyData.dealerId === 'Other_Dealer') {

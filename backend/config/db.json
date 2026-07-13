@@ -88,29 +88,6 @@
       "pitchedPropertyId": "",
       "pitchPrice": "",
       "pitchRemarks": ""
-    },
-    {
-      "id": "LEAD-003",
-      "name": "Rajan Gupta",
-      "email": "gupta.rajan1212@gmail.com",
-      "phone": 15032,
-      "source": "Instagram",
-      "status": "In-Progress",
-      "assignedEmployeeId": "EMP-003",
-      "preferredEmployees": "EMP-002",
-      "enableRotation": "",
-      "budget": 10000000,
-      "r_c_i": "Commercial",
-      "propertyType": "Villa",
-      "locality": "da",
-      "sector_block": "ad",
-      "leadType": "Buyer",
-      "demand": "",
-      "size": "a",
-      "dateAdded": "2026-07-09",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": ""
     }
   ],
   "properties": [
@@ -143,33 +120,6 @@
     },
     {
       "id": "PROP-002",
-      "status": "",
-      "date": "06/02/2026",
-      "contact_person_name": "Alam",
-      "contact_number": 7814992504,
-      "dealer_owner_booked": "Dealer",
-      "dealerId": "",
-      "dealer_deal_type": "",
-      "booked_by_customer_id": "",
-      "dealer_firm_name": "",
-      "r_c_i": "Residential ",
-      "propertyType": "LOI",
-      "locality": "Aerotropolis",
-      "sector_block": "Block C",
-      "address_number": "LOI",
-      "size": "100 Sq.Yd.",
-      "bhk_and_washrooms": "",
-      "dimensions": "",
-      "location_type": "",
-      "facing": "",
-      "white": "50 %",
-      "time": "15-20 days",
-      "demand": "1.35 Cr",
-      "lead_source": "Whatsapp",
-      "initial_notes": "Direct Deal"
-    },
-    {
-      "id": "PROP-003",
       "status": "Sold",
       "date": "06/02/2026",
       "contact_person_name": "d",
@@ -196,7 +146,7 @@
       "initial_notes": "Book Deal "
     },
     {
-      "id": "PROP-004",
+      "id": "PROP-003",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Mansi",
@@ -223,7 +173,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROP-005",
+      "id": "PROP-004",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Mansi",
@@ -250,7 +200,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROP-006",
+      "id": "PROP-005",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Puneet ",
@@ -277,7 +227,7 @@
       "initial_notes": ""
     },
     {
-      "id": "PROP-007",
+      "id": "PROP-006",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Indu",
@@ -304,7 +254,7 @@
       "initial_notes": "Direct Deal"
     },
     {
-      "id": "PROP-008",
+      "id": "PROP-007",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Varun Sahni ",
@@ -331,7 +281,7 @@
       "initial_notes": ""
     },
     {
-      "id": "PROP-009",
+      "id": "PROP-008",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Pushap Bhatia",
@@ -358,7 +308,7 @@
       "initial_notes": "Party Deal "
     },
     {
-      "id": "PROP-010",
+      "id": "PROP-009",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Pushap Bhatia",
@@ -385,7 +335,7 @@
       "initial_notes": "Oustee Case 25% Paid"
     },
     {
-      "id": "PROP-011",
+      "id": "PROP-010",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "        Amit Gupta",
@@ -412,7 +362,7 @@
       "initial_notes": "25% built up"
     },
     {
-      "id": "PROP-012",
+      "id": "PROP-011",
       "status": "",
       "date": "06/02/2026",
       "contact_person_name": "Parmvir Singh",
@@ -439,7 +389,7 @@
       "initial_notes": "25% built up, Booked Deal"
     },
     {
-      "id": "PROP-013",
+      "id": "PROP-012",
       "status": "Available",
       "date": "12/09/2026",
       "contact_person_name": "Abhi",
@@ -466,7 +416,7 @@
       "initial_notes": "Aerocity "
     },
     {
-      "id": "PROP-014",
+      "id": "PROP-013",
       "status": "Available",
       "date": "2026-07-12",
       "contact_person_name": "SOURAV Gupta",
@@ -493,7 +443,7 @@
       "initial_notes": "e"
     },
     {
-      "id": "PROP-015",
+      "id": "PROP-014",
       "status": "Available",
       "date": "12/7/2026",
       "contact_person_name": "",
@@ -1219,19 +1169,6 @@
   "follow_ups": [
     {
       "id": "FOLLOW-001",
-      "customerId": "LEAD-004",
-      "queryId": "",
-      "employeeId": "EMP-001",
-      "date": "12/7/2026",
-      "time": "12:00 PM",
-      "status": "Pending Call",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": "",
-      "pipelineAction": "Negotiation"
-    },
-    {
-      "id": "FOLLOW-002",
       "customerId": "LEAD-006",
       "queryId": "",
       "employeeId": "EMP-001",
@@ -1244,7 +1181,7 @@
       "pipelineAction": "Negotiation"
     },
     {
-      "id": "FOLLOW-003",
+      "id": "FOLLOW-002",
       "customerId": "LEAD-001",
       "queryId": "",
       "employeeId": "EMP-001",
@@ -1255,19 +1192,6 @@
       "pitchPrice": "",
       "pitchRemarks": "",
       "pipelineAction": "Site Visit"
-    },
-    {
-      "id": "FOLLOW-004",
-      "customerId": "LEAD-004",
-      "queryId": "",
-      "employeeId": "EMP-001",
-      "date": "13/7/2026",
-      "time": "03:00 PM",
-      "status": "Pending Call",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": "",
-      "pipelineAction": ""
     }
   ],
   "attendance": [
@@ -3021,7 +2945,7 @@
       "id": "PITCH-001",
       "customerId": "LEAD-001",
       "customerName": "Rajan Gupta",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "propertyName": "",
       "employeeName": "Gagan Chopra",
       "pitchDate": "",
@@ -3057,7 +2981,7 @@
       "id": "DEAL-001",
       "customerId": "CUST-001",
       "sellerCustomerId": "",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "employeeId": "EMP-001",
       "registrationDate": "2026-07-13",
       "salePrice": 10,
@@ -3071,7 +2995,7 @@
   "property_history": [
     {
       "id": "PROPH-1783863424606-5hfv",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "80 Lakh",
@@ -3081,7 +3005,7 @@
     },
     {
       "id": "PROPH-1783863424679-4oap",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "1.65 Cr",
@@ -3091,7 +3015,7 @@
     },
     {
       "id": "PROPH-1783863543445-7wfh",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "80 Lakh",
@@ -3101,7 +3025,7 @@
     },
     {
       "id": "PROPH-1783863543491-lwvk",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "1.65 Cr",
@@ -3111,7 +3035,7 @@
     },
     {
       "id": "PROPH-1783863559113-zfqs",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "80 Lakh",
@@ -3121,7 +3045,7 @@
     },
     {
       "id": "PROPH-1783863559135-mb5f",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "1.65 Cr",
@@ -3131,7 +3055,7 @@
     },
     {
       "id": "PROPH-1783863575561-imbb",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "80 Lakh",
@@ -3141,7 +3065,7 @@
     },
     {
       "id": "PROPH-1783863575606-a4uq",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "1.65 Cr",
@@ -3151,7 +3075,7 @@
     },
     {
       "id": "PROPH-1783863643373-uosx",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "80 Lakh",
@@ -3161,7 +3085,7 @@
     },
     {
       "id": "PROPH-1783863643404-rowx",
-      "propertyId": "PROP-003",
+      "propertyId": "PROP-002",
       "field": "demand",
       "fieldName": "Demand",
       "oldValue": "1.65 Cr",

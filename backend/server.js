@@ -1420,8 +1420,47 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     try { syncToSheets('site_visits'); } catch(e) {}
     try { syncToSheets('property_pitch_history'); } catch(e) {}
   }
+  // Auto-shift sequential IDs to close the gap and update references globally
+  const prefixMap = {
+    employees: 'EMP',
+    customers: 'CUST',
+    leads: 'LEAD',
+    properties: 'PROP',
+    projects: 'PROJ',
+    site_visits: 'VISIT',
+    follow_ups: 'FOLLOW',
+    remarks: 'REM',
+    tasks: 'TASK',
+    sales: 'SALE',
+    documents: 'DOC',
+    attendance: 'ATT',
+    daily_prices: 'PRICE',
+    salaries: 'SAL',
+    queries: 'QRY',
+    deals: 'DEAL',
+    property_pitch_history: 'PITCH',
+    dealer_calls: 'CALL',
+    dealer_meetings: 'MEET'
+  };
 
+  const prefix = prefixMap[module];
+  if (prefix) {
+    const idUpdates = [];
+    db[module].forEach((rec, idx) => {
+      const newId = `${prefix}-${String(idx + 1).padStart(3, '0')}`;
+      if (String(rec.id) !== newId) {
+        idUpdates.push({ oldId: rec.id, newId });
+      }
+    });
 
+    idUpdates.forEach(({ oldId, newId }) => {
+      const rec = db[module].find(r => r.id === oldId);
+      if (rec) {
+        rec.id = newId;
+      }
+      updateGlobalReferences(db, oldId, newId);
+    });
+  }
 
   // Track Activity Log
   const log = {
@@ -1438,6 +1477,93 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   // Sync to Google sheets
   syncToSheets(module);
   res.json({ success: true, message: `Record ${id} deleted successfully.` });
+});
+
+// Bulk Delete Route
+app.post('/api/data/:module/bulk-delete', authenticateToken, checkPermission('settings', 'edit'), async (req, res) => {
+  const { module } = req.params;
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids)) {
+    return res.status(400).json({ message: 'Invalid IDs array.' });
+  }
+
+  const db = readDb();
+  if (!db[module]) return res.status(404).json({ message: `Module ${module} is empty.` });
+
+  // Delete all matches
+  db[module] = db[module].filter(rec => !ids.includes(String(rec.id)));
+
+  // If lead or customer deleted, delete child followups etc.
+  if (module === 'leads' || module === 'customers') {
+    ids.forEach(id => {
+      db.follow_ups = (db.follow_ups || []).filter(f => String(f.customerId) !== String(id));
+      db.queries = (db.queries || []).filter(q => String(q.customerId) !== String(id));
+      db.site_visits = (db.site_visits || []).filter(s => String(s.customerId) !== String(id));
+      db.property_pitch_history = (db.property_pitch_history || []).filter(p => String(p.customerId) !== String(id));
+    });
+
+    try { syncToSheets('follow_ups'); } catch(e) {}
+    try { syncToSheets('queries'); } catch(e) {}
+    try { syncToSheets('site_visits'); } catch(e) {}
+    try { syncToSheets('property_pitch_history'); } catch(e) {}
+  }
+
+  // Auto-shift sequential IDs to close the gap and update references globally
+  const prefixMap = {
+    employees: 'EMP',
+    customers: 'CUST',
+    leads: 'LEAD',
+    properties: 'PROP',
+    projects: 'PROJ',
+    site_visits: 'VISIT',
+    follow_ups: 'FOLLOW',
+    remarks: 'REM',
+    tasks: 'TASK',
+    sales: 'SALE',
+    documents: 'DOC',
+    attendance: 'ATT',
+    daily_prices: 'PRICE',
+    salaries: 'SAL',
+    queries: 'QRY',
+    deals: 'DEAL',
+    property_pitch_history: 'PITCH',
+    dealer_calls: 'CALL',
+    dealer_meetings: 'MEET'
+  };
+
+  const prefix = prefixMap[module];
+  if (prefix) {
+    const idUpdates = [];
+    db[module].forEach((rec, idx) => {
+      const newId = `${prefix}-${String(idx + 1).padStart(3, '0')}`;
+      if (String(rec.id) !== newId) {
+        idUpdates.push({ oldId: rec.id, newId });
+      }
+    });
+
+    idUpdates.forEach(({ oldId, newId }) => {
+      const rec = db[module].find(r => r.id === oldId);
+      if (rec) {
+        rec.id = newId;
+      }
+      updateGlobalReferences(db, oldId, newId);
+    });
+  }
+
+  // Track Activity Log
+  const log = {
+    id: `LOG-${Date.now()}`,
+    employeeName: req.user.name,
+    action: `Bulk deleted ${ids.length} records in ${module}`,
+    dateTime: new Date().toLocaleString()
+  };
+  if (!db.activity_logs) db.activity_logs = [];
+  db.activity_logs.unshift(log);
+
+  writeDb(db);
+  try { syncToSheets(module); } catch(e) {}
+
+  res.json({ success: true, message: `Successfully deleted ${ids.length} records.` });
 });
 
 const SECRET_KEY = "GAGAN_REALTECH_SECURE_LOCATION_KEY_2026";

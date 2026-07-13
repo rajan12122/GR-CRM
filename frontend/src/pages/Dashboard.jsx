@@ -44,7 +44,8 @@ const Dashboard = () => {
     activityLogs, 
     user,
     metadata,
-    hasPermission
+    hasPermission,
+    updateRecord
   } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -67,6 +68,15 @@ const Dashboard = () => {
     navigate(`/module/${moduleKey}?new=true`);
   };
 
+  const handleToggleTask = async (taskId) => {
+    const taskList = moduleData.tasks || [];
+    const t = taskList.find(x => x.id === taskId);
+    if (!t) return;
+    const newStatus = t.status === 'Completed' ? 'Pending' : 'Completed';
+    await updateRecord('tasks', taskId, { ...t, status: newStatus });
+    fetchModuleData('tasks');
+  };
+
   // Load modules on dashboard boot
   useEffect(() => {
     const loadAllData = async () => {
@@ -85,7 +95,8 @@ const Dashboard = () => {
         'property_pitch_history',
         'dealer_calls',
         'dealer_meetings',
-        'documents'
+        'documents',
+        'tasks'
       ];
       await Promise.all(
         modulesToFetch.map(async (m) => {
@@ -120,6 +131,27 @@ const Dashboard = () => {
   const dealerCalls = moduleData.dealer_calls || [];
   const documents = moduleData.documents || [];
   const propertyPitches = moduleData.property_pitch_history || [];
+  const tasks = moduleData.tasks || [];
+
+  const myTasks = useMemo(() => {
+    let filtered = tasks;
+    if (user?.role !== 'Admin') {
+      filtered = tasks.filter(t => String(t.assignedTo) === String(user?.id));
+    }
+    // Fetch assignedToName from employee record
+    const empList = moduleData.employees || [];
+    return [...filtered].map(t => {
+      const emp = empList.find(e => String(e.id) === String(t.assignedTo));
+      return {
+        ...t,
+        assignedToName: emp ? emp.name : t.assignedTo
+      };
+    }).sort((a, b) => {
+      if (a.status === 'Completed' && b.status !== 'Completed') return 1;
+      if (a.status !== 'Completed' && b.status === 'Completed') return -1;
+      return new Date(a.dueDate) - new Date(b.dueDate);
+    });
+  }, [tasks, user, moduleData.employees]);
 
   // Upgraded deals-driven revenue intelligence calculations
   const closedDeals = deals.filter(d => d.status === 'Closed');
@@ -778,20 +810,94 @@ const Dashboard = () => {
       <Grid container spacing={3} sx={{ mb: 4 }}>
         <Grid item xs={12} md={8}>
           <Card sx={{ height: '380px', display: 'flex', flexDirection: 'column', p: 1 }}>
-            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-              <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 2, fontFamily: 'Poppins' }}>
-                Lead & Query Nurturing Pipelines (Active Follow-ups)
-              </Typography>
-              <Box sx={{ flex: 1, minHeight: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={pipelineChartData} margin={{ top: 10, right: 10, left: -25, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                    <XAxis dataKey="name" stroke="#94A3B8" fontSize={11} interval={0} tickFormatter={(value) => value.split(' / ')[0]} />
-                    <YAxis stroke="#94A3B8" fontSize={12} allowDecimals={false} />
-                    <Tooltip cursor={{ fill: 'rgba(37, 99, 235, 0.04)' }} />
-                    <Bar dataKey="Active Deals" fill="#2563EB" radius={[4, 4, 0, 0]} barSize={35} />
-                  </BarChart>
-                </ResponsiveContainer>
+            <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Icons.CheckSquare size={20} color="#2563EB" />
+                  Task Assigned Panel
+                </Typography>
+                <Chip 
+                  label={`${myTasks.filter(t => t.status !== 'Completed').length} Pending`} 
+                  color="primary" 
+                  size="small" 
+                  sx={{ fontWeight: 700, backgroundColor: 'rgba(37,99,235,0.1)', color: '#2563EB' }} 
+                />
+              </Box>
+              
+              <Box sx={{ flex: 1, overflowY: 'auto', pr: 1 }}>
+                {myTasks.length === 0 ? (
+                  <Box display="flex" flexDirection="column" alignItems="center" justifyContent="center" height="100%" sx={{ py: 6, color: '#94A3B8' }}>
+                    <Icons.Inbox size={48} strokeWidth={1} sx={{ mb: 1, color: '#94A3B8' }} />
+                    <Typography variant="body2">No tasks assigned.</Typography>
+                  </Box>
+                ) : (
+                  <List disablePadding>
+                    {myTasks.map(task => (
+                      <ListItem 
+                        key={task.id} 
+                        sx={{ 
+                          mb: 1.5, 
+                          p: 1.5, 
+                          border: '1px solid #E2E8F0', 
+                          borderRadius: '12px', 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center',
+                          backgroundColor: '#F8FAFC',
+                          '&:hover': { backgroundColor: '#F1F5F9' }
+                        }}
+                      >
+                        <Box display="flex" alignItems="center" gap={1.5} sx={{ flex: 1, minWidth: 0 }}>
+                          <IconButton 
+                            size="small" 
+                            onClick={() => handleToggleTask(task.id)}
+                            sx={{ color: task.status === 'Completed' ? '#22C55E' : '#64748B', p: 0.5 }}
+                          >
+                            {task.status === 'Completed' ? <Icons.CheckCircle2 size={20} /> : <Icons.Circle size={20} />}
+                          </IconButton>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Box display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                              <Chip 
+                                label={task.id} 
+                                size="small" 
+                                onClick={() => navigate(`/module/tasks/${task.id}`)}
+                                sx={{ cursor: 'pointer', borderRadius: '4px', fontWeight: 700, fontSize: '10px', backgroundColor: '#E2E8F0' }} 
+                              />
+                              <Typography variant="body2" sx={{ fontWeight: 700, textDecoration: task.status === 'Completed' ? 'line-through' : 'none', color: '#0F172A', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {task.title}
+                              </Typography>
+                            </Box>
+                            <Typography variant="caption" sx={{ color: '#64748B', mt: 0.5, display: 'block' }}>
+                              Due: {task.dueDate} {task.assignedToName ? `| Assigned: ${task.assignedToName}` : ''}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box display="flex" gap={1} sx={{ ml: 1, flexShrink: 0 }}>
+                          <Chip 
+                            label={task.priority} 
+                            size="small" 
+                            sx={{ 
+                              fontWeight: 700, 
+                              fontSize: '9px',
+                              backgroundColor: task.priority === 'High' ? 'rgba(239,68,68,0.1)' : task.priority === 'Medium' ? 'rgba(245,158,11,0.1)' : 'rgba(37,99,235,0.1)',
+                              color: task.priority === 'High' ? '#EF4444' : task.priority === 'Medium' ? '#F59E0B' : '#2563EB'
+                            }} 
+                          />
+                          <Chip 
+                            label={task.status} 
+                            size="small" 
+                            sx={{ 
+                              fontWeight: 700, 
+                              fontSize: '9px',
+                              backgroundColor: task.status === 'Completed' ? 'rgba(34,197,94,0.1)' : 'rgba(100,116,139,0.1)',
+                              color: task.status === 'Completed' ? '#22C55E' : '#64748B'
+                            }} 
+                          />
+                        </Box>
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
               </Box>
             </CardContent>
           </Card>
@@ -974,25 +1080,37 @@ const Dashboard = () => {
               </Typography>
               <Grid container spacing={2}>
                 <Grid item xs={6}>
-                  <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
+                  <Paper 
+                    onClick={() => navigate('/module/dealer_calls')}
+                    sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none', cursor: 'pointer', '&:hover': { backgroundColor: '#F1F5F9' } }}
+                  >
                     <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>DEALER CALLS LOGGED</Typography>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: '#2563EB', mt: 0.5 }}>{dealerCalls.length}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6}>
-                  <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
+                  <Paper 
+                    onClick={() => navigate('/module/dealer_meetings')}
+                    sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none', cursor: 'pointer', '&:hover': { backgroundColor: '#F1F5F9' } }}
+                  >
                     <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>DEALER MEETINGS</Typography>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: '#F59E0B', mt: 0.5 }}>{dealerMeetings.length}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6}>
-                  <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
+                  <Paper 
+                    onClick={() => navigate('/module/site_visits')}
+                    sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none', cursor: 'pointer', '&:hover': { backgroundColor: '#F1F5F9' } }}
+                  >
                     <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>SITE VISITS ARRANGED</Typography>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: '#16A34A', mt: 0.5 }}>{siteVisits.length}</Typography>
                   </Paper>
                 </Grid>
                 <Grid item xs={6}>
-                  <Paper sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none' }}>
+                  <Paper 
+                    onClick={() => navigate('/module/property_pitch_history')}
+                    sx={{ p: 2, border: '1px solid #F1F5F9', backgroundColor: '#F8FAFC', boxShadow: 'none', cursor: 'pointer', '&:hover': { backgroundColor: '#F1F5F9' } }}
+                  >
                     <Typography variant="caption" sx={{ color: '#64748B', display: 'block', fontWeight: 600 }}>PROPERTY PITCHES</Typography>
                     <Typography variant="h4" sx={{ fontWeight: 800, color: '#8B5CF6', mt: 0.5 }}>{propertyPitches.length}</Typography>
                   </Paper>

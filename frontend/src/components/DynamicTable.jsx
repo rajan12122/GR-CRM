@@ -220,6 +220,7 @@ const DynamicTable = ({
     }
 
     if (field.type === 'ref') {
+      if (!val) return '---';
       return (
         <EntityChip 
           moduleName={field.refModule} 

@@ -172,6 +172,23 @@ export const AppProvider = ({ children }) => {
     }
   };
 
+  // Bulk delete records dynamically
+  const bulkDeleteRecord = async (moduleName, ids) => {
+    try {
+      await axios.post(`${API_BASE_URL}/data/${moduleName}/bulk-delete`, { ids });
+      // Remove from cache
+      setModuleData(prev => ({
+        ...prev,
+        [moduleName]: (prev[moduleName] || []).filter(rec => !ids.includes(rec.id))
+      }));
+      axios.get(`${API_BASE_URL}/data/activity_logs`).then(r => setActivityLogs(r.data)).catch(() => {});
+      return { success: true };
+    } catch (err) {
+      console.error(`Error bulk deleting ${moduleName}:`, err);
+      return { success: false, message: err.response?.data?.message || 'Bulk delete failed.' };
+    }
+  };
+
   // Log employee coordinates securely
   const logEmployeeLocation = async (lat, lng, status) => {
     try {
@@ -300,6 +317,7 @@ export const AppProvider = ({ children }) => {
         createRecord,
         updateRecord,
         deleteRecord,
+        bulkDeleteRecord,
         createRemark,
         uploadDocument,
         fetchEntity360,

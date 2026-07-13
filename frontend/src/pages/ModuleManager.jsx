@@ -175,6 +175,7 @@ const ModuleManager = () => {
     createRecord, 
     updateRecord, 
     deleteRecord,
+    bulkDeleteRecord,
     loadingData 
   } = useApp();
 
@@ -466,14 +467,13 @@ const ModuleManager = () => {
   const handleBulkDelete = async () => {
     if (window.confirm(`Are you sure you want to delete these ${selectedRows.length} records?`)) {
       setErrorMsg('');
-      for (const id of selectedRows) {
-        const res = await deleteRecord(moduleName, id);
-        if (!res.success) {
-          setErrorMsg(res.message || 'Bulk delete operation failed.');
-        }
+      const res = await bulkDeleteRecord(moduleName, selectedRows);
+      if (res.success) {
+        setSelectedRows([]);
+        fetchModuleData(moduleName);
+      } else {
+        setErrorMsg(res.message || 'Bulk delete operation failed.');
       }
-      setSelectedRows([]);
-      fetchModuleData(moduleName);
     }
   };
 

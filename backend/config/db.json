@@ -111,29 +111,6 @@
       "pitchedPropertyId": "",
       "pitchPrice": "",
       "pitchRemarks": ""
-    },
-    {
-      "id": "LEAD-004",
-      "name": "d",
-      "email": "ds",
-      "phone": "ds",
-      "source": "Facebook",
-      "status": "Interested",
-      "assignedEmployeeId": "EMP-003",
-      "preferredEmployees": "EMP-001",
-      "enableRotation": "",
-      "budget": 0,
-      "r_c_i": "Residential",
-      "propertyType": "Plot",
-      "locality": "s",
-      "sector_block": "d",
-      "leadType": "Buyer",
-      "demand": "",
-      "size": "d",
-      "dateAdded": "2026-07-07",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": ""
     }
   ],
   "properties": [
@@ -1245,19 +1222,6 @@
       "customerId": "LEAD-004",
       "queryId": "",
       "employeeId": "EMP-001",
-      "date": "2026-07-11",
-      "time": "12:00 PM",
-      "status": "Completed",
-      "pitchedPropertyId": "PROP-003",
-      "pitchPrice": 10,
-      "pitchRemarks": "weq",
-      "pipelineAction": "Site Visit"
-    },
-    {
-      "id": "FOLLOW-002",
-      "customerId": "LEAD-005",
-      "queryId": "",
-      "employeeId": "EMP-001",
       "date": "12/7/2026",
       "time": "12:00 PM",
       "status": "Pending Call",
@@ -1267,7 +1231,7 @@
       "pipelineAction": "Negotiation"
     },
     {
-      "id": "FOLLOW-003",
+      "id": "FOLLOW-002",
       "customerId": "LEAD-006",
       "queryId": "",
       "employeeId": "EMP-001",
@@ -1280,7 +1244,7 @@
       "pipelineAction": "Negotiation"
     },
     {
-      "id": "FOLLOW-004",
+      "id": "FOLLOW-003",
       "customerId": "LEAD-001",
       "queryId": "",
       "employeeId": "EMP-001",
@@ -1291,6 +1255,19 @@
       "pitchPrice": "",
       "pitchRemarks": "",
       "pipelineAction": "Site Visit"
+    },
+    {
+      "id": "FOLLOW-004",
+      "customerId": "LEAD-004",
+      "queryId": "",
+      "employeeId": "EMP-001",
+      "date": "13/7/2026",
+      "time": "03:00 PM",
+      "status": "Pending Call",
+      "pitchedPropertyId": "",
+      "pitchPrice": "",
+      "pitchRemarks": "",
+      "pipelineAction": ""
     }
   ],
   "attendance": [
@@ -1836,6 +1813,30 @@
     }
   ],
   "activity_logs": [
+    {
+      "id": "LOG-1783928432714",
+      "employeeName": "Gagan Chopra",
+      "action": "Deleted record LEAD-TST-B-1783928432467 in leads",
+      "dateTime": "13/7/2026, 1:10:32 pm"
+    },
+    {
+      "id": "LOG-1783928432637",
+      "employeeName": "Gagan Chopra",
+      "action": "Deleted record LEAD-TST-A-1783928432467 in leads",
+      "dateTime": "13/7/2026, 1:10:32 pm"
+    },
+    {
+      "id": "LOG-1783928432596",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-TST-B-1783928432467 in leads",
+      "dateTime": "13/7/2026, 1:10:32 pm"
+    },
+    {
+      "id": "LOG-1783928432479",
+      "employeeName": "Gagan Chopra",
+      "action": "Created record LEAD-TST-A-1783928432467 in leads",
+      "dateTime": "13/7/2026, 1:10:32 pm"
+    },
     {
       "id": "LOG-1783928052650",
       "employeeName": "Gagan Chopra",
@@ -3018,25 +3019,6 @@
   "property_pitch_history": [
     {
       "id": "PITCH-001",
-      "customerId": "LEAD-004",
-      "customerName": "d",
-      "propertyId": "PROP-003",
-      "propertyName": "",
-      "employeeName": "Gagan Chopra",
-      "pitchDate": "12/7/2026",
-      "pitchMethod": "Call",
-      "quotedPrice": 10,
-      "minNegotiablePrice": "",
-      "expectedClosingPrice": "",
-      "brokerageOffered": "",
-      "paymentTerms": "",
-      "status": "Interested",
-      "interestLevel": "Interested",
-      "followUpDate": "2026-07-31",
-      "remarks": "weq"
-    },
-    {
-      "id": "PITCH-002",
       "customerId": "LEAD-001",
       "customerName": "Rajan Gupta",
       "propertyId": "PROP-003",
@@ -3068,28 +3050,7 @@
     }
   ],
   "active_paths": {},
-  "queries": [
-    {
-      "id": "QRY-001",
-      "customerId": "LEAD-004",
-      "assignedEmployeeId": "EMP-001",
-      "date": "13/7/2026",
-      "queryType": "Buy Property",
-      "status": "Pending Approval",
-      "stage": "New Query",
-      "budget": "50 Lakhs",
-      "demand": "",
-      "r_c_i": "",
-      "propertyType": "",
-      "locality": "Sector 82",
-      "sector_block": "",
-      "size": "",
-      "remarks": "Quick added query via scan test.",
-      "pitchedPropertyId": "",
-      "pitchPrice": "",
-      "pitchRemarks": ""
-    }
-  ],
+  "queries": [],
   "notices": [],
   "deals": [
     {

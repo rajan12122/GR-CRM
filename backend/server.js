@@ -1421,47 +1421,7 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     try { syncToSheets('property_pitch_history'); } catch(e) {}
   }
 
-  // Auto-shift sequential IDs to close the gap and update references globally
-  const prefixMap = {
-    employees: 'EMP',
-    customers: 'CUST',
-    leads: 'LEAD',
-    properties: 'PROP',
-    projects: 'PROJ',
-    site_visits: 'VISIT',
-    follow_ups: 'FOLLOW',
-    remarks: 'REM',
-    tasks: 'TASK',
-    sales: 'SALE',
-    documents: 'DOC',
-    attendance: 'ATT',
-    daily_prices: 'PRICE',
-    salaries: 'SAL',
-    queries: 'QRY',
-    deals: 'DEAL',
-    property_pitch_history: 'PITCH',
-    dealer_calls: 'CALL',
-    dealer_meetings: 'MEET'
-  };
 
-  const prefix = prefixMap[module];
-  if (prefix) {
-    const idUpdates = [];
-    db[module].forEach((rec, idx) => {
-      const newId = `${prefix}-${String(idx + 1).padStart(3, '0')}`;
-      if (String(rec.id) !== newId) {
-        idUpdates.push({ oldId: rec.id, newId });
-      }
-    });
-
-    idUpdates.forEach(({ oldId, newId }) => {
-      const rec = db[module].find(r => r.id === oldId);
-      if (rec) {
-        rec.id = newId;
-      }
-      updateGlobalReferences(db, oldId, newId);
-    });
-  }
 
   // Track Activity Log
   const log = {

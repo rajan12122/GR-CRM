@@ -11,6 +11,7 @@ import {
   Alert
 } from '@mui/material';
 import axios from 'axios';
+import { Capacitor } from '@capacitor/core';
 import { API_BASE_URL } from '../context/AppContext';
 import * as Icons from 'lucide-react';
 
@@ -30,14 +31,14 @@ const AppUpdater = () => {
 
   useEffect(() => {
     // Check if we are running inside native Capacitor environment
-    if (!window.Capacitor || !window.Capacitor.Plugins || !window.Capacitor.Plugins.AppUpdater) {
+    if (!Capacitor.isNativePlatform() || !Capacitor.Plugins.AppUpdater) {
       setChecking(false);
       return;
     }
 
     const checkUpdates = async () => {
       try {
-        const { AppUpdater: NativeUpdater } = window.Capacitor.Plugins;
+        const NativeUpdater = Capacitor.Plugins.AppUpdater;
         
         // 1. Get current installed version from native app
         const appInfo = await NativeUpdater.getAppVersionCode();
@@ -72,8 +73,8 @@ const AppUpdater = () => {
     let progressListener;
     let stateListener;
 
-    if (window.Capacitor && window.Capacitor.Plugins.AppUpdater) {
-      const { AppUpdater: NativeUpdater } = window.Capacitor.Plugins;
+    if (Capacitor.isNativePlatform() && Capacitor.Plugins.AppUpdater) {
+      const NativeUpdater = Capacitor.Plugins.AppUpdater;
       
       progressListener = NativeUpdater.addListener('downloadProgress', (info) => {
         setProgress(info.progress);
@@ -104,7 +105,7 @@ const AppUpdater = () => {
     setProgress(0);
 
     try {
-      const { AppUpdater: NativeUpdater } = window.Capacitor.Plugins;
+      const NativeUpdater = Capacitor.Plugins.AppUpdater;
       await NativeUpdater.downloadAndInstallApk({ url: apkUrl });
     } catch (err) {
       console.error('Update failed:', err);

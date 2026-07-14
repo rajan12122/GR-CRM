@@ -468,6 +468,33 @@
       "demand": 2,
       "lead_source": "Facebook",
       "initial_notes": 24
+    },
+    {
+      "id": "PROP-015",
+      "status": "Available",
+      "date": "14/7/2026",
+      "contact_person_name": "DD",
+      "contact_number": 456156,
+      "dealer_owner_booked": "Dealer",
+      "dealerId": "DEAL-002",
+      "dealer_deal_type": "",
+      "booked_by_customer_id": "",
+      "dealer_firm_name": "",
+      "r_c_i": "Residential",
+      "propertyType": "Plot",
+      "locality": 24,
+      "sector_block": 24,
+      "address_number": "",
+      "size": 4,
+      "bhk_and_washrooms": "",
+      "dimensions": "",
+      "location_type": "",
+      "facing": "",
+      "white": "",
+      "time": "",
+      "demand": 2,
+      "lead_source": "",
+      "initial_notes": ""
     }
   ],
   "projects": [
@@ -2900,46 +2927,23 @@
       "callOutcome": "",
       "assignedEmployeeId": "EMP-001",
       "visitStatus": "Assigned"
-    }
-  ],
-  "dealer_calls": [
+    },
     {
-      "id": "CALL-001",
-      "dealerId": "DEALER-001",
-      "date": "10/07/2026",
-      "duration": 5,
+      "id": "DEAL-002",
+      "firm_name": "Dynamic Stage Test Lead",
+      "address": 42,
+      "sector_block": 242,
+      "person_name": "dynamicstage@test.com",
+      "contact_num": 522124242,
+      "contacted_num": 424254322,
+      "remarks": 24,
       "callOutcome": "Call Done",
-      "budget": 7500000,
-      "areas": "Sector 123",
-      "followUpDate": "2026-07-15",
-      "remarks": "Dealer interested in residential plots. Has a couple of buyer clients.",
-      "employeeName": "Vipin"
+      "assignedEmployeeId": "",
+      "visitStatus": ""
     }
   ],
-  "dealer_meetings": [
-    {
-      "id": "MEET-001",
-      "dealerId": "DEALER-001",
-      "assignedEmployeeId": "EMP-003",
-      "meetingDate": "2026-07-12",
-      "meetingTime": "",
-      "priority": "",
-      "purpose": "",
-      "instructions": "",
-      "status": "Assigned",
-      "start_time": "",
-      "end_time": "",
-      "outcome": "",
-      "interest_level": "",
-      "properties_discussed": "",
-      "new_buyer_leads": "",
-      "new_seller_leads": "",
-      "documents_collected": "",
-      "next_action": "",
-      "followUpDate": "",
-      "remarks": ""
-    }
-  ],
+  "dealer_calls": [],
+  "dealer_meetings": [],
   "property_pitch_history": [
     {
       "id": "PITCH-001",
@@ -2958,7 +2962,28 @@
       "status": "Site Visit Scheduled",
       "interestLevel": "Interested",
       "followUpDate": "",
-      "remarks": "Kanban board test pitch"
+      "remarks": "Kanban board test pitch",
+      "dealerId": ""
+    },
+    {
+      "id": "PITCH-002",
+      "customerId": "LEAD-001",
+      "customerName": "Amit Pathak",
+      "propertyId": "PROP-015",
+      "propertyName": "",
+      "employeeName": "Gagan Chopra",
+      "pitchDate": "14/7/2026 11:02:48 am",
+      "pitchMethod": "Call",
+      "quotedPrice": 24,
+      "minNegotiablePrice": "",
+      "expectedClosingPrice": "",
+      "brokerageOffered": "",
+      "paymentTerms": "",
+      "status": "Pitched",
+      "interestLevel": "Interested",
+      "followUpDate": "",
+      "remarks": 24,
+      "dealerId": ""
     }
   ],
   "project_history": [

@@ -2336,6 +2336,34 @@ const rotateLeadsTask = () => {
   }
 };
 
+
+// Public App Update check endpoint
+app.get('/api/public/update-check', (req, res) => {
+  try {
+    const configPath = path.join(__dirname, 'config/update-config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      return res.json(config);
+    }
+    res.status(404).json({ error: "Update configuration not found." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load update configuration." });
+  }
+});
+
+// Expose APK file public download
+app.get('/public/app-debug.apk', (req, res) => {
+  try {
+    const apkPath = path.join(__dirname, '../app-debug.apk');
+    if (fs.existsSync(apkPath)) {
+      return res.sendFile(apkPath);
+    }
+    res.status(404).json({ error: "APK file not found on server." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to download APK file." });
+  }
+});
+
 // Public Metadata endpoint for Quick-Add portal
 app.get('/api/public/metadata', (req, res) => {
   try {

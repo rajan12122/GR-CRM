@@ -22,6 +22,7 @@ import PublicIntake from './pages/PublicIntake';
 import QuickAdd from './pages/QuickAdd';
 import LeadNotificationListener from './components/LeadNotificationListener';
 import Salary from './pages/Salary';
+import AppUpdater from './components/AppUpdater';
 import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
@@ -249,6 +250,7 @@ function App() {
     <ThemeProvider theme={theme}>
       <AppProvider>
         <LeadNotificationListener />
+        <AppUpdater />
         <Router>
             <DomRoutes>
               <DomRoute path="/intake" element={<PublicIntake />} />

@@ -1015,6 +1015,31 @@ const EntityDetail = () => {
                           startIcon={<Icons.Plus size={16} />}
                           onClick={() => {
                             setQueryEmployeeId(record.assignedEmployeeId || '');
+                            setNestedPropertyData({
+                              contact_person_name: record?.name || record?.person_name || '',
+                              contact_number: record?.phone || record?.contact_num || '',
+                              dealer_owner_booked: 'Direct',
+                              dealerId: '',
+                              dealer_deal_type: '',
+                              booked_by_customer_id: '',
+                              locality: '',
+                              sector_block: '',
+                              size: '',
+                              demand: '',
+                              propertyType: 'Plot',
+                              r_c_i: 'Residential',
+                              status: 'Available'
+                            });
+                            setNestedDealerData({
+                              firm_name: '',
+                              address: '',
+                              sector_block: '',
+                              person_name: '',
+                              contact_num: '',
+                              contacted_num: '',
+                              remarks: '',
+                              callOutcome: 'Call Done'
+                            });
                             setQueryDialogOpen(true);
                           }}
                         >
@@ -2984,37 +3009,200 @@ const EntityDetail = () => {
                 <MenuItem value="Sell Property">Sell Property (Inventory Supply)</MenuItem>
               </Select>
             </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>R/C/I Segment</InputLabel>
-              <Select value={queryRCI} onChange={(e) => setQueryRCI(e.target.value)} label="R/C/I Segment">
-                <MenuItem value="Residential">Residential</MenuItem>
-                <MenuItem value="Commercial">Commercial</MenuItem>
-                <MenuItem value="Industrial">Industrial</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
-              <InputLabel>Property Type Category</InputLabel>
-              <Select value={queryPropType} onChange={(e) => setQueryPropType(e.target.value)} label="Property Type Category">
-                <MenuItem value="Villa">Villa Listing</MenuItem>
-                <MenuItem value="Plot">Residential Plot</MenuItem>
-                <MenuItem value="Apartment">Apartment Flat</MenuItem>
-                <MenuItem value="Commercial">Retail Office Space</MenuItem>
-              </Select>
-            </FormControl>
+            
+            {queryType !== 'Sell Property' && (
+              <>
+                <FormControl fullWidth>
+                  <InputLabel>R/C/I Segment</InputLabel>
+                  <Select value={queryRCI} onChange={(e) => setQueryRCI(e.target.value)} label="R/C/I Segment">
+                    <MenuItem value="Residential">Residential</MenuItem>
+                    <MenuItem value="Commercial">Commercial</MenuItem>
+                    <MenuItem value="Industrial">Industrial</MenuItem>
+                  </Select>
+                </FormControl>
+                <FormControl fullWidth>
+                  <InputLabel>Property Type Category</InputLabel>
+                  <Select value={queryPropType} onChange={(e) => setQueryPropType(e.target.value)} label="Property Type Category">
+                    <MenuItem value="Villa">Villa Listing</MenuItem>
+                    <MenuItem value="Plot">Residential Plot</MenuItem>
+                    <MenuItem value="Apartment">Apartment Flat</MenuItem>
+                    <MenuItem value="Commercial">Retail Office Space</MenuItem>
+                  </Select>
+                </FormControl>
+              </>
+            )}
+
             {queryType === 'Buy Property' ? (
               <TextField label="Client Budget Cap (INR)" type="number" fullWidth value={queryBudget} onChange={(e) => setQueryBudget(e.target.value)} />
-            ) : (
-              <TextField label="Seller Demanded Price (INR)" type="number" fullWidth value={queryDemand} onChange={(e) => setQueryDemand(e.target.value)} />
+            ) : null}
+
+            {queryType !== 'Sell Property' && (
+              <>
+                <TextField label="Target Size/Dimensions (e.g. 250 Sq.Yds)" fullWidth value={querySize} onChange={(e) => setQuerySize(e.target.value)} />
+                <TextField label="Preferred Localities" fullWidth value={queryLocality} onChange={(e) => setQueryLocality(e.target.value)} />
+                <TextField label="Sector/Block Details" fullWidth value={querySector} onChange={(e) => setQuerySector(e.target.value)} />
+              </>
             )}
-            <TextField label="Target Size/Dimensions (e.g. 250 Sq.Yds)" fullWidth value={querySize} onChange={(e) => setQuerySize(e.target.value)} />
-            <TextField label="Preferred Localities" fullWidth value={queryLocality} onChange={(e) => setQueryLocality(e.target.value)} />
-            <TextField label="Sector/Block Details" fullWidth value={querySector} onChange={(e) => setQuerySector(e.target.value)} />
+
+            {queryType === 'Sell Property' && (
+              <Box sx={{ mt: 1, p: 2.5, border: '1px solid #10B981', borderRadius: '12px', backgroundColor: '#F0FDF4', width: '100%' }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#065F46', display: 'flex', alignItems: 'center', gap: 1, fontFamily: 'Poppins' }}>
+                  <Icons.Home size={18} />
+                  Register Property Listing (Seller Details)
+                </Typography>
+                <Grid container spacing={1.5}>
+                  {(metadata?.modules?.properties?.fields || []).filter(f => {
+                    if (f.name === 'id') return false;
+                    if (f.name === 'current_owner_id') return false;
+                    if (f.name === 'dealerId' || f.name === 'dealer_deal_type') {
+                      return nestedPropertyData.dealer_owner_booked === 'Dealer';
+                    }
+                    if (f.name === 'booked_by_customer_id') {
+                      return nestedPropertyData.dealer_owner_booked === 'Booked By Us';
+                    }
+                    return true;
+                  }).map(f => {
+                    // 1. SELECT TYPE FIELD
+                    if (f.type === 'select' && f.chipGroup) {
+                      const options = metadata?.chips?.[f.chipGroup] || [];
+                      return (
+                        <Grid item xs={12} sm={6} key={f.name}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>{f.label}</InputLabel>
+                            <Select
+                              value={nestedPropertyData[f.name] || ''}
+                              onChange={(e) => setNestedPropertyData(prev => ({ ...prev, [f.name]: e.target.value }))}
+                              label={f.label}
+                            >
+                              {options.map(opt => (
+                                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      );
+                    }
+
+                    // 2. REFERENCE TYPE FIELD
+                    if (f.type === 'ref' && f.refModule) {
+                      const options = moduleData[f.refModule] || [];
+                      return (
+                        <Grid item xs={12} sm={6} key={f.name}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>{f.label}</InputLabel>
+                            <Select
+                              value={nestedPropertyData[f.name] || ''}
+                              onChange={(e) => setNestedPropertyData(prev => ({ ...prev, [f.name]: e.target.value }))}
+                              label={f.label}
+                            >
+                              <MenuItem value="">-- Select --</MenuItem>
+                              {options.map(opt => (
+                                <MenuItem key={opt.id} value={opt.id}>{opt.name || opt.firm_name || opt.id}</MenuItem>
+                              ))}
+                              {f.refModule === 'dealers' && (
+                                <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                                  + Add New Property Dealer
+                                </MenuItem>
+                              )}
+                            </Select>
+                          </FormControl>
+                          
+                          {/* Inner Associated Dealer Sub-Form */}
+                          {f.refModule === 'dealers' && nestedPropertyData.dealerId === 'Other_Dealer' && (
+                            <Box sx={{ mt: 1.5, p: 2, border: '1px solid #3B82F6', borderRadius: '12px', backgroundColor: '#EFF6FF', width: '100%' }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#1E3A8A' }}>
+                                Create New Property Dealer
+                              </Typography>
+                              <Grid container spacing={1.5}>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Firm Name" size="small" fullWidth required value={nestedDealerData.firm_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, firm_name: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Person Name" size="small" fullWidth required value={nestedDealerData.person_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, person_name: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Contact Number" size="small" fullWidth required value={nestedDealerData.contact_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contact_num: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Contacted Number" size="small" fullWidth value={nestedDealerData.contacted_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contacted_num: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Area/Sector/Block" size="small" fullWidth required value={nestedDealerData.sector_block || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Address" size="small" fullWidth value={nestedDealerData.address || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, address: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12}>
+                                  <TextField label="Call Notes/Remarks" size="small" fullWidth multiline rows={2} value={nestedDealerData.remarks || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, remarks: e.target.value }))} />
+                                </Grid>
+                              </Grid>
+                            </Box>
+                          )}
+                        </Grid>
+                      );
+                    }
+
+                    // 3. STANDARD TEXT/NUMBER/DATE/TEXTAREA FIELD
+                    return (
+                      <Grid item xs={12} sm={6} key={f.name}>
+                        <TextField
+                          label={f.label}
+                          type={f.type === 'number' ? 'number' : f.type === 'date' ? 'date' : 'text'}
+                          multiline={f.type === 'textarea'}
+                          rows={f.type === 'textarea' ? 2 : undefined}
+                          size="small"
+                          fullWidth
+                          InputLabelProps={f.type === 'date' ? { shrink: true } : undefined}
+                          value={nestedPropertyData[f.name] || ''}
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, [f.name]: e.target.value }))}
+                        />
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </Box>
+            )}
+
             <TextField label="Requirements Remarks" multiline rows={3} fullWidth value={queryRemarks} onChange={(e) => setQueryRemarks(e.target.value)} />
           </Box>
         </DialogContent>
         <DialogActions sx={{ p: 2.5 }}>
           <Button onClick={() => setQueryDialogOpen(false)} sx={{ textTransform: 'none', color: '#64748B', fontWeight: 600 }}>Cancel</Button>
           <Button variant="contained" sx={{ textTransform: 'none', fontWeight: 700 }} onClick={async () => {
+            let finalPropertyId = '';
+            if (queryType === 'Sell Property') {
+              let finalDealerId = nestedPropertyData.dealerId;
+              if (nestedPropertyData.dealer_owner_booked === 'Dealer' && nestedPropertyData.dealerId === 'Other_Dealer') {
+                const dealerRes = await createRecord('dealers', {
+                  ...nestedDealerData
+                });
+                if (dealerRes.success) {
+                  finalDealerId = dealerRes.data.id;
+                  fetchModuleData('dealers');
+                } else {
+                  alert(dealerRes.message || "Failed to auto-create associated dealer");
+                  return;
+                }
+              }
+              
+              const propPayload = {
+                ...nestedPropertyData,
+                dealerId: finalDealerId,
+                contact_person_name: nestedPropertyData.contact_person_name || record.name || record.person_name || '',
+                contact_number: nestedPropertyData.contact_number || record.phone || record.contact_num || '',
+                date: new Date().toLocaleDateString('en-IN')
+              };
+              
+              const propRes = await createRecord('properties', propPayload);
+              if (propRes.success) {
+                finalPropertyId = propRes.data.id;
+                fetchModuleData('properties');
+              } else {
+                alert(propRes.message || "Failed to auto-create seller property");
+                return;
+              }
+            }
+
             const payload = {
               customerId: id,
               assignedEmployeeId: queryEmployeeId || 'EMP-001',
@@ -3023,13 +3211,14 @@ const EntityDetail = () => {
               queryType,
               stage: 'New Query',
               budget: queryType === 'Buy Property' ? Number(queryBudget) : 0,
-              demand: queryType === 'Sell Property' ? Number(queryDemand) : 0,
-              r_c_i: queryRCI,
-              propertyType: queryPropType,
-              locality: queryLocality,
-              sector_block: querySector,
-              size: querySize,
-              remarks: queryRemarks
+              demand: queryType === 'Sell Property' ? Number(nestedPropertyData.demand || 0) : 0,
+              r_c_i: queryType === 'Sell Property' ? (nestedPropertyData.r_c_i || '') : queryRCI,
+              propertyType: queryType === 'Sell Property' ? (nestedPropertyData.propertyType || '') : queryPropType,
+              locality: queryType === 'Sell Property' ? (nestedPropertyData.locality || '') : queryLocality,
+              sector_block: queryType === 'Sell Property' ? (nestedPropertyData.sector_block || '') : querySector,
+              size: queryType === 'Sell Property' ? (nestedPropertyData.size || '') : querySize,
+              remarks: queryRemarks,
+              propertyId: finalPropertyId
             };
             const res = await createRecord('queries', payload);
             if (res.success) {

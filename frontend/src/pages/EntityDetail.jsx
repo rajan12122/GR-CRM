@@ -103,6 +103,7 @@ const EntityDetail = () => {
   const [pitchRemarks, setPitchRemarks] = useState('');
   const [pitchWarning, setPitchWarning] = useState('');
   const [pitchItemType, setPitchItemType] = useState('Property');
+  const [editingPitch, setEditingPitch] = useState(null);
   const [propSearch, setPropSearch] = useState('');
   const [dealerSearch, setDealerSearch] = useState('');
   const [nestedDealerData, setNestedDealerData] = useState({
@@ -632,7 +633,11 @@ const EntityDetail = () => {
                     ) : f.type === 'ref' ? (
                       <EntityTooltip moduleName={f.refModule} id={val}>
                         <Chip 
-                          label={val} 
+                          label={(() => {
+                            const refArray = moduleData[f.refModule] || [];
+                            const referencedRecord = refArray.find(r => String(r.id) === String(val));
+                            return referencedRecord ? (referencedRecord.name || referencedRecord.person_name || referencedRecord.title || val) : val;
+                          })()} 
                           size="small" 
                           onClick={() => navigate(`/module/${f.refModule}/${val}`)}
                           sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
@@ -643,7 +648,11 @@ const EntityDetail = () => {
                         {String(val).split(',').filter(Boolean).map(itemId => (
                           <EntityTooltip key={itemId} moduleName={f.refModule} id={itemId}>
                             <Chip 
-                              label={itemId} 
+                              label={(() => {
+                                const refArray = moduleData[f.refModule] || [];
+                                const referencedRecord = refArray.find(r => String(r.id) === String(itemId));
+                                return referencedRecord ? (referencedRecord.name || referencedRecord.person_name || referencedRecord.title || itemId) : itemId;
+                              })()} 
                               size="small" 
                               onClick={() => navigate(`/module/${f.refModule}/${itemId}`)}
                               sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
@@ -954,12 +963,35 @@ const EntityDetail = () => {
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
                               </Box>
-                              <Chip 
-                                label={p.interestLevel} 
-                                color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
-                                size="small"
-                                sx={{ fontWeight: 700 }}
-                              />
+                              <Box display="flex" alignItems="center" gap={1}>
+                                <IconButton 
+                                  size="small" 
+                                  onClick={() => {
+                                    setEditingPitch(p);
+                                    setPitchItemType(p.propertyId?.startsWith('PROJ-') ? 'Project' : 'Property');
+                                    setPitchPropertyId(p.propertyId);
+                                    setPitchCustomerId(p.customerId);
+                                    setPitchEmployeeId(p.employeeId);
+                                    setPitchPrice(p.quotedPrice);
+                                    setPitchRemarks(p.remarks);
+                                    setPitchInterest(p.interestLevel);
+                                    setPitchStatus(p.status);
+                                    setPitchMethod(p.pitchMethod);
+                                    setPitchFollowUp(p.followUpDate || '');
+                                    setPitchWarning('');
+                                    setPitchDialogOpen(true);
+                                  }}
+                                  sx={{ color: '#2563EB', p: 0.5 }}
+                                >
+                                  <Icons.Edit size={16} />
+                                </IconButton>
+                                <Chip 
+                                  label={p.interestLevel} 
+                                  color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
+                                  size="small"
+                                  sx={{ fontWeight: 700 }}
+                                />
+                              </Box>
                             </Box>
                             <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
                               Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/employees/${p.employeeId || 'EMP-001'}`)}>{p.employeeName}</span>
@@ -2138,12 +2170,35 @@ const EntityDetail = () => {
                                           </Typography>
                                           <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
                                         </Box>
-                                        <Chip 
-                                          label={p.interestLevel} 
-                                          color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
-                                          size="small"
-                                          sx={{ fontWeight: 700 }}
-                                        />
+                                        <Box display="flex" alignItems="center" gap={1}>
+                                          <IconButton 
+                                            size="small" 
+                                            onClick={() => {
+                                              setEditingPitch(p);
+                                              setPitchItemType(p.propertyId?.startsWith('PROJ-') ? 'Project' : 'Property');
+                                              setPitchPropertyId(p.propertyId);
+                                              setPitchCustomerId(p.customerId);
+                                              setPitchEmployeeId(p.employeeId);
+                                              setPitchPrice(p.quotedPrice);
+                                              setPitchRemarks(p.remarks);
+                                              setPitchInterest(p.interestLevel);
+                                              setPitchStatus(p.status);
+                                              setPitchMethod(p.pitchMethod);
+                                              setPitchFollowUp(p.followUpDate || '');
+                                              setPitchWarning('');
+                                              setPitchDialogOpen(true);
+                                            }}
+                                            sx={{ color: '#2563EB', p: 0.5 }}
+                                          >
+                                            <Icons.Edit size={16} />
+                                          </IconButton>
+                                          <Chip 
+                                            label={p.interestLevel} 
+                                            color={p.interestLevel === 'Interested' ? 'success' : p.interestLevel === 'Not Interested' ? 'error' : 'warning'} 
+                                            size="small"
+                                            sx={{ fontWeight: 700 }}
+                                          />
+                                        </Box>
                                       </Box>
                                       <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
                                         Pitched on: {p.pitchDate} • Method: <strong>{p.pitchMethod}</strong> • Pitched by: {p.employeeName}
@@ -2989,7 +3044,7 @@ const EntityDetail = () => {
 
       {/* Log Pitch Dialog */}
       <Dialog open={pitchDialogOpen} onClose={() => setPitchDialogOpen(false)} maxWidth="sm" fullWidth PaperProps={{ sx: { borderRadius: '16px' } }}>
-        <DialogTitle sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>Log Agent Pitch Presentation</DialogTitle>
+        <DialogTitle sx={{ fontWeight: 800, fontFamily: 'Poppins' }}>{editingPitch ? 'Edit Pitch Presentation' : 'Log Agent Pitch Presentation'}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1.5 }}>
             {pitchWarning && (
@@ -3648,16 +3703,19 @@ const EntityDetail = () => {
               quotedPrice: Number(pitchPrice || 0),
               followUpDate: pitchFollowUp,
               remarks: pitchRemarks,
-              pitchDate: new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN')
+              pitchDate: editingPitch ? (editingPitch.pitchDate || new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN')) : new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN')
             };
-            const res = await createRecord('property_pitch_history', payload);
+            const res = editingPitch 
+              ? await updateRecord('property_pitch_history', editingPitch.id, payload)
+              : await createRecord('property_pitch_history', payload);
             if (res.success) {
               setPitchDialogOpen(false);
+              setEditingPitch(null);
               loadData();
             } else {
-              alert(res.message || "Failed to log pitch");
+              alert(res.message || (editingPitch ? "Failed to update pitch" : "Failed to log pitch"));
             }
-          }}>Log Pitch</Button>
+          }}>{editingPitch ? 'Save Changes' : 'Log Pitch'}</Button>
         </DialogActions>
       </Dialog>
 

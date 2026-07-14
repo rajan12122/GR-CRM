@@ -342,31 +342,6 @@
           "required": true,
           "showInTable": true,
           "editable": false
-        },
-        {
-          "name": "pitchedPropertyId",
-          "label": "Did you pitch any property?",
-          "type": "ref",
-          "refModule": "properties",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "pitchPrice",
-          "label": "Quoted Pitch Price (INR)",
-          "type": "number",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "pitchRemarks",
-          "label": "Pitch Remarks",
-          "type": "textarea",
-          "required": false,
-          "showInTable": false,
-          "editable": true
         }
       ]
     },
@@ -446,6 +421,15 @@
         {
           "name": "booked_by_customer_id",
           "label": "Booked By (Customer)",
+          "type": "ref",
+          "refModule": "customers",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "current_owner_id",
+          "label": "Current Owner",
           "type": "ref",
           "refModule": "customers",
           "required": false,
@@ -882,31 +866,6 @@
           "showInTable": true,
           "editable": true,
           "chipGroup": "followUpStatus"
-        },
-        {
-          "name": "pitchedPropertyId",
-          "label": "Did you pitch any property?",
-          "type": "ref",
-          "refModule": "properties",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "pitchPrice",
-          "label": "Quoted Pitch Price (INR)",
-          "type": "number",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "pitchRemarks",
-          "label": "Pitch Remarks",
-          "type": "textarea",
-          "required": false,
-          "showInTable": false,
-          "editable": true
         },
         {
           "name": "pipelineAction",
@@ -1786,31 +1745,6 @@
           "type": "textarea",
           "required": false,
           "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "pitchedPropertyId",
-          "label": "Did you pitch any property?",
-          "type": "ref",
-          "refModule": "properties",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "pitchPrice",
-          "label": "Quoted Pitch Price (INR)",
-          "type": "number",
-          "required": false,
-          "showInTable": false,
-          "editable": true
-        },
-        {
-          "name": "pitchRemarks",
-          "label": "Pitch Remarks",
-          "type": "textarea",
-          "required": false,
-          "showInTable": false,
           "editable": true
         }
       ]

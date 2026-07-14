@@ -39,7 +39,15 @@ function updateGlobalReferences(db, oldId, newId) {
         if (rec[key] === oldId) {
           rec[key] = newId;
         } else if (Array.isArray(rec[key])) {
-          rec[key] = rec[key].map(item => item === oldId ? newId : item);
+          rec[key] = rec[key].map(item => {
+            if (item && typeof item === 'object') {
+              Object.keys(item).forEach(k => {
+                if (item[k] === oldId) item[k] = newId;
+              });
+              return item;
+            }
+            return item === oldId ? newId : item;
+          });
         } else if (typeof rec[key] === 'string') {
           if (rec[key].includes(oldId)) {
             rec[key] = rec[key].split(',').map(s => s.trim() === oldId ? newId : s.trim()).join(', ');
@@ -475,14 +483,18 @@ function handleDealStatusChange(d, db, req) {
     
     prop.owner_history = prop.owner_history || [];
     if (prevOwnerId || prevOwnerName) {
-      prop.owner_history.push({
-        ownerId: prevOwnerId || 'N/A',
-        ownerName: prevOwnerName || 'Previous Owner',
-        purchaseDate: prop.date || '',
-        purchasePrice: prop.demand || '',
-        saleDate: d.registrationDate || new Date().toISOString().split('T')[0],
-        salePrice: d.salePrice || ''
-      });
+      const hasHistory = prop.owner_history.some(h => String(h.dealId) === String(d.id));
+      if (!hasHistory) {
+        prop.owner_history.push({
+          dealId: d.id,
+          ownerId: prevOwnerId || 'N/A',
+          ownerName: prevOwnerName || 'Previous Owner',
+          purchaseDate: prop.date || '',
+          purchasePrice: prop.demand || '',
+          saleDate: d.registrationDate || new Date().toISOString().split('T')[0],
+          salePrice: d.salePrice || ''
+        });
+      }
     }
     
     prop.current_owner_id = d.customerId;
@@ -534,6 +546,132 @@ function handleDealStatusChange(d, db, req) {
     writeDb(db);
     try { syncToSheets('properties'); } catch(e) {}
   }
+}
+
+function handlePitchStatusChange(p, db, req) {
+  if (!p.id || p.status !== 'Deal Closed') return;
+
+  // Convert Lead to Customer if Pitch closed for a Lead ID
+  let finalCustomerId = p.customerId;
+  if (p.customerId && String(p.customerId).startsWith('LEAD-')) {
+    const leadId = p.customerId;
+    const lead = (db.leads || []).find(l => String(l.id) === String(leadId));
+    if (lead) {
+      const cleanPhone = String(lead.phone).trim();
+      let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
+      if (!existingCust) {
+        const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
+        existingCust = {
+          id: custId,
+          name: lead.name,
+          email: lead.email || '',
+          phone: lead.phone,
+          stage: 'Converted Buyer Deal Closed',
+          assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
+          budget: lead.budget || '',
+          city: lead.locality || '',
+          requirements: lead.remarks || `Converted via Closed Pitch ${p.id}`,
+          dateAdded: new Date().toISOString().split('T')[0]
+        };
+        db.customers = db.customers || [];
+        db.customers.push(existingCust);
+        writeDb(db);
+        try { syncToSheets('customers'); } catch(e) {}
+      }
+      
+      // Update pitch reference to customer
+      p.customerId = existingCust.id;
+      finalCustomerId = existingCust.id;
+      
+      // Update lead status
+      lead.status = 'Converted';
+      writeDb(db);
+      try { syncToSheets('leads'); } catch(e) {}
+    }
+  }
+
+  // Update property ownership details
+  db.properties = db.properties || [];
+  const propIndex = db.properties.findIndex(pr => String(pr.id) === String(p.propertyId));
+  if (propIndex !== -1) {
+    const prop = db.properties[propIndex];
+    
+    const prevOwnerId = prop.current_owner_id || '';
+    const prevOwnerName = prop.contact_person_name || '';
+    
+    const buyerCust = (db.customers || []).find(c => String(c.id) === String(finalCustomerId));
+    const buyerName = buyerCust ? buyerCust.name : (finalCustomerId || 'Unknown');
+    
+    prop.owner_history = prop.owner_history || [];
+    if (prevOwnerId || prevOwnerName) {
+      const hasHistory = prop.owner_history.some(h => String(h.dealId) === String(p.id));
+      if (!hasHistory) {
+        prop.owner_history.push({
+          dealId: p.id,
+          ownerId: prevOwnerId || 'N/A',
+          ownerName: prevOwnerName || 'Previous Owner',
+          purchaseDate: prop.date || '',
+          purchasePrice: prop.demand || '',
+          saleDate: new Date().toISOString().split('T')[0],
+          salePrice: p.quotedPrice || ''
+        });
+      }
+    }
+    
+    prop.current_owner_id = finalCustomerId;
+    prop.contact_person_name = buyerName;
+    prop.contact_number = buyerCust ? buyerCust.phone : (prop.contact_number || '');
+    prop.status = 'Sold';
+    
+    prop.ownership_documents = prop.ownership_documents || { old_owner: [], new_owner: [] };
+    if (prop.ownership_documents.new_owner && prop.ownership_documents.new_owner.length > 0) {
+      prop.ownership_documents.old_owner = [
+        ...(prop.ownership_documents.old_owner || []),
+        ...prop.ownership_documents.new_owner
+      ];
+    }
+    prop.ownership_documents.new_owner = [];
+    
+    prop.timeline = prop.timeline || [];
+    prop.timeline.push({
+      date: new Date().toLocaleDateString('en-IN'),
+      event: 'Ownership Changed (Pitch Closed)',
+      details: `Sold by ${prevOwnerName || 'Unknown'} to ${buyerName} for ₹${p.quotedPrice} via Pitch ${p.id}`
+    });
+    
+    db.properties[propIndex] = prop;
+    
+    if (p.employeeId) {
+      setTimeout(() => {
+        notifyUser(p.employeeId, 'pitch-closed-notif', {
+          pitchId: p.id,
+          message: `Pitch ${p.id} for Property ${p.propertyId} has been closed and ownership updated.`
+        });
+      }, 500);
+    }
+    
+    db.activity_logs = db.activity_logs || [];
+    db.activity_logs.unshift({
+      id: `LOG-${Date.now()}`,
+      employeeName: req.user ? req.user.name : 'System',
+      action: `Pitch ${p.id} closed. Ownership of Property ${p.propertyId} transferred to Customer ${finalCustomerId}.`,
+      dateTime: new Date().toLocaleString()
+    });
+    
+    writeDb(db);
+    try { syncToSheets('properties'); } catch(e) {}
+  }
+
+  // Auto convert follow-ups for this client to Call Done / Closed
+  db.follow_ups = db.follow_ups || [];
+  db.follow_ups.forEach(f => {
+    if (String(f.customerId) === String(p.customerId) || String(f.customerId) === String(finalCustomerId)) {
+      f.status = 'Call Done';
+      f.pipelineAction = 'Deal Closed';
+    }
+  });
+  writeDb(db);
+  try { syncToSheets('follow_ups'); } catch(e) {}
 }
 
 function handleLeadStatusChange(lead, db, req) {
@@ -1233,6 +1371,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     try { syncToSheets('follow_ups'); } catch(e) {}
   }
   if (module === 'deals') handleDealStatusChange(payload, db, req);
+  if (module === 'property_pitch_history') handlePitchStatusChange(payload, db, req);
   if (module === 'leads') {
     handleLeadStatusChange(payload, db, req);
     if (payload.assignmentStatus === 'accepted') {
@@ -1392,6 +1531,7 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
 
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
+  if (module === 'property_pitch_history') handlePitchStatusChange(db[module][index], db, req);
   if (module === 'leads') {
     handleLeadStatusChange(db[module][index], db, req);
     if (db[module][index].assignmentStatus === 'accepted') {
@@ -1474,6 +1614,15 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     try { syncToSheets('queries'); } catch(e) {}
     try { syncToSheets('site_visits'); } catch(e) {}
     try { syncToSheets('property_pitch_history'); } catch(e) {}
+  }
+  if (module === 'deals') {
+    db.properties = db.properties || [];
+    db.properties.forEach(p => {
+      if (p.owner_history) {
+        p.owner_history = p.owner_history.filter(h => String(h.dealId) !== String(id));
+      }
+    });
+    try { syncToSheets('properties'); } catch(e) {}
   }
   // Auto-shift sequential IDs to close the gap and update references globally
   const prefixMap = {
@@ -1561,6 +1710,17 @@ app.post('/api/data/:module/bulk-delete', authenticateToken, checkPermission('se
     try { syncToSheets('queries'); } catch(e) {}
     try { syncToSheets('site_visits'); } catch(e) {}
     try { syncToSheets('property_pitch_history'); } catch(e) {}
+  }
+  if (module === 'deals') {
+    ids.forEach(id => {
+      db.properties = db.properties || [];
+      db.properties.forEach(p => {
+        if (p.owner_history) {
+          p.owner_history = p.owner_history.filter(h => String(h.dealId) !== String(id));
+        }
+      });
+    });
+    try { syncToSheets('properties'); } catch(e) {}
   }
 
   // Auto-shift sequential IDs to close the gap and update references globally

@@ -86,42 +86,53 @@ const QuickAdd = () => {
   const [dealerSearch, setDealerSearch] = useState('');
   const [propSearch, setPropSearch] = useState('');
 
-  useEffect(() => {
-    axios.get(`${API_BASE_URL}/public/metadata`)
-      .then(async (res) => {
-        setMetadata(res.data);
-        
-        // Find all referenced modules dynamically
-        const refModules = new Set();
-        Object.values(res.data.modules).forEach(mod => {
-          mod.fields.forEach(f => {
-            if (f.type === 'ref' && f.refModule) {
-              refModules.add(f.refModule);
-            }
-          });
+  const loadData = async (showLoadingIndicator = false) => {
+    if (showLoadingIndicator) setLoading(true);
+    try {
+      const res = await axios.get(`${API_BASE_URL}/public/metadata`);
+      setMetadata(res.data);
+      
+      // Find all referenced modules dynamically
+      const refModules = new Set();
+      Object.values(res.data.modules).forEach(mod => {
+        mod.fields.forEach(f => {
+          if (f.type === 'ref' && f.refModule) {
+            refModules.add(f.refModule);
+          }
         });
-
-        // Fetch lookups for those referenced modules
-        const promises = Array.from(refModules).map(mModule => {
-          return axios.get(`${API_BASE_URL}/public/lookup/${mModule}`)
-            .then(lRes => ({ module: mModule, data: lRes.data }))
-            .catch(() => ({ module: mModule, data: [] }));
-        });
-
-        const results = await Promise.all(promises);
-        const lookupMap = {};
-        results.forEach(r => {
-          lookupMap[r.module] = r.data;
-        });
-
-        setLookups(lookupMap);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching metadata for quick-add:', err);
-        setSubmitError('Failed to load system metadata configurations.');
-        setLoading(false);
       });
+
+      // Fetch lookups for those referenced modules
+      const promises = Array.from(refModules).map(mModule => {
+        return axios.get(`${API_BASE_URL}/public/lookup/${mModule}`)
+          .then(lRes => ({ module: mModule, data: lRes.data }))
+          .catch(() => ({ module: mModule, data: [] }));
+      });
+
+      const results = await Promise.all(promises);
+      const lookupMap = {};
+      results.forEach(r => {
+        lookupMap[r.module] = r.data;
+      });
+
+      setLookups(lookupMap);
+    } catch (err) {
+      console.error('Error fetching metadata for quick-add:', err);
+      setSubmitError('Failed to load system metadata configurations.');
+    } finally {
+      if (showLoadingIndicator) setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData(true);
+
+    // Auto-update lookups and metadata schema in the background every 10 seconds
+    const interval = setInterval(() => {
+      loadData(false);
+    }, 10000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
@@ -277,6 +288,7 @@ const QuickAdd = () => {
         });
         setDealerSearch('');
         setPropSearch('');
+        loadData(false);
       } else {
         setSubmitError(response.data.error || 'Failed to submit data.');
       }

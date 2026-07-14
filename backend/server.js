@@ -294,6 +294,7 @@ function handleAutomatedPitchLogging(rec, db, req) {
       } else {
         cust.stage = 'Interested';
       }
+      writeDb(db);
       try {
         if (String(custId).startsWith('LEAD-')) syncToSheets('leads');
         else syncToSheets('customers');
@@ -302,10 +303,11 @@ function handleAutomatedPitchLogging(rec, db, req) {
 
     // Automatically update active non-approved queries stage to Property Matching
     const queries = (db.queries || []).filter(q => String(q.customerId) === String(custId) && q.status !== 'Approved');
-    queries.forEach(q => {
-      q.stage = 'Property Matching';
-    });
     if (queries.length > 0) {
+      queries.forEach(q => {
+        q.stage = 'Property Matching';
+      });
+      writeDb(db);
       try { syncToSheets('queries'); } catch(e) {}
     }
     
@@ -389,6 +391,7 @@ function handleDealerCallInsertion(c, db) {
     dealer.remarks = c.remarks || '';
     dealer.callOutcome = c.callOutcome || '';
     // Automatically trigger sync to dealers sheet
+    writeDb(db);
     try { syncToSheets('dealers'); } catch(e) {}
   }
 }
@@ -445,6 +448,7 @@ function handleDealStatusChange(d, db, req) {
         };
         db.customers = db.customers || [];
         db.customers.push(existingCust);
+        writeDb(db);
         try { syncToSheets('customers'); } catch(e) {}
       }
       
@@ -453,6 +457,7 @@ function handleDealStatusChange(d, db, req) {
       
       // Update lead status
       lead.status = 'Converted';
+      writeDb(db);
       try { syncToSheets('leads'); } catch(e) {}
     }
   }
@@ -622,6 +627,7 @@ function handleFollowUpPipelineAction(f, db, req) {
       };
       db.site_visits = db.site_visits || [];
       db.site_visits.push(newVisit);
+      writeDb(db);
       try { syncToSheets('site_visits'); } catch(e) {}
     }
   }
@@ -653,10 +659,12 @@ function handleFollowUpPipelineAction(f, db, req) {
           };
           db.customers = db.customers || [];
           db.customers.push(existingCust);
+          writeDb(db);
           try { syncToSheets('customers'); } catch(e) {}
         }
         finalCustomerId = existingCust.id;
         lead.status = 'Converted';
+        writeDb(db);
         try { syncToSheets('leads'); } catch(e) {}
       }
     }
@@ -676,6 +684,7 @@ function handleFollowUpPipelineAction(f, db, req) {
     db.deals = db.deals || [];
     db.deals.push(newDeal);
     handleDealStatusChange(newDeal, db, req);
+    writeDb(db);
     try { syncToSheets('deals'); } catch(e) {}
   }
 
@@ -691,6 +700,7 @@ function handleFollowUpPipelineAction(f, db, req) {
         q.status = 'Approved';
       }
       handleQueryStageChange(q, db, req);
+      writeDb(db);
       try { syncToSheets('queries'); } catch(e) {}
     }
   } else if (customerId && String(customerId).startsWith('LEAD-')) {
@@ -703,6 +713,7 @@ function handleFollowUpPipelineAction(f, db, req) {
       } else {
         lead.status = action;
       }
+      writeDb(db);
       try { syncToSheets('leads'); } catch(e) {}
     }
   }

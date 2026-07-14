@@ -254,7 +254,6 @@ function App() {
         <Router>
             <DomRoutes>
               <DomRoute path="/intake" element={<PublicIntake />} />
-              <DomRoute path="/quick-add" element={<QuickAdd />} />
               <DomRoute path="/*" element={<MainLayout />} />
             </DomRoutes>
         </Router>

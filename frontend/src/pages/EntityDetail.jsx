@@ -128,7 +128,18 @@ const EntityDetail = () => {
     demand: '',
     propertyType: 'Plot',
     r_c_i: 'Residential',
-    status: 'Available'
+    status: 'Available',
+    date: '',
+    dealer_firm_name: '',
+    address_number: '',
+    bhk_and_washrooms: '',
+    dimensions: '',
+    location_type: 'Normal',
+    facing: 'East',
+    white: '',
+    time: '',
+    lead_source: 'Self Source',
+    initial_notes: ''
   });
   const [nestedProjectData, setNestedProjectData] = useState({
     name: '',
@@ -3261,6 +3272,159 @@ const EntityDetail = () => {
                             <MenuItem value="Industrial">Industrial</MenuItem>
                           </Select>
                         </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Status</InputLabel>
+                          <Select
+                            value={nestedPropertyData.status || 'Available'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, status: e.target.value }))}
+                            label="Status"
+                          >
+                            <MenuItem value="Available">Available</MenuItem>
+                            <MenuItem value="Booked By Client">Booked By Client</MenuItem>
+                            <MenuItem value="Booked By Outside Dealer">Booked By Outside Dealer</MenuItem>
+                            <MenuItem value="Hold">Hold</MenuItem>
+                            <MenuItem value="Sold Out">Sold Out</MenuItem>
+                            <MenuItem value="Not Interested">Not Interested</MenuItem>
+                            <MenuItem value="Wrong Number">Wrong Number</MenuItem>
+                            <MenuItem value="No Response">No Response</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField 
+                          label="Date" 
+                          type="date" 
+                          size="small" 
+                          fullWidth 
+                          InputLabelProps={{ shrink: true }} 
+                          value={nestedPropertyData.date || ''} 
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, date: e.target.value }))} 
+                        />
+                      </Grid>
+                      {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
+                        <Grid item xs={12} sm={6}>
+                          <TextField 
+                            label="Dealer Firm Name" 
+                            size="small" 
+                            fullWidth 
+                            value={nestedPropertyData.dealer_firm_name || ''} 
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_firm_name: e.target.value }))} 
+                          />
+                        </Grid>
+                      )}
+                      <Grid item xs={12} sm={6}>
+                        <TextField 
+                          label="Address/Number" 
+                          size="small" 
+                          fullWidth 
+                          value={nestedPropertyData.address_number || ''} 
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, address_number: e.target.value }))} 
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField 
+                          label="BHK & Washroom" 
+                          size="small" 
+                          fullWidth 
+                          value={nestedPropertyData.bhk_and_washrooms || ''} 
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, bhk_and_washrooms: e.target.value }))} 
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField 
+                          label="Dimensions" 
+                          size="small" 
+                          fullWidth 
+                          value={nestedPropertyData.dimensions || ''} 
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dimensions: e.target.value }))} 
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Location Type</InputLabel>
+                          <Select
+                            value={nestedPropertyData.location_type || 'Normal'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, location_type: e.target.value }))}
+                            label="Location Type"
+                          >
+                            <MenuItem value="Normal">Normal</MenuItem>
+                            <MenuItem value="Corner">Corner</MenuItem>
+                            <MenuItem value="Park Facing">Park Facing</MenuItem>
+                            <MenuItem value="Wide Road">Wide Road</MenuItem>
+                            <MenuItem value="Corner + Park Facing">Corner + Park Facing</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Facing</InputLabel>
+                          <Select
+                            value={nestedPropertyData.facing || 'East'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, facing: e.target.value }))}
+                            label="Facing"
+                          >
+                            <MenuItem value="East">East</MenuItem>
+                            <MenuItem value="West">West</MenuItem>
+                            <MenuItem value="North">North</MenuItem>
+                            <MenuItem value="South">South</MenuItem>
+                            <MenuItem value="North-East">North-East</MenuItem>
+                            <MenuItem value="North-West">North-West</MenuItem>
+                            <MenuItem value="South-East">South-East</MenuItem>
+                            <MenuItem value="South-West">South-West</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField 
+                          label="White" 
+                          size="small" 
+                          fullWidth 
+                          value={nestedPropertyData.white || ''} 
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, white: e.target.value }))} 
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField 
+                          label="Time" 
+                          size="small" 
+                          fullWidth 
+                          value={nestedPropertyData.time || ''} 
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, time: e.target.value }))} 
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Lead Source</InputLabel>
+                          <Select
+                            value={nestedPropertyData.lead_source || 'Self Source'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, lead_source: e.target.value }))}
+                            label="Lead Source"
+                          >
+                            <MenuItem value="Dealer">Dealer</MenuItem>
+                            <MenuItem value="Direct Client">Direct Client</MenuItem>
+                            <MenuItem value="Cold Calling">Cold Calling</MenuItem>
+                            <MenuItem value="Google Ads">Google Ads</MenuItem>
+                            <MenuItem value="Facebook Ads">Facebook Ads</MenuItem>
+                            <MenuItem value="JustDial">JustDial</MenuItem>
+                            <MenuItem value="99acres">99acres</MenuItem>
+                            <MenuItem value="MagicBricks">MagicBricks</MenuItem>
+                            <MenuItem value="Reference">Reference</MenuItem>
+                            <MenuItem value="Self Source">Self Source</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField 
+                          label="Initial Notes / Remarks" 
+                          size="small" 
+                          fullWidth 
+                          multiline 
+                          rows={2} 
+                          value={nestedPropertyData.initial_notes || ''} 
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, initial_notes: e.target.value }))} 
+                        />
                       </Grid>
                     </Grid>
                   </Box>

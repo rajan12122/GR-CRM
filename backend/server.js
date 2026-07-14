@@ -722,11 +722,22 @@ function handleLeadStatusChange(lead, db, req) {
       locality: lead.locality || '',
       sector_block: lead.sector_block || '',
       size: lead.size || '',
-      remarks: `Converted from Lead ${lead.id}.`
+      remarks: `Converted from Lead ${lead.id}.`,
+      propertyId: lead.propertyId || ''
     };
     db.queries.push(newQuery);
     writeDb(db);
     try { syncToSheets('queries'); } catch(e) {}
+
+    if (lead.propertyId) {
+      db.properties = db.properties || [];
+      const prop = db.properties.find(pr => String(pr.id) === String(lead.propertyId));
+      if (prop) {
+        prop.current_owner_id = existingCust.id;
+        writeDb(db);
+        try { syncToSheets('properties'); } catch(e) {}
+      }
+    }
     
     db.activity_logs = db.activity_logs || [];
     db.activity_logs.unshift({

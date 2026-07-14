@@ -336,6 +336,15 @@
           "editable": true
         },
         {
+          "name": "propertyId",
+          "label": "Associated Property",
+          "type": "ref",
+          "refModule": "properties",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "dateAdded",
           "label": "Date Captured",
           "type": "date",
@@ -1743,6 +1752,15 @@
           "name": "remarks",
           "label": "Remarks",
           "type": "textarea",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
+          "name": "propertyId",
+          "label": "Associated Property",
+          "type": "ref",
+          "refModule": "properties",
           "required": false,
           "showInTable": true,
           "editable": true

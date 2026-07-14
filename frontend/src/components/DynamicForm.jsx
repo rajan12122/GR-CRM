@@ -20,6 +20,7 @@ import {
   Typography
 } from '@mui/material';
 import { useApp } from '../context/AppContext';
+import { Home } from 'lucide-react';
 
 const DynamicForm = ({ 
   open, 
@@ -207,6 +208,20 @@ const DynamicForm = ({
     }
   }, [open, initialData, fields, user]);
 
+  const isSellerLead = moduleKey === 'leads' && formData.leadType === 'Seller';
+  const isSellerQuery = moduleKey === 'queries' && formData.queryType === 'Sell Property';
+  const showSellerPropertyForm = isSellerLead || isSellerQuery;
+
+  useEffect(() => {
+    if (showSellerPropertyForm) {
+      setNestedPropertyData(prev => ({
+        ...prev,
+        contact_person_name: prev.contact_person_name || formData.name || formData.person_name || '',
+        contact_number: prev.contact_number || formData.phone || formData.contact_num || ''
+      }));
+    }
+  }, [showSellerPropertyForm, formData.name, formData.person_name, formData.phone, formData.contact_num]);
+
   const handleChange = (name, val, type) => {
     setFormData(prev => ({
       ...prev,
@@ -304,6 +319,40 @@ const DynamicForm = ({
     return payload;
   };
 
+  const resolveSellerProperty = async (payload) => {
+    if (showSellerPropertyForm) {
+      let finalDealerId = nestedPropertyData.dealerId;
+      if (nestedPropertyData.dealer_owner_booked === 'Dealer' && nestedPropertyData.dealerId === 'Other_Dealer') {
+        const dealerRes = await createRecord('dealers', {
+          ...nestedDealerData
+        });
+        if (dealerRes.success) {
+          finalDealerId = dealerRes.data.id;
+          fetchModuleData('dealers');
+        } else {
+          throw new Error(dealerRes.message || "Failed to auto-create associated dealer");
+        }
+      }
+      
+      const propPayload = {
+        ...nestedPropertyData,
+        dealerId: finalDealerId,
+        contact_person_name: nestedPropertyData.contact_person_name || payload.name || payload.person_name || '',
+        contact_number: nestedPropertyData.contact_number || payload.phone || payload.contact_num || '',
+        date: new Date().toLocaleDateString('en-IN')
+      };
+      
+      const propRes = await createRecord('properties', propPayload);
+      if (propRes.success) {
+        payload.propertyId = propRes.data.id;
+        fetchModuleData('properties');
+      } else {
+        throw new Error(propRes.message || "Failed to auto-create seller property");
+      }
+    }
+    return payload;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (validate()) {
@@ -316,6 +365,7 @@ const DynamicForm = ({
         });
         payload = await resolveDealerId(payload);
         payload = await resolvePitchedProperty(payload);
+        payload = await resolveSellerProperty(payload);
         onSubmit(payload);
       } catch (err) {
         setErrors({ submit: err.message });
@@ -335,6 +385,7 @@ const DynamicForm = ({
         });
         payload = await resolveDealerId(payload);
         payload = await resolvePitchedProperty(payload);
+        payload = await resolveSellerProperty(payload);
         
         const res = await createRecord(moduleKey, payload);
         if (res.success) {
@@ -994,6 +1045,170 @@ const DynamicForm = ({
                 </Grid>
               );
             })}
+
+            {showSellerPropertyForm && (
+              <Grid item xs={12}>
+                <Box sx={{ mt: 3, p: 2.5, border: '1px solid #10B981', borderRadius: '12px', backgroundColor: '#F0FDF4' }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#065F46', display: 'flex', alignItems: 'center', gap: 1, fontFamily: 'Poppins' }}>
+                    <Home size={18} />
+                    Register Property Listing (Seller Details)
+                  </Typography>
+                  <Grid container spacing={1.5}>
+                    <Grid item xs={12} sm={6}>
+                      <TextField label="Contact Person Name" size="small" fullWidth value={nestedPropertyData.contact_person_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_person_name: e.target.value }))} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField label="Contact Number" size="small" fullWidth value={nestedPropertyData.contact_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_number: e.target.value }))} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Dealer/Owner/Booked</InputLabel>
+                        <Select
+                          value={nestedPropertyData.dealer_owner_booked || 'Direct'}
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_owner_booked: e.target.value }))}
+                          label="Dealer/Owner/Booked"
+                        >
+                          <MenuItem value="Dealer">Dealer</MenuItem>
+                          <MenuItem value="Direct">Direct</MenuItem>
+                          <MenuItem value="Booked By Us">Booked By Us</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
+                      <>
+                        <Grid item xs={12} sm={6}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>Associated Dealer</InputLabel>
+                            <Select
+                              value={nestedPropertyData.dealerId || ''}
+                              onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
+                              label="Associated Dealer"
+                            >
+                              <MenuItem value="">-- Select --</MenuItem>
+                              {(moduleData.dealers || []).map(d => (
+                                <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
+                              ))}
+                              <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                                + Add New Property Dealer
+                              </MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel>Dealer Deal Type</InputLabel>
+                            <Select
+                              value={nestedPropertyData.dealer_deal_type || ''}
+                              onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_deal_type: e.target.value }))}
+                              label="Dealer Deal Type"
+                            >
+                              <MenuItem value="Dealer To Dealer">Dealer To Dealer</MenuItem>
+                              <MenuItem value="Direct">Direct</MenuItem>
+                              <MenuItem value="Booked">Booked</MenuItem>
+                            </Select>
+                          </FormControl>
+                        </Grid>
+
+                        {nestedPropertyData.dealerId === 'Other_Dealer' && (
+                          <Grid item xs={12}>
+                            <Paper sx={{ p: 2, border: '1px solid #3B82F6', borderRadius: '12px', backgroundColor: '#EFF6FF', boxShadow: 'none' }}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1.5, color: '#1E3A8A' }}>
+                                Create New Property Dealer
+                              </Typography>
+                              <Grid container spacing={1.5}>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Firm Name" size="small" fullWidth required value={nestedDealerData.firm_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, firm_name: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Person Name" size="small" fullWidth required value={nestedDealerData.person_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, person_name: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Contact Number" size="small" fullWidth required value={nestedDealerData.contact_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contact_num: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Contacted Number" size="small" fullWidth value={nestedDealerData.contacted_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contacted_num: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Area/Sector/Block" size="small" fullWidth required value={nestedDealerData.sector_block || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                  <TextField label="Address" size="small" fullWidth value={nestedDealerData.address || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, address: e.target.value }))} />
+                                </Grid>
+                                <Grid item xs={12}>
+                                  <TextField label="Call Notes/Remarks" size="small" fullWidth multiline rows={2} value={nestedDealerData.remarks || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, remarks: e.target.value }))} />
+                                </Grid>
+                              </Grid>
+                            </Paper>
+                          </Grid>
+                        )}
+                      </>
+                    )}
+
+                    {nestedPropertyData.dealer_owner_booked === 'Booked By Us' && (
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Booked By (Customer)</InputLabel>
+                          <Select
+                            value={nestedPropertyData.booked_by_customer_id || ''}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, booked_by_customer_id: e.target.value }))}
+                            label="Booked By (Customer)"
+                          >
+                            <MenuItem value="">-- Select --</MenuItem>
+                            {(moduleData.customers || []).map(c => (
+                              <MenuItem key={c.id} value={c.id}>{c.name} ({c.id})</MenuItem>
+                            ))}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                    )}
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} />
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Property Type</InputLabel>
+                        <Select
+                          value={nestedPropertyData.propertyType || 'Plot'}
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
+                          label="Property Type"
+                        >
+                          <MenuItem value="Villa">Luxury Villa</MenuItem>
+                          <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                          <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                          <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                          <MenuItem value="LOI">LOI</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>R/C/I</InputLabel>
+                        <Select
+                          value={nestedPropertyData.r_c_i || 'Residential'}
+                          onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
+                          label="R/C/I"
+                        >
+                          <MenuItem value="Residential">Residential</MenuItem>
+                          <MenuItem value="Commercial">Commercial</MenuItem>
+                          <MenuItem value="Industrial">Industrial</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Grid>
+            )}
           </Grid>
         </DialogContent>
         

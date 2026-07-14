@@ -317,10 +317,10 @@ const Sidebar = ({ mobileOpen, handleDrawerToggle }) => {
             {user?.name?.split(' ').map(n=>n[0]).join('') || 'U'}
           </Box>
           <Box sx={{ overflow: 'hidden' }}>
-            <Typography variant="body2" sx={{ color: '#FFFFFF', fontWeight: 600, noWrap: true }}>
+            <Typography variant="body2" noWrap sx={{ color: '#FFFFFF', fontWeight: 600 }}>
               {user?.name || 'User Profile'}
             </Typography>
-            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', noWrap: true }}>
+            <Typography variant="caption" noWrap sx={{ color: '#64748B', display: 'block' }}>
               Role: {user?.role || 'Guest'}
             </Typography>
           </Box>

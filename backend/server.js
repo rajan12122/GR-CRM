@@ -969,11 +969,32 @@ app.get('/api/data/:module', authenticateToken, (req, res, next) => {
   
   if (role !== 'Admin') {
     if (module === 'leads') {
-      records = records.filter(r => String(r.assignedEmployeeId) === String(req.user.id));
+      const myFollowUpCustomerIds = (db.follow_ups || [])
+        .filter(f => String(f.employeeId) === String(req.user.id))
+        .map(f => String(f.customerId));
+      const mySiteVisitCustomerIds = (db.site_visits || [])
+        .filter(sv => String(sv.employeeId) === String(req.user.id))
+        .map(sv => String(sv.customerId));
+      const myPitchCustomerIds = (db.property_pitch_history || [])
+        .filter(p => String(p.employeeId) === String(req.user.id))
+        .map(p => String(p.customerId));
+      
+      records = records.filter(r => 
+        String(r.assignedEmployeeId) === String(req.user.id) ||
+        myFollowUpCustomerIds.includes(String(r.id)) ||
+        mySiteVisitCustomerIds.includes(String(r.id)) ||
+        myPitchCustomerIds.includes(String(r.id))
+      );
     } else if (module === 'follow_ups') {
       records = records.filter(r => String(r.employeeId) === String(req.user.id));
     } else if (module === 'queries') {
-      records = records.filter(r => String(r.assignedEmployeeId) === String(req.user.id));
+      const myFollowUpQueryIds = (db.follow_ups || [])
+        .filter(f => String(f.employeeId) === String(req.user.id))
+        .map(f => String(f.queryId));
+      records = records.filter(r => 
+        String(r.assignedEmployeeId) === String(req.user.id) ||
+        myFollowUpQueryIds.includes(String(r.id))
+      );
     } else if (module === 'property_pitch_history') {
       records = records.filter(r => String(r.employeeId) === String(req.user.id));
     } else if (module === 'site_visits') {
@@ -1079,6 +1100,18 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     }
     if (f.name === 'status' && !payload[f.name] && module === 'property_pitch_history') {
       payload[f.name] = 'Pitched';
+    }
+    if (f.name === 'pitchDate' && !payload[f.name] && module === 'property_pitch_history') {
+      payload[f.name] = new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN');
+    }
+    if (f.name === 'employeeName' && !payload[f.name] && (module === 'property_pitch_history' || module === 'dealer_calls')) {
+      payload[f.name] = req.user.name;
+    }
+    if (f.name === 'employeeId' && !payload[f.name] && module === 'property_pitch_history') {
+      payload[f.name] = req.user.id;
+    }
+    if (f.name === 'assignedEmployeeId' && !payload[f.name] && module === 'dealer_meetings') {
+      payload[f.name] = req.user.id;
     }
   });
 

@@ -29,7 +29,7 @@ const DynamicForm = ({
   initialData, 
   onSubmit 
 }) => {
-  const { moduleData, fetchModuleData, metadata, createRecord } = useApp();
+  const { moduleData, fetchModuleData, metadata, createRecord, user } = useApp();
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [customValues, setCustomValues] = useState({});
@@ -94,7 +94,22 @@ const DynamicForm = ({
         const initialForm = {};
         const initialCustom = {};
         fields.forEach(f => {
-          const val = initialData[f.name];
+          let val = initialData[f.name];
+          if ((val === undefined || val === null || String(val).trim() === '') && f.required && f.editable === false) {
+            if (f.name === 'pitchDate') {
+              val = new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN');
+            } else if (f.name === 'dateAdded') {
+              val = new Date().toISOString().split('T')[0];
+            } else if (f.name === 'date' && f.type === 'date') {
+              val = new Date().toISOString().split('T')[0];
+            } else if (f.name === 'employeeName' && user?.name) {
+              val = user.name;
+            } else if (f.name === 'employeeId' && user?.id) {
+              val = user.id;
+            } else if (f.name === 'assignedEmployeeId' && user?.id) {
+              val = user.id;
+            }
+          }
           if (f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup]) {
             const options = metadata.chips[f.chipGroup];
             const hasOption = options.some(opt => opt.value === val);
@@ -129,7 +144,21 @@ const DynamicForm = ({
       } else {
         const defaultForm = {};
         fields.forEach(f => {
-          defaultForm[f.name] = '';
+          if (f.name === 'pitchDate') {
+            defaultForm[f.name] = new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN');
+          } else if (f.name === 'dateAdded') {
+            defaultForm[f.name] = new Date().toISOString().split('T')[0];
+          } else if (f.name === 'date' && f.type === 'date') {
+            defaultForm[f.name] = new Date().toISOString().split('T')[0];
+          } else if (f.name === 'employeeName' && user?.name) {
+            defaultForm[f.name] = user.name;
+          } else if (f.name === 'employeeId' && user?.id) {
+            defaultForm[f.name] = user.id;
+          } else if (f.name === 'assignedEmployeeId' && user?.id) {
+            defaultForm[f.name] = user.id;
+          } else {
+            defaultForm[f.name] = '';
+          }
         });
         setFormData(defaultForm);
         setCustomValues({});
@@ -176,7 +205,7 @@ const DynamicForm = ({
       
       setErrors({});
     }
-  }, [open, initialData, fields]);
+  }, [open, initialData, fields, user]);
 
   const handleChange = (name, val, type) => {
     setFormData(prev => ({
@@ -361,7 +390,7 @@ const DynamicForm = ({
               if (f.name === 'id' && !initialData) return null; // Hide auto-generated ID field on create
               
               // Primary keys or non-editable fields (like ID on edit) should be read-only
-              const isReadOnly = f.editable === false && initialData;
+              const isReadOnly = f.editable === false;
 
               // 1. SELECT TYPE FIELD
               if (f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup]) {

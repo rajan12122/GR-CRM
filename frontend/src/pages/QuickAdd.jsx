@@ -34,6 +34,58 @@ const QuickAdd = () => {
 
   const [lookups, setLookups] = useState({});
 
+  const [nestedPropertyData, setNestedPropertyData] = useState({
+    contact_person_name: '',
+    contact_number: '',
+    dealer_owner_booked: 'Direct',
+    dealerId: '',
+    dealer_deal_type: '',
+    booked_by_customer_id: '',
+    locality: '',
+    sector_block: '',
+    size: '',
+    demand: '',
+    propertyType: 'Plot',
+    r_c_i: 'Residential',
+    status: 'Available',
+    date: '',
+    dealer_firm_name: '',
+    address_number: '',
+    bhk_and_washrooms: '',
+    dimensions: '',
+    location_type: 'Normal',
+    facing: 'East',
+    white: '',
+    time: '',
+    lead_source: 'Self Source',
+    initial_notes: ''
+  });
+
+  const [nestedProjectData, setNestedProjectData] = useState({
+    name: '',
+    builder: 'DLF Group',
+    locality: '',
+    sector_block: '',
+    status: 'Ready to Move',
+    pricing_details: '',
+    plc_percent: '',
+    initial_notes: ''
+  });
+
+  const [nestedDealerData, setNestedDealerData] = useState({
+    firm_name: '',
+    person_name: '',
+    contact_num: '',
+    contacted_num: '',
+    sector_block: '',
+    address: '',
+    remarks: '',
+    callOutcome: 'Call Done'
+  });
+
+  const [dealerSearch, setDealerSearch] = useState('');
+  const [propSearch, setPropSearch] = useState('');
+
   useEffect(() => {
     axios.get(`${API_BASE_URL}/public/metadata`)
       .then(async (res) => {
@@ -112,6 +164,55 @@ const QuickAdd = () => {
     try {
       // Map custom "Other" fields into the submitted payload
       const payload = { ...formData };
+
+      // Auto-create property or project if logged inside property_pitch_history
+      if (selectedModule === 'property_pitch_history') {
+        if (formData.propertyId === 'Other_Property') {
+          let finalDealerId = nestedPropertyData.dealerId;
+          
+          if (nestedPropertyData.dealer_owner_booked === 'Dealer' && nestedPropertyData.dealerId === 'Other_Dealer') {
+            const dealerRes = await axios.post(`${API_BASE_URL}/public/quick-add`, {
+              module: 'dealers',
+              payload: nestedDealerData,
+              key: 'gagan_employee_intake_2026'
+            });
+            if (dealerRes.data.success) {
+              finalDealerId = dealerRes.data.record.id;
+            } else {
+              throw new Error(dealerRes.data.error || 'Failed to auto-create property dealer');
+            }
+          }
+
+          const propRes = await axios.post(`${API_BASE_URL}/public/quick-add`, {
+            module: 'properties',
+            payload: {
+              ...nestedPropertyData,
+              dealerId: finalDealerId,
+              date: nestedPropertyData.date || new Date().toLocaleDateString('en-IN')
+            },
+            key: 'gagan_employee_intake_2026'
+          });
+          if (propRes.data.success) {
+            payload.propertyId = propRes.data.record.id;
+          } else {
+            throw new Error(propRes.data.error || 'Failed to auto-create property details');
+          }
+        }
+
+        if (formData.projectId === 'Other_Project') {
+          const projRes = await axios.post(`${API_BASE_URL}/public/quick-add`, {
+            module: 'projects',
+            payload: nestedProjectData,
+            key: 'gagan_employee_intake_2026'
+          });
+          if (projRes.data.success) {
+            payload.projectId = projRes.data.record.id;
+          } else {
+            throw new Error(projRes.data.error || 'Failed to auto-create project details');
+          }
+        }
+      }
+
       fields.forEach(f => {
         if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
           payload[f.name] = customValues[f.name] || '';
@@ -128,12 +229,60 @@ const QuickAdd = () => {
         setSubmitSuccess(true);
         setFormData({});
         setCustomValues({});
+        setNestedPropertyData({
+          contact_person_name: '',
+          contact_number: '',
+          dealer_owner_booked: 'Direct',
+          dealerId: '',
+          dealer_deal_type: '',
+          booked_by_customer_id: '',
+          locality: '',
+          sector_block: '',
+          size: '',
+          demand: '',
+          propertyType: 'Plot',
+          r_c_i: 'Residential',
+          status: 'Available',
+          date: '',
+          dealer_firm_name: '',
+          address_number: '',
+          bhk_and_washrooms: '',
+          dimensions: '',
+          location_type: 'Normal',
+          facing: 'East',
+          white: '',
+          time: '',
+          lead_source: 'Self Source',
+          initial_notes: ''
+        });
+        setNestedProjectData({
+          name: '',
+          builder: 'DLF Group',
+          locality: '',
+          sector_block: '',
+          status: 'Ready to Move',
+          pricing_details: '',
+          plc_percent: '',
+          initial_notes: ''
+        });
+        setNestedDealerData({
+          firm_name: '',
+          person_name: '',
+          contact_num: '',
+          contacted_num: '',
+          sector_block: '',
+          address: '',
+          remarks: '',
+          callOutcome: 'Call Done'
+        });
+        setDealerSearch('');
+        setPropSearch('');
       } else {
         setSubmitError(response.data.error || 'Failed to submit data.');
       }
     } catch (err) {
       console.error(err);
-      setSubmitError(err.response?.data?.error || 'A network error occurred. Please try again.');
+      setSubmitError(err.message || err.response?.data?.error || 'A network error occurred. Please try again.');
     } finally {
       setSubmitting(false);
     }
@@ -284,12 +433,62 @@ const QuickAdd = () => {
                                 '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: '#3B82F6' }
                               }}
                             >
-                              {lookups[f.refModule].map(opt => (
+                              {selectedModule === 'property_pitch_history' && (f.name === 'propertyId' || f.name === 'projectId') && (
+                                <MenuItem
+                                  disableRipple
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  sx={{ 
+                                    backgroundColor: 'transparent !important', 
+                                    cursor: 'default',
+                                    p: '4px 16px',
+                                    '&:hover': { backgroundColor: 'transparent' }
+                                  }}
+                                >
+                                  <TextField
+                                    size="small"
+                                    placeholder={f.name === 'propertyId' ? "Search properties..." : "Search projects..."}
+                                    fullWidth
+                                    value={propSearch}
+                                    onChange={(e) => setPropSearch(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                    sx={{ 
+                                      input: { color: '#FFFFFF' }, 
+                                      '.MuiInputLabel-root': { color: '#94A3B8' },
+                                      '& .MuiOutlinedInput-root': {
+                                        backgroundColor: '#0F172A',
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' }
+                                      }
+                                    }}
+                                  />
+                                </MenuItem>
+                              )}
+                              <MenuItem value="">-- Select --</MenuItem>
+                              {lookups[f.refModule].filter(opt => {
+                                if (selectedModule === 'property_pitch_history' && (f.name === 'propertyId' || f.name === 'projectId')) {
+                                  if (!propSearch) return true;
+                                  return String(opt.name || '').toLowerCase().includes(propSearch.toLowerCase()) || 
+                                         String(opt.id || '').toLowerCase().includes(propSearch.toLowerCase());
+                                }
+                                return true;
+                              }).map(opt => (
                                 <MenuItem key={opt.id} value={opt.id}>{opt.name} ({opt.id})</MenuItem>
                               ))}
-                              <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
-                                Other (Specify...)
-                              </MenuItem>
+                              
+                              {selectedModule === 'property_pitch_history' && f.name === 'propertyId' ? (
+                                <MenuItem value="Other_Property" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
+                                  + Create New Property Detail...
+                                </MenuItem>
+                              ) : selectedModule === 'property_pitch_history' && f.name === 'projectId' ? (
+                                <MenuItem value="Other_Project" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
+                                  + Create New Project Detail...
+                                </MenuItem>
+                              ) : (
+                                <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
+                                  Other (Specify...)
+                                </MenuItem>
+                              )}
                             </Select>
                           </FormControl>
                         ) : isMultiRef ? (
@@ -419,6 +618,364 @@ const QuickAdd = () => {
                     );
                   })}
                 </Grid>
+
+                {/* Inline Nested Property Form */}
+                {selectedModule === 'property_pitch_history' && formData.propertyId === 'Other_Property' && (
+                  <Box sx={{ mt: 1, mb: 3.5, p: 2.5, border: '1px solid #334155', borderRadius: '16px', backgroundColor: '#1E293B', textAlign: 'left' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#3B82F6', textTransform: 'uppercase', fontFamily: 'Poppins', letterSpacing: '0.5px' }}>
+                      Create New Property Detail
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Contact Person Name" size="small" fullWidth value={nestedPropertyData.contact_person_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_person_name: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Contact Number" size="small" fullWidth value={nestedPropertyData.contact_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, contact_number: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Dealer/Owner/Booked</InputLabel>
+                          <Select
+                            value={nestedPropertyData.dealer_owner_booked || 'Direct'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_owner_booked: e.target.value }))}
+                            label="Dealer/Owner/Booked"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="Dealer">Dealer</MenuItem>
+                            <MenuItem value="Direct">Direct</MenuItem>
+                            <MenuItem value="Booked By Us">Booked By Us</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
+                        <>
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth size="small">
+                              <InputLabel sx={{ color: '#94A3B8' }}>Associated Dealer</InputLabel>
+                              <Select
+                                value={nestedPropertyData.dealerId || ''}
+                                onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealerId: e.target.value }))}
+                                label="Associated Dealer"
+                                sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                              >
+                                <MenuItem
+                                  disableRipple
+                                  onClick={(e) => e.stopPropagation()}
+                                  onKeyDown={(e) => e.stopPropagation()}
+                                  sx={{ 
+                                    backgroundColor: 'transparent !important', 
+                                    cursor: 'default',
+                                    p: '4px 16px',
+                                    '&:hover': { backgroundColor: 'transparent' }
+                                  }}
+                                >
+                                  <TextField
+                                    size="small"
+                                    placeholder="Search dealers..."
+                                    fullWidth
+                                    value={dealerSearch}
+                                    onChange={(e) => setDealerSearch(e.target.value)}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onKeyDown={(e) => e.stopPropagation()}
+                                    sx={{ 
+                                      input: { color: '#FFFFFF' }, 
+                                      '.MuiInputLabel-root': { color: '#94A3B8' },
+                                      '& .MuiOutlinedInput-root': {
+                                        backgroundColor: '#0F172A',
+                                        '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' }
+                                      }
+                                    }}
+                                  />
+                                </MenuItem>
+                                <MenuItem value="">-- Select --</MenuItem>
+                                {(lookups['dealers'] || []).filter(d => {
+                                  if (!dealerSearch) return true;
+                                  return String(d.name || '').toLowerCase().includes(dealerSearch.toLowerCase()) || 
+                                         String(d.id || '').toLowerCase().includes(dealerSearch.toLowerCase());
+                                }).map(d => (
+                                  <MenuItem key={d.id} value={d.id}>{d.name} ({d.id})</MenuItem>
+                                ))}
+                                <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#3B82F6' }}>
+                                  + Add New Property Dealer
+                                </MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth size="small">
+                              <InputLabel sx={{ color: '#94A3B8' }}>Dealer Deal Type</InputLabel>
+                              <Select
+                                value={nestedPropertyData.dealer_deal_type || ''}
+                                onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_deal_type: e.target.value }))}
+                                label="Dealer Deal Type"
+                                sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                              >
+                                <MenuItem value="Dealer To Dealer">Dealer To Dealer</MenuItem>
+                                <MenuItem value="Direct">Direct</MenuItem>
+                                <MenuItem value="Booked">Booked</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+
+                          {nestedPropertyData.dealerId === 'Other_Dealer' && (
+                            <Grid item xs={12}>
+                              <Paper sx={{ p: 2.5, border: '1px solid #3B82F6', borderRadius: '12px', backgroundColor: '#0F172A', boxShadow: 'none' }}>
+                                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#FFFFFF', fontFamily: 'Poppins' }}>
+                                  Create New Property Dealer
+                                </Typography>
+                                <Grid container spacing={2}>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Firm Name" size="small" fullWidth required value={nestedDealerData.firm_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, firm_name: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Person Name" size="small" fullWidth required value={nestedDealerData.person_name || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, person_name: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Contact Number" size="small" fullWidth required value={nestedDealerData.contact_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contact_num: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Contacted Number" size="small" fullWidth value={nestedDealerData.contacted_num || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, contacted_num: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Area/Sector/Block" size="small" fullWidth required value={nestedDealerData.sector_block || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, sector_block: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                                  </Grid>
+                                  <Grid item xs={12} sm={6}>
+                                    <TextField label="Address" size="small" fullWidth value={nestedDealerData.address || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, address: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                                  </Grid>
+                                  <Grid item xs={12}>
+                                    <TextField label="Call Notes/Remarks" size="small" fullWidth multiline rows={2} value={nestedDealerData.remarks || ''} onChange={(e) => setNestedDealerData(prev => ({ ...prev, remarks: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                                  </Grid>
+                                </Grid>
+                              </Paper>
+                            </Grid>
+                          )}
+                        </>
+                      )}
+
+                      {nestedPropertyData.dealer_owner_booked === 'Booked By Us' && (
+                        <Grid item xs={12} sm={6}>
+                          <FormControl fullWidth size="small">
+                            <InputLabel sx={{ color: '#94A3B8' }}>Booked By (Customer)</InputLabel>
+                            <Select
+                              value={nestedPropertyData.booked_by_customer_id || ''}
+                              onChange={(e) => setNestedPropertyData(prev => ({ ...prev, booked_by_customer_id: e.target.value }))}
+                              label="Booked By (Customer)"
+                              sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                            >
+                              <MenuItem value="">-- Select --</MenuItem>
+                              {(lookups['customers'] || []).map(c => (
+                                <MenuItem key={c.id} value={c.id}>{c.name} ({c.id})</MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                      )}
+
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Property Type</InputLabel>
+                          <Select
+                            value={nestedPropertyData.propertyType || 'Plot'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
+                            label="Property Type"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="Villa">Luxury Villa</MenuItem>
+                            <MenuItem value="Plot">Residential Land Plot</MenuItem>
+                            <MenuItem value="Apartment">Multistory Apartment</MenuItem>
+                            <MenuItem value="Commercial">Retail/Office Space</MenuItem>
+                            <MenuItem value="LOI">LOI</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>R/C/I</InputLabel>
+                          <Select
+                            value={nestedPropertyData.r_c_i || 'Residential'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
+                            label="R/C/I"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="Residential">Residential</MenuItem>
+                            <MenuItem value="Commercial">Commercial</MenuItem>
+                            <MenuItem value="Industrial">Industrial</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Status</InputLabel>
+                          <Select
+                            value={nestedPropertyData.status || 'Available'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, status: e.target.value }))}
+                            label="Status"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="Available">Available</MenuItem>
+                            <MenuItem value="Booked By Client">Booked By Client</MenuItem>
+                            <MenuItem value="Booked By Outside Dealer">Booked By Outside Dealer</MenuItem>
+                            <MenuItem value="Hold">Hold</MenuItem>
+                            <MenuItem value="Sold Out">Sold Out</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Date" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} value={nestedPropertyData.date || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, date: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Dealer Firm Name" size="small" fullWidth value={nestedPropertyData.dealer_firm_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_firm_name: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Address Number" size="small" fullWidth value={nestedPropertyData.address_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, address_number: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="BHK & Washrooms" size="small" fullWidth value={nestedPropertyData.bhk_and_washrooms || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, bhk_and_washrooms: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Dimensions" size="small" fullWidth value={nestedPropertyData.dimensions || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dimensions: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Location Type</InputLabel>
+                          <Select
+                            value={nestedPropertyData.location_type || 'Normal'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, location_type: e.target.value }))}
+                            label="Location Type"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="Normal">Normal</MenuItem>
+                            <MenuItem value="Corner">Corner</MenuItem>
+                            <MenuItem value="Park Facing">Park Facing</MenuItem>
+                            <MenuItem value="Wide Road">Wide Road</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Facing</InputLabel>
+                          <Select
+                            value={nestedPropertyData.facing || 'East'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, facing: e.target.value }))}
+                            label="Facing"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="East">East</MenuItem>
+                            <MenuItem value="West">West</MenuItem>
+                            <MenuItem value="North">North</MenuItem>
+                            <MenuItem value="South">South</MenuItem>
+                            <MenuItem value="North-East">North-East</MenuItem>
+                            <MenuItem value="North-West">North-West</MenuItem>
+                            <MenuItem value="South-East">South-East</MenuItem>
+                            <MenuItem value="South-West">South-West</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="White" size="small" fullWidth value={nestedPropertyData.white || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, white: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Time" size="small" fullWidth value={nestedPropertyData.time || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, time: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Lead Source</InputLabel>
+                          <Select
+                            value={nestedPropertyData.lead_source || 'Self Source'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, lead_source: e.target.value }))}
+                            label="Lead Source"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="Self Source">Self Source</MenuItem>
+                            <MenuItem value="Cold Calling">Cold Calling</MenuItem>
+                            <MenuItem value="JustDial">JustDial</MenuItem>
+                            <MenuItem value="Social Media">Social Media</MenuItem>
+                            <MenuItem value="Dealer Network">Dealer Network</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField label="Initial Notes" size="small" fullWidth multiline rows={2} value={nestedPropertyData.initial_notes || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, initial_notes: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
+
+                {/* Inline Nested Project Form */}
+                {selectedModule === 'property_pitch_history' && formData.projectId === 'Other_Project' && (
+                  <Box sx={{ mt: 1, mb: 3.5, p: 2.5, border: '1px solid #334155', borderRadius: '16px', backgroundColor: '#1E293B', textAlign: 'left' }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#3B82F6', textTransform: 'uppercase', fontFamily: 'Poppins', letterSpacing: '0.5px' }}>
+                      Create New Project Detail
+                    </Typography>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Project Name" size="small" fullWidth required value={nestedProjectData.name || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, name: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Builder Group</InputLabel>
+                          <Select
+                            value={nestedProjectData.builder || 'DLF Group'}
+                            onChange={(e) => setNestedProjectData(prev => ({ ...prev, builder: e.target.value }))}
+                            label="Builder Group"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="DLF Group">DLF Group</MenuItem>
+                            <MenuItem value="M3M India">M3M India</MenuItem>
+                            <MenuItem value="Emaar India">Emaar India</MenuItem>
+                            <MenuItem value="Signature Global">Signature Global</MenuItem>
+                            <MenuItem value="Godrej Properties">Godrej Properties</MenuItem>
+                            <MenuItem value="Smart World">Smart World</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Locality" size="small" fullWidth value={nestedProjectData.locality || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, locality: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Sector/Block" size="small" fullWidth value={nestedProjectData.sector_block || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, sector_block: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel sx={{ color: '#94A3B8' }}>Construction Status</InputLabel>
+                          <Select
+                            value={nestedProjectData.status || 'Ready to Move'}
+                            onChange={(e) => setNestedProjectData(prev => ({ ...prev, status: e.target.value }))}
+                            label="Construction Status"
+                            sx={{ color: '#FFFFFF', backgroundColor: '#0F172A', '.MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } }}
+                          >
+                            <MenuItem value="Under Construction">Under Construction</MenuItem>
+                            <MenuItem value="New Launch">New Launch</MenuItem>
+                            <MenuItem value="Ready to Move">Ready to Move</MenuItem>
+                            <MenuItem value="Possession Soon">Possession Soon</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="Pricing Details" size="small" fullWidth value={nestedProjectData.pricing_details || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, pricing_details: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField label="PLC Percent" size="small" fullWidth value={nestedProjectData.plc_percent || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, plc_percent: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField label="Initial Notes" size="small" fullWidth multiline rows={2} value={nestedProjectData.initial_notes || ''} onChange={(e) => setNestedProjectData(prev => ({ ...prev, initial_notes: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                )}
 
                 <Button
                   fullWidth

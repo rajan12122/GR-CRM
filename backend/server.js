@@ -474,10 +474,10 @@ function handleDealStatusChange(d, db, req) {
     const buyerName = buyerCust ? buyerCust.name : (d.customerId || 'Unknown');
     
     prop.owner_history = prop.owner_history || [];
-    if (prevOwnerId) {
+    if (prevOwnerId || prevOwnerName) {
       prop.owner_history.push({
-        ownerId: prevOwnerId,
-        ownerName: prevOwnerName,
+        ownerId: prevOwnerId || 'N/A',
+        ownerName: prevOwnerName || 'Previous Owner',
         purchaseDate: prop.date || '',
         purchasePrice: prop.demand || '',
         saleDate: d.registrationDate || new Date().toISOString().split('T')[0],
@@ -2094,7 +2094,25 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     
     // Extended ERP connections
     data.currentOwner = allCustomers.find(c => String(c.id) === String(prop && prop.current_owner_id));
-    data.ownerHistory = prop ? (prop.owner_history || []) : [];
+    data.ownerHistory = prop ? [...(prop.owner_history || [])] : [];
+    const closedDeals = allDeals.filter(d => String(d.propertyId) === String(id) && d.status === 'Closed');
+    closedDeals.forEach(d => {
+      const alreadyLogged = data.ownerHistory.some(h => 
+        String(h.saleDate) === String(d.registrationDate)
+      );
+      if (!alreadyLogged) {
+        const sellerCust = allCustomers.find(c => String(c.id) === String(d.sellerCustomerId));
+        const sellerName = sellerCust ? sellerCust.name : (d.sellerCustomerId || prop.contact_person_name || 'Previous Owner');
+        data.ownerHistory.push({
+          ownerId: d.sellerCustomerId || 'N/A',
+          ownerName: sellerName,
+          purchaseDate: '',
+          purchasePrice: '',
+          saleDate: d.registrationDate || new Date().toISOString().split('T')[0],
+          salePrice: d.salePrice || ''
+        });
+      }
+    });
     data.deals = allDeals.filter(d => String(d.propertyId) === String(id));
     data.buyerHistory = data.deals.map(d => allCustomers.find(c => String(c.id) === String(d.customerId))).filter(Boolean);
     data.sellerHistory = data.deals.map(d => allCustomers.find(c => String(c.id) === String(d.sellerCustomerId))).filter(Boolean);
@@ -2900,4 +2918,48 @@ setInterval(checkLeadAssignmentTimeouts, 5000);
 
 app.listen(PORT, () => {
   console.log(`Gagan Realtech ERP+CRM API Server running on port ${PORT}`);
+  try {
+    const db = readDb();
+    let updated = false;
+    const closedDeals = (db.deals || []).filter(d => d.status === 'Closed');
+    closedDeals.forEach(d => {
+      const propIndex = (db.properties || []).findIndex(p => String(p.id) === String(d.propertyId));
+      if (propIndex !== -1) {
+        const prop = db.properties[propIndex];
+        if (prop.status !== 'Sold') {
+          prop.status = 'Sold';
+          updated = true;
+        }
+        if (prop.current_owner_id !== d.customerId) {
+          prop.current_owner_id = d.customerId;
+          const buyerCust = (db.customers || []).find(c => String(c.id) === String(d.customerId));
+          const buyerName = buyerCust ? buyerCust.name : (d.customerId || 'Unknown');
+          prop.contact_person_name = buyerName;
+          updated = true;
+        }
+        prop.owner_history = prop.owner_history || [];
+        const hasHistory = prop.owner_history.some(h => 
+          String(h.saleDate) === String(d.registrationDate)
+        );
+        if (!hasHistory) {
+          const prevOwnerName = 'Previous Owner';
+          prop.owner_history.push({
+            ownerId: 'N/A',
+            ownerName: prevOwnerName,
+            purchaseDate: prop.date || '',
+            purchasePrice: prop.demand || '',
+            saleDate: d.registrationDate || new Date().toISOString().split('T')[0],
+            salePrice: d.salePrice || ''
+          });
+          updated = true;
+        }
+      }
+    });
+    if (updated) {
+      writeDb(db);
+      console.log('Database self-correction: synced property status & ownership logs for closed deals.');
+    }
+  } catch (err) {
+    console.error('Database self-correction failed:', err);
+  }
 });

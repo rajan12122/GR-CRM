@@ -1387,7 +1387,15 @@ const EntityDetail = () => {
                           {connections.ownerHistory.map((h, idx) => (
                             <Box key={idx} sx={{ mb: 3, position: 'relative' }}>
                               <Box sx={{ position: 'absolute', left: '-35px', top: '2px', width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#10B981' }} />
-                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Owner: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${h.ownerId}`)}>{h.ownerName} ({h.ownerId})</span></Typography>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                                Owner: {h.ownerId && h.ownerId !== 'N/A' ? (
+                                  <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/customers/${h.ownerId}`)}>
+                                    {h.ownerName} ({h.ownerId})
+                                  </span>
+                                ) : (
+                                  <span>{h.ownerName}</span>
+                                )}
+                              </Typography>
                               <Typography variant="body2" sx={{ color: '#475569' }}>
                                 Purchase Date: {h.purchaseDate || 'N/A'} • Bought for: ₹{formatCurrency(h.purchasePrice || 0)}
                               </Typography>

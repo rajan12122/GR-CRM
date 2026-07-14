@@ -234,6 +234,15 @@
           "chipGroup": "leadSources"
         },
         {
+          "name": "leadType",
+          "label": "Lead Type",
+          "type": "select",
+          "required": true,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "leadTypes"
+        },
+        {
           "name": "status",
           "label": "Status",
           "type": "select",
@@ -309,15 +318,6 @@
           "required": false,
           "showInTable": true,
           "editable": true
-        },
-        {
-          "name": "leadType",
-          "label": "Lead Type",
-          "type": "select",
-          "required": true,
-          "showInTable": true,
-          "editable": true,
-          "chipGroup": "leadTypes"
         },
         {
           "name": "demand",

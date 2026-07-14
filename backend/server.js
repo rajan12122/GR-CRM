@@ -675,6 +675,9 @@ function handlePitchStatusChange(p, db, req) {
 }
 
 function handleLeadStatusChange(lead, db, req) {
+  if (lead.leadType === 'Seller' && lead.dealer_owner_booked === 'Direct') {
+    lead.status = 'Converted';
+  }
   if (lead.status === 'Converted') {
     if (lead.leadType !== 'Seller') {
       // If it's a buyer lead, do NOT convert directly to customer.

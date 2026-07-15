@@ -583,7 +583,11 @@ function handlePitchStatusChange(p, db, req) {
     try { syncToSheets('follow_ups'); } catch(e) {}
   }
 
-  if (p.status !== 'Deal Closed') return;
+  const isDealClosed = p.status === 'Deal Closed' || 
+                       p.status === 'Property Registered/Sold Out' || 
+                       p.propertyStatus === 'Property Registered/Sold Out';
+
+  if (!isDealClosed) return;
 
   // Convert Lead to Customer if Pitch closed for a Lead ID
   let finalCustomerId = p.customerId;

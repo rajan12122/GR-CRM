@@ -1645,6 +1645,14 @@
           "editable": false
         },
         {
+          "name": "title",
+          "label": "Query Name / Title",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "customerId",
           "label": "Customer",
           "type": "ref",

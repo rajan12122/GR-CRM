@@ -9,7 +9,7 @@ const EntityTooltip = ({ moduleName, id, children }) => {
   const list = moduleData[moduleName] || [];
   const record = list.find(r => String(r.id) === String(id));
   const resolvedName = record 
-    ? (record.name || record.title || record.firm_name || record.person_name || 'Unnamed') 
+    ? (record.name || record.title || record.firm_name || record.person_name || record.id || 'Unnamed') 
     : `ID: ${id}`;
   
   return (

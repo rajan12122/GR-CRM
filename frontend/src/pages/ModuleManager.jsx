@@ -100,7 +100,7 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
                       }
                       const list = moduleData[resolvedModule] || [];
                       const record = list.find(r => String(r.id) === String(val));
-                      const resolvedName = record ? (record.propertyName || record.name || record.title || record.firm_name || record.person_name || 'Unnamed') : val;
+                      const resolvedName = record ? (record.propertyName || record.name || record.title || record.firm_name || record.person_name || record.id || 'Unnamed') : val;
                       return (
                         <span style={{ color: '#2563EB', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }} onClick={() => handleInspectClick(resolvedModule, val)}>
                           {resolvedName}

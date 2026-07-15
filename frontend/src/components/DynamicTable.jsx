@@ -45,7 +45,7 @@ const EntityChip = ({ moduleName, id, onClick }) => {
   
   const list = moduleData[resolvedModule] || [];
   const record = list.find(r => String(r.id) === String(id));
-  const resolvedName = record ? (record.propertyName || record.name || record.title || record.firm_name || record.person_name || 'Unnamed') : id;
+  const resolvedName = record ? (record.propertyName || record.name || record.title || record.firm_name || record.person_name || record.id || 'Unnamed') : id;
   
   return (
     <Tooltip title={`${resolvedModule.slice(0, -1).toUpperCase()}: ${resolvedName}`} arrow placement="top">

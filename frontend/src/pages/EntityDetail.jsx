@@ -1985,7 +1985,7 @@ const EntityDetail = () => {
                             setPitchDialogOpen(true);
                           }}
                         >
-                          + Log Pitch
+                          Log Pitch
                         </Button>
                       </Box>
                       
@@ -2196,7 +2196,7 @@ const EntityDetail = () => {
                                       setPitchDialogOpen(true);
                                     }}
                                   >
-                                    + Log Pitch
+                                    Log Pitch
                                   </Button>
                                 </Box>
                                 {connections.pitches?.length === 0 ? (

@@ -45,15 +45,27 @@ const EntityChip = ({ moduleName, id, onClick }) => {
   
   const list = moduleData[resolvedModule] || [];
   const record = list.find(r => String(r.id) === String(id));
-  const resolvedName = record ? (record.name || record.title || record.firm_name || record.person_name || 'Unnamed') : `ID: ${id}`;
+  const resolvedName = record ? (record.propertyName || record.name || record.title || record.firm_name || record.person_name || 'Unnamed') : id;
   
   return (
     <Tooltip title={`${resolvedModule.slice(0, -1).toUpperCase()}: ${resolvedName}`} arrow placement="top">
       <Chip 
-        label={id} 
+        label={resolvedName} 
         size="small"
         onClick={(e) => { e.stopPropagation(); onClick(resolvedModule, id); }}
-        sx={{ cursor: 'pointer', borderRadius: '4px', fontWeight: 600, fontSize: '11px' }}
+        sx={{ 
+          cursor: 'pointer', 
+          borderRadius: '6px', 
+          fontWeight: 700, 
+          fontSize: '11px',
+          color: '#2563EB',
+          backgroundColor: 'rgba(37,99,235,0.08)',
+          border: '1px solid rgba(37,99,235,0.2)',
+          '&:hover': {
+            backgroundColor: 'rgba(37,99,235,0.15)',
+            textDecoration: 'underline'
+          }
+        }}
       />
     </Tooltip>
   );

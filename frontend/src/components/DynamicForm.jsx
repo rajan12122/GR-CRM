@@ -135,6 +135,36 @@ const DynamicForm = ({
             initialForm[f.name] = val || '';
           }
         });
+        if (initialData.size) {
+          const sizeStr = String(initialData.size);
+          const currentRCI = initialData.r_c_i || 'Residential';
+          if (currentRCI === 'Land') {
+            const parts = sizeStr.split(',').map(p => p.trim());
+            const comp1Part = parts[0] || '';
+            const comp2Part = parts[1] || '';
+            const comp3Part = parts[2] || '';
+            
+            const match1 = comp1Part.match(/^([\d\.\w\s\-]+)\s+(Sq\.\s*ft\.|Sq\.\s*yd\.|Marla|Kanal|Acre)$/i);
+            const match2 = comp2Part.match(/^([\d\.\w\s\-]+)\s+(Sq\.\s*ft\.|Sq\.\s*yd\.|Marla|Kanal|Acre)$/i);
+            const match3 = comp3Part.match(/^([\d\.\w\s\-]+)\s+(Sq\.\s*ft\.|Sq\.\s*yd\.|Marla|Kanal|Acre)$/i);
+            
+            initialForm.size_comp1 = match1 ? match1[1] : '';
+            initialForm.size_unit1 = match1 ? match1[2] : 'Acre';
+            initialForm.size_comp2 = match2 ? match2[1] : '';
+            initialForm.size_unit2 = match2 ? match2[2] : 'Kanal';
+            initialForm.size_comp3 = match3 ? match3[1] : '';
+            initialForm.size_unit3 = match3 ? match3[2] : 'Marla';
+          } else {
+            const match = sizeStr.match(/^([\d\.\w\s\-]+)\s+(Sq\.\s*ft\.|Sq\.\s*yd\.|Marla|Kanal|Acre)$/i);
+            if (match) {
+              initialForm.size_val = match[1];
+              initialForm.size_unit = match[2];
+            } else {
+              initialForm.size_val = sizeStr;
+              initialForm.size_unit = 'Sq. yd.';
+            }
+          }
+        }
         setFormData(initialForm);
         setCustomValues(initialCustom);
         
@@ -328,6 +358,38 @@ const DynamicForm = ({
     return payload;
   };
 
+  const compileSize = (payload, isNested = false) => {
+    const currentRCI = isNested ? nestedPropertyData.r_c_i : payload.r_c_i;
+    if (currentRCI === 'Land') {
+      const parts = [];
+      const c1 = isNested ? nestedPropertyData.size_comp1 : payload.size_comp1;
+      const u1 = isNested ? nestedPropertyData.size_unit1 : payload.size_unit1;
+      const c2 = isNested ? nestedPropertyData.size_comp2 : payload.size_comp2;
+      const u2 = isNested ? nestedPropertyData.size_unit2 : payload.size_unit2;
+      const c3 = isNested ? nestedPropertyData.size_comp3 : payload.size_comp3;
+      const u3 = isNested ? nestedPropertyData.size_unit3 : payload.size_unit3;
+      
+      if (c1) parts.push(`${c1} ${u1 || 'Acre'}`);
+      if (c2) parts.push(`${c2} ${u2 || 'Kanal'}`);
+      if (c3) parts.push(`${c3} ${u3 || 'Marla'}`);
+      payload.size = parts.join(', ');
+    } else {
+      const val = isNested ? nestedPropertyData.size_val : payload.size_val;
+      const unit = isNested ? nestedPropertyData.size_unit : payload.size_unit;
+      payload.size = val ? `${val} ${unit || 'Sq. yd.'}` : '';
+    }
+    // Clean up temporary fields
+    delete payload.size_val;
+    delete payload.size_unit;
+    delete payload.size_comp1;
+    delete payload.size_unit1;
+    delete payload.size_comp2;
+    delete payload.size_unit2;
+    delete payload.size_comp3;
+    delete payload.size_unit3;
+    return payload;
+  };
+
   const resolveSellerProperty = async (payload) => {
     if (showSellerPropertyForm) {
       let finalDealerId = nestedPropertyData.dealerId;
@@ -343,8 +405,10 @@ const DynamicForm = ({
         }
       }
       
+      let nestedPayload = { ...nestedPropertyData };
+      nestedPayload = compileSize(nestedPayload, true);
       const propPayload = {
-        ...nestedPropertyData,
+        ...nestedPayload,
         dealerId: finalDealerId,
         contact_person_name: nestedPropertyData.contact_person_name || payload.name || payload.person_name || '',
         contact_number: nestedPropertyData.contact_number || payload.phone || payload.contact_num || '',
@@ -358,7 +422,7 @@ const DynamicForm = ({
         payload.propertyType = nestedPropertyData.propertyType || '';
         payload.locality = nestedPropertyData.locality || '';
         payload.sector_block = nestedPropertyData.sector_block || '';
-        payload.size = nestedPropertyData.size || '';
+        payload.size = nestedPayload.size || '';
         payload.demand = nestedPropertyData.demand || '';
         payload.dealer_owner_booked = nestedPropertyData.dealer_owner_booked || 'Direct';
         fetchModuleData('properties');
@@ -379,6 +443,7 @@ const DynamicForm = ({
             payload[f.name] = customValues[f.name] || '';
           }
         });
+        payload = compileSize(payload, false);
         payload = await resolveDealerId(payload);
         payload = await resolvePitchedProperty(payload);
         payload = await resolveSellerProperty(payload);
@@ -399,6 +464,7 @@ const DynamicForm = ({
             payload[f.name] = customValues[f.name] || '';
           }
         });
+        payload = compileSize(payload, false);
         payload = await resolveDealerId(payload);
         payload = await resolvePitchedProperty(payload);
         payload = await resolveSellerProperty(payload);
@@ -465,8 +531,23 @@ const DynamicForm = ({
                 if (f.name === 'pipelineAction' && moduleKey === 'follow_ups') {
                   options = [
                     { value: 'None', label: 'Keep Current Stage' },
-                    ...(metadata?.chips?.customerStages || [])
+                    ...(metadata?.chips?.pipelineActionGroup || [])
                   ];
+                }
+                if (f.name === 'propertyType') {
+                  const currentRCI = formData.r_c_i || 'Residential';
+                  const mapping = {
+                    Residential: ['Plots', 'LOI', 'Villa', 'Kothi', 'Apartment', 'Farm House'],
+                    Commercial: ['Showroom', 'Bay Shop', 'Booth', 'Booth Built Up', 'SCO Plot'],
+                    Industrial: ['Built up', 'Plot', 'LOI', 'Floors'],
+                    Land: []
+                  };
+                  const allowed = mapping[currentRCI] || [];
+                  options = allowed.map(val => ({
+                    value: val,
+                    label: val,
+                    color: '#2563EB'
+                  }));
                 }
                 const isOther = formData[f.name] === 'Other';
                 return (
@@ -719,46 +800,162 @@ const DynamicForm = ({
                                   )}
 
                                   <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>R/C/I Segment</InputLabel>
+                                      <Select
+                                        value={nestedPropertyData.r_c_i || 'Residential'}
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
+                                        label="R/C/I Segment"
+                                      >
+                                        <MenuItem value="Residential">Residential</MenuItem>
+                                        <MenuItem value="Commercial">Commercial</MenuItem>
+                                        <MenuItem value="Industrial">Industrial</MenuItem>
+                                        <MenuItem value="Land">Land</MenuItem>
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+
+                                  <Grid item xs={12} sm={6}>
+                                    <FormControl fullWidth size="small">
+                                      <InputLabel>Property Type</InputLabel>
+                                      <Select
+                                        value={nestedPropertyData.propertyType || ''}
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
+                                        label="Property Type"
+                                      >
+                                        {(() => {
+                                          const currentRCI = nestedPropertyData.r_c_i || 'Residential';
+                                          const mapping = {
+                                            Residential: ['Plots', 'LOI', 'Villa', 'Kothi', 'Apartment', 'Farm House'],
+                                            Commercial: ['Bay Shop', 'Booth', 'Booth Built Up', 'Showroom', 'SCO Plot'],
+                                            Industrial: ['Built up', 'Plot', 'LOI', 'Floors'],
+                                            Land: []
+                                          };
+                                          const allowed = mapping[currentRCI] || [];
+                                          return [
+                                            ...allowed.map(val => <MenuItem key={val} value={val}>{val}</MenuItem>),
+                                            <MenuItem key="Other" value="Other">Other</MenuItem>
+                                          ];
+                                        })()}
+                                      </Select>
+                                    </FormControl>
+                                  </Grid>
+
+                                  {nestedPropertyData.propertyType === 'Showroom' && (
+                                    <Grid item xs={12} sm={6}>
+                                      <TextField 
+                                        label="No. of Floors" 
+                                        size="small" 
+                                        fullWidth 
+                                        value={nestedPropertyData.no_of_floors || ''} 
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, no_of_floors: e.target.value }))} 
+                                      />
+                                    </Grid>
+                                  )}
+
+                                  <Grid item xs={12} sm={6}>
                                     <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} />
                                   </Grid>
                                   <Grid item xs={12} sm={6}>
                                     <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} />
                                   </Grid>
-                                  <Grid item xs={12} sm={6}>
-                                    <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} />
-                                  </Grid>
+
+                                  {(() => {
+                                    const currentRCI = nestedPropertyData.r_c_i || 'Residential';
+                                    const units = ['Sq. ft.', 'Sq. yd.', 'Marla', 'Kanal', 'Acre'];
+                                    if (currentRCI === 'Land') {
+                                      return (
+                                        <Grid item xs={12}>
+                                          <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', color: '#475569' }}>
+                                            Property Size (Land Components)
+                                          </Typography>
+                                          <Grid container spacing={1}>
+                                            <Grid item xs={4}>
+                                              <Box display="flex" gap={0.5}>
+                                                <TextField 
+                                                  label="Size 1" 
+                                                  size="small" 
+                                                  value={nestedPropertyData.size_comp1 || ''} 
+                                                  onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_comp1: e.target.value }))} 
+                                                />
+                                                <FormControl size="small" fullWidth>
+                                                  <Select 
+                                                    value={nestedPropertyData.size_unit1 || 'Acre'} 
+                                                    onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit1: e.target.value }))}
+                                                  >
+                                                    {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                  </Select>
+                                                </FormControl>
+                                              </Box>
+                                            </Grid>
+                                            <Grid item xs={4}>
+                                              <Box display="flex" gap={0.5}>
+                                                <TextField 
+                                                  label="Size 2" 
+                                                  size="small" 
+                                                  value={nestedPropertyData.size_comp2 || ''} 
+                                                  onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_comp2: e.target.value }))} 
+                                                />
+                                                <FormControl size="small" fullWidth>
+                                                  <Select 
+                                                    value={nestedPropertyData.size_unit2 || 'Kanal'} 
+                                                    onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit2: e.target.value }))}
+                                                  >
+                                                    {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                  </Select>
+                                                </FormControl>
+                                              </Box>
+                                            </Grid>
+                                            <Grid item xs={4}>
+                                              <Box display="flex" gap={0.5}>
+                                                <TextField 
+                                                  label="Size 3" 
+                                                  size="small" 
+                                                  value={nestedPropertyData.size_comp3 || ''} 
+                                                  onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_comp3: e.target.value }))} 
+                                                />
+                                                <FormControl size="small" fullWidth>
+                                                  <Select 
+                                                    value={nestedPropertyData.size_unit3 || 'Marla'} 
+                                                    onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit3: e.target.value }))}
+                                                  >
+                                                    {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                  </Select>
+                                                </FormControl>
+                                              </Box>
+                                            </Grid>
+                                          </Grid>
+                                        </Grid>
+                                      );
+                                    } else {
+                                      return (
+                                        <Grid item xs={12} sm={6}>
+                                          <Box display="flex" gap={1} alignItems="flex-start">
+                                            <TextField 
+                                              label="Property Size" 
+                                              size="small"
+                                              fullWidth 
+                                              value={nestedPropertyData.size_val || ''} 
+                                              onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_val: e.target.value }))} 
+                                            />
+                                            <FormControl size="small" style={{ minWidth: 100 }}>
+                                              <InputLabel>Unit</InputLabel>
+                                              <Select 
+                                                value={nestedPropertyData.size_unit || 'Sq. yd.'} 
+                                                onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit: e.target.value }))}
+                                                label="Unit"
+                                              >
+                                                {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                              </Select>
+                                            </FormControl>
+                                          </Box>
+                                        </Grid>
+                                      );
+                                    }
+                                  })()}
+
                                   <Grid item xs={12} sm={6}>
                                     <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} />
-                                  </Grid>
-                                  <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth size="small">
-                                      <InputLabel>Property Type</InputLabel>
-                                      <Select
-                                        value={nestedPropertyData.propertyType || 'Plot'}
-                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
-                                        label="Property Type"
-                                      >
-                                        <MenuItem value="Villa">Luxury Villa</MenuItem>
-                                        <MenuItem value="Plot">Residential Land Plot</MenuItem>
-                                        <MenuItem value="Apartment">Multistory Apartment</MenuItem>
-                                        <MenuItem value="Commercial">Retail/Office Space</MenuItem>
-                                        <MenuItem value="LOI">LOI</MenuItem>
-                                      </Select>
-                                    </FormControl>
-                                  </Grid>
-                                  <Grid item xs={12} sm={6}>
-                                    <FormControl fullWidth size="small">
-                                      <InputLabel>R/C/I</InputLabel>
-                                      <Select
-                                        value={nestedPropertyData.r_c_i || 'Residential'}
-                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
-                                        label="R/C/I"
-                                      >
-                                        <MenuItem value="Residential">Residential</MenuItem>
-                                        <MenuItem value="Commercial">Commercial</MenuItem>
-                                        <MenuItem value="Industrial">Industrial</MenuItem>
-                                      </Select>
-                                    </FormControl>
                                   </Grid>
                                 </Grid>
                               </Box>
@@ -1044,6 +1241,101 @@ const DynamicForm = ({
                 );
               }
 
+              // 3.5 SIZE CUSTOM COMPONENT (MAIN FORM)
+              if (f.name === 'size') {
+                const currentRCI = formData.r_c_i || 'Residential';
+                const units = ['Sq. ft.', 'Sq. yd.', 'Marla', 'Kanal', 'Acre'];
+                
+                if (currentRCI === 'Land') {
+                  return (
+                    <Grid item xs={12} key={f.name}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', color: '#475569' }}>
+                        Property Size (Land Components)
+                      </Typography>
+                      <Grid container spacing={1}>
+                        <Grid item xs={4}>
+                          <Box display="flex" gap={0.5}>
+                            <TextField 
+                              label="Size 1" 
+                              size="small" 
+                              value={formData.size_comp1 || ''} 
+                              onChange={(e) => handleChange('size_comp1', e.target.value)} 
+                            />
+                            <FormControl size="small" fullWidth>
+                              <Select 
+                                value={formData.size_unit1 || 'Acre'} 
+                                onChange={(e) => handleChange('size_unit1', e.target.value)}
+                              >
+                                {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                              </Select>
+                            </FormControl>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Box display="flex" gap={0.5}>
+                            <TextField 
+                              label="Size 2" 
+                              size="small" 
+                              value={formData.size_comp2 || ''} 
+                              onChange={(e) => handleChange('size_comp2', e.target.value)} 
+                            />
+                            <FormControl size="small" fullWidth>
+                              <Select 
+                                value={formData.size_unit2 || 'Kanal'} 
+                                onChange={(e) => handleChange('size_unit2', e.target.value)}
+                              >
+                                {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                              </Select>
+                            </FormControl>
+                          </Box>
+                        </Grid>
+                        <Grid item xs={4}>
+                          <Box display="flex" gap={0.5}>
+                            <TextField 
+                              label="Size 3" 
+                              size="small" 
+                              value={formData.size_comp3 || ''} 
+                              onChange={(e) => handleChange('size_comp3', e.target.value)} 
+                            />
+                            <FormControl size="small" fullWidth>
+                              <Select 
+                                value={formData.size_unit3 || 'Marla'} 
+                                onChange={(e) => handleChange('size_unit3', e.target.value)}
+                              >
+                                {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                              </Select>
+                            </FormControl>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Grid>
+                  );
+                } else {
+                  return (
+                    <Grid item xs={12} key={f.name}>
+                      <Box display="flex" gap={1} alignItems="flex-start">
+                        <TextField 
+                          label="Property Size" 
+                          fullWidth 
+                          value={formData.size_val || ''} 
+                          onChange={(e) => handleChange('size_val', e.target.value)} 
+                        />
+                        <FormControl style={{ minWidth: 120 }}>
+                          <InputLabel>Unit</InputLabel>
+                          <Select 
+                            value={formData.size_unit || 'Sq. yd.'} 
+                            onChange={(e) => handleChange('size_unit', e.target.value)}
+                            label="Unit"
+                          >
+                            {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                          </Select>
+                        </FormControl>
+                      </Box>
+                    </Grid>
+                  );
+                }
+              }
+
               // 4. STANDARD TEXT/NUMBER/DATE FIELD
               return (
                 <Grid item xs={f.name === 'id' ? 12 : 6} key={f.name}>
@@ -1079,11 +1371,126 @@ const DynamicForm = ({
                       if (f.name === 'booked_by_customer_id') {
                         return nestedPropertyData.dealer_owner_booked === 'Booked By Us';
                       }
+                      if (f.name === 'no_of_floors') {
+                        return nestedPropertyData.propertyType === 'Showroom';
+                      }
                       return true;
                     }).map(f => {
+                      // 0. SIZE CUSTOM WIDGET (NESTED CARD)
+                      if (f.name === 'size') {
+                        const currentRCI = nestedPropertyData.r_c_i || 'Residential';
+                        const units = ['Sq. ft.', 'Sq. yd.', 'Marla', 'Kanal', 'Acre'];
+                        
+                        if (currentRCI === 'Land') {
+                          return (
+                            <Grid item xs={12} key={f.name}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', color: '#475569' }}>
+                                Property Size (Land Components)
+                              </Typography>
+                              <Grid container spacing={1}>
+                                <Grid item xs={4}>
+                                  <Box display="flex" gap={0.5}>
+                                    <TextField 
+                                      label="Size 1" 
+                                      size="small" 
+                                      value={nestedPropertyData.size_comp1 || ''} 
+                                      onChange={(e) => handleNestedPropertyChange('size_comp1', e.target.value)} 
+                                    />
+                                    <FormControl size="small" fullWidth>
+                                      <Select 
+                                        value={nestedPropertyData.size_unit1 || 'Acre'} 
+                                        onChange={(e) => handleNestedPropertyChange('size_unit1', e.target.value)}
+                                      >
+                                        {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                      </Select>
+                                    </FormControl>
+                                  </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                  <Box display="flex" gap={0.5}>
+                                    <TextField 
+                                      label="Size 2" 
+                                      size="small" 
+                                      value={nestedPropertyData.size_comp2 || ''} 
+                                      onChange={(e) => handleNestedPropertyChange('size_comp2', e.target.value)} 
+                                    />
+                                    <FormControl size="small" fullWidth>
+                                      <Select 
+                                        value={nestedPropertyData.size_unit2 || 'Kanal'} 
+                                        onChange={(e) => handleNestedPropertyChange('size_unit2', e.target.value)}
+                                      >
+                                        {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                      </Select>
+                                    </FormControl>
+                                  </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                  <Box display="flex" gap={0.5}>
+                                    <TextField 
+                                      label="Size 3" 
+                                      size="small" 
+                                      value={nestedPropertyData.size_comp3 || ''} 
+                                      onChange={(e) => handleNestedPropertyChange('size_comp3', e.target.value)} 
+                                    />
+                                    <FormControl size="small" fullWidth>
+                                      <Select 
+                                        value={nestedPropertyData.size_unit3 || 'Marla'} 
+                                        onChange={(e) => handleNestedPropertyChange('size_unit3', e.target.value)}
+                                      >
+                                        {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                      </Select>
+                                    </FormControl>
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                            </Grid>
+                          );
+                        } else {
+                          return (
+                            <Grid item xs={12} sm={6} key={f.name}>
+                              <Box display="flex" gap={1} alignItems="flex-start">
+                                <TextField 
+                                  label="Property Size" 
+                                  size="small"
+                                  fullWidth 
+                                  value={nestedPropertyData.size_val || ''} 
+                                  onChange={(e) => handleNestedPropertyChange('size_val', e.target.value)} 
+                                />
+                                <FormControl size="small" style={{ minWidth: 100 }}>
+                                  <InputLabel>Unit</InputLabel>
+                                  <Select 
+                                    value={nestedPropertyData.size_unit || 'Sq. yd.'} 
+                                    onChange={(e) => handleNestedPropertyChange('size_unit', e.target.value)}
+                                    label="Unit"
+                                  >
+                                    {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                  </Select>
+                                </FormControl>
+                              </Box>
+                            </Grid>
+                          );
+                        }
+                      }
+
                       // 1. SELECT TYPE FIELD
                       if (f.type === 'select' && f.chipGroup) {
-                        const options = metadata?.chips?.[f.chipGroup] || [];
+                        let options = metadata?.chips?.[f.chipGroup] || [];
+                        if (f.name === 'propertyType') {
+                          const currentRCI = nestedPropertyData.r_c_i || 'Residential';
+                          const mapping = {
+                            Residential: ['Plots', 'LOI', 'Villa', 'Kothi', 'Apartment', 'Farm House'],
+                            Commercial: ['Showroom', 'Bay Shop', 'Booth', 'Booth Built Up', 'SCO Plot'],
+                            Industrial: ['Built up', 'Plot', 'LOI', 'Floors'],
+                            Land: []
+                          };
+                          const allowed = mapping[currentRCI] || [];
+                          options = allowed.map(val => ({
+                            value: val,
+                            label: val,
+                            color: '#2563EB'
+                          }));
+                          options.push({ value: 'Other', label: 'Other (Specify...)', color: '#2563EB' });
+                        }
                         return (
                           <Grid item xs={12} sm={6} key={f.name}>
                             <FormControl fullWidth size="small">

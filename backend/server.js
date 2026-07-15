@@ -549,7 +549,21 @@ function handleDealStatusChange(d, db, req) {
 }
 
 function handlePitchStatusChange(p, db, req) {
-  if (!p.id || p.status !== 'Deal Closed') return;
+  if (!p.id) return;
+
+  // Auto-complete call follow-up if pitched via call
+  if (p.pitchMethod === 'Call') {
+    db.follow_ups = db.follow_ups || [];
+    db.follow_ups.forEach(f => {
+      if (String(f.customerId) === String(p.customerId) && f.status !== 'Completed') {
+        f.status = 'Completed';
+        f.remarks = (f.remarks || '') + `\n[System: Auto-completed call follow-up via logged Call Pitch ${p.id}]`;
+      }
+    });
+    try { syncToSheets('follow_ups'); } catch(e) {}
+  }
+
+  if (p.status !== 'Property Registered/Sold Out') return;
 
   // Convert Lead to Customer if Pitch closed for a Lead ID
   let finalCustomerId = p.customerId;
@@ -667,7 +681,7 @@ function handlePitchStatusChange(p, db, req) {
   db.follow_ups.forEach(f => {
     if (String(f.customerId) === String(p.customerId) || String(f.customerId) === String(finalCustomerId)) {
       f.status = 'Call Done';
-      f.pipelineAction = 'Deal Closed';
+      f.pipelineAction = 'Property Registered/Sold Out';
     }
   });
   writeDb(db);
@@ -785,7 +799,7 @@ function handleFollowUpPipelineAction(f, db, req) {
   }
 
   // Check if we should trigger deal conversion (e.g. stage is Closed or Booked)
-  const isClosedDeal = action === 'Closed' || action === 'Booked' || action === 'Query_ClosedWon' || action === 'Deal Closed' || action === 'Property Booked';
+  const isClosedDeal = action === 'Closed' || action === 'Booked' || action === 'Query_ClosedWon' || action === 'Deal Closed' || action === 'Property Registered/Sold Out' || action === 'Property Booked';
 
   if (isClosedDeal) {
     // 1. If customerId is a Lead, convert to Customer first
@@ -846,7 +860,7 @@ function handleFollowUpPipelineAction(f, db, req) {
     if (q) {
       q.stage = action;
       // If it is closed won/approved, normalize statuses
-      if (action === 'Closed' || action === 'Deal Closed' || action === 'Query_ClosedWon') {
+      if (action === 'Closed' || action === 'Deal Closed' || action === 'Property Registered/Sold Out' || action === 'Query_ClosedWon') {
         q.status = 'Closed';
       } else if (action === 'Requirement Verified' || action === 'Query_Approved') {
         q.status = 'Approved';
@@ -860,7 +874,7 @@ function handleFollowUpPipelineAction(f, db, req) {
     if (lead) {
       if (action === 'Lost' || action === 'Lost Lead') {
         lead.status = 'Junk';
-      } else if (action === 'Closed' || action === 'Deal Closed' || action === 'Booked' || action === 'Property Booked') {
+      } else if (action === 'Closed' || action === 'Deal Closed' || action === 'Property Registered/Sold Out' || action === 'Booked' || action === 'Property Booked') {
         lead.status = 'Converted';
       } else {
         lead.status = action;
@@ -1351,11 +1365,12 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   }
 
   if (module === 'leads') {
-    payload.assignmentStatus = payload.assignmentStatus || 'pending';
-    payload.assignmentTime = payload.assignmentTime || new Date().toISOString();
-    payload.droppedBy = payload.droppedBy || [];
+    payload.assignmentStatus = 'accepted';
+    payload.assignmentTime = null;
+    payload.droppedBy = [];
     if (payload.assignedEmployeeId) {
       setTimeout(() => {
+        createFollowUpForLead(payload, db);
         notifyUser(payload.assignedEmployeeId, 'new-lead', { leadId: payload.id, leadName: payload.name || payload.person_name || 'New Lead' });
       }, 500);
     }
@@ -1475,10 +1490,11 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   if (module === 'leads') {
     const oldLead = db[module][index];
     if (payload.assignedEmployeeId && payload.assignedEmployeeId !== oldLead.assignedEmployeeId) {
-      payload.assignmentStatus = 'pending';
-      payload.assignmentTime = new Date().toISOString();
+      payload.assignmentStatus = 'accepted';
+      payload.assignmentTime = null;
       payload.droppedBy = [];
       setTimeout(() => {
+        createFollowUpForLead(payload, db);
         notifyUser(payload.assignedEmployeeId, 'new-lead', { leadId: id, leadName: payload.name || payload.person_name || 'New Lead' });
       }, 500);
     }
@@ -3030,65 +3046,7 @@ app.post('/api/leads/:id/drop', authenticateToken, (req, res) => {
   res.json({ success: true, message: "Lead dropped and re-assigned.", lead });
 });
 
-// Automatic timeout check for pending leads
-function checkLeadAssignmentTimeouts() {
-  try {
-    const db = readDb();
-    const now = Date.now();
-    let updated = false;
 
-    if (db.leads) {
-      db.leads.forEach(lead => {
-        if (lead.assignmentStatus === 'pending' && lead.assignmentTime) {
-          const elapsedMs = now - new Date(lead.assignmentTime).getTime();
-          if (elapsedMs > 30000) { // 30 seconds timeout
-            console.log(`Lead ${lead.id} assignment timed out for ${lead.assignedEmployeeId}. Re-routing...`);
-            const oldAssignee = lead.assignedEmployeeId;
-            lead.droppedBy = lead.droppedBy || [];
-            if (!lead.droppedBy.includes(oldAssignee)) {
-              lead.droppedBy.push(oldAssignee);
-            }
-
-            const employees = db.employees || [];
-            let candidates = employees.filter(emp => 
-              emp.role !== 'Admin' && 
-              String(emp.id) !== String(oldAssignee) && 
-              !lead.droppedBy.includes(emp.id)
-            );
-
-            if (candidates.length === 0) {
-              lead.droppedBy = [oldAssignee];
-              candidates = employees.filter(emp => emp.role !== 'Admin' && String(emp.id) !== String(oldAssignee));
-            }
-
-            if (candidates.length > 0) {
-              const nextEmp = candidates[0];
-              lead.assignedEmployeeId = nextEmp.id;
-              lead.assignmentStatus = 'pending';
-              lead.assignmentTime = new Date().toISOString();
-              notifyUser(nextEmp.id, 'new-lead', { leadId: lead.id, leadName: lead.name || lead.person_name || 'New Lead' });
-            } else {
-              lead.assignedEmployeeId = 'EMP-001';
-              lead.assignmentStatus = 'accepted';
-              lead.assignmentTime = null;
-              createFollowUpForLead(lead, db);
-            }
-            updated = true;
-          }
-        }
-      });
-    }
-
-    if (updated) {
-      writeDb(db);
-      syncToSheets('leads');
-    }
-  } catch (err) {
-    console.error("Timeout checker error:", err);
-  }
-}
-
-setInterval(checkLeadAssignmentTimeouts, 5000);
 
 app.listen(PORT, () => {
   console.log(`Gagan Realtech ERP+CRM API Server running on port ${PORT}`);

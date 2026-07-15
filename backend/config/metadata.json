@@ -280,7 +280,7 @@
         {
           "name": "budget",
           "label": "Budget (INR)",
-          "type": "number",
+          "type": "text",
           "required": false,
           "showInTable": true,
           "editable": true
@@ -322,7 +322,7 @@
         {
           "name": "demand",
           "label": "Quoted Price / Demand (INR)",
-          "type": "number",
+          "type": "text",
           "required": false,
           "showInTable": true,
           "editable": true
@@ -331,15 +331,6 @@
           "name": "size",
           "label": "Property Size",
           "type": "text",
-          "required": false,
-          "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "propertyId",
-          "label": "Associated Property",
-          "type": "ref",
-          "refModule": "properties",
           "required": false,
           "showInTable": true,
           "editable": true
@@ -366,6 +357,14 @@
           "required": true,
           "showInTable": true,
           "editable": false
+        },
+        {
+          "name": "propertyName",
+          "label": "Property Name",
+          "type": "text",
+          "required": true,
+          "showInTable": true,
+          "editable": true
         },
         {
           "name": "status",
@@ -470,6 +469,14 @@
           "showInTable": true,
           "editable": true,
           "chipGroup": "propertyTypes"
+        },
+        {
+          "name": "no_of_floors",
+          "label": "Number of Floors",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
         },
         {
           "name": "locality",
@@ -1693,7 +1700,7 @@
         {
           "name": "budget",
           "label": "Budget (INR)",
-          "type": "number",
+          "type": "text",
           "required": false,
           "showInTable": true,
           "editable": true
@@ -1701,7 +1708,7 @@
         {
           "name": "demand",
           "label": "Quoted Price / Demand (INR)",
-          "type": "number",
+          "type": "text",
           "required": false,
           "showInTable": true,
           "editable": true
@@ -1752,15 +1759,6 @@
           "name": "remarks",
           "label": "Remarks",
           "type": "textarea",
-          "required": false,
-          "showInTable": true,
-          "editable": true
-        },
-        {
-          "name": "propertyId",
-          "label": "Associated Property",
-          "type": "ref",
-          "refModule": "properties",
           "required": false,
           "showInTable": true,
           "editable": true
@@ -2645,29 +2643,39 @@
         "color": "#64748B"
       },
       {
-        "value": "Lead_Contacted",
-        "label": "Lead -> Contacted",
+        "value": "Token/Booking Amount Recieved",
+        "label": "Token/Booking Amount Recieved",
+        "color": "#14B8A6"
+      },
+      {
+        "value": "Sales Agreement",
+        "label": "Sales Agreement",
         "color": "#3B82F6"
       },
       {
-        "value": "Lead_VisitScheduled",
-        "label": "Lead -> Site Visit Scheduled",
+        "value": "NOC",
+        "label": "NOC",
         "color": "#8B5CF6"
       },
       {
-        "value": "Lead_Negotiation",
-        "label": "Lead -> Negotiation",
+        "value": "Part Payment",
+        "label": "Part Payment",
         "color": "#F59E0B"
       },
       {
-        "value": "Query_Approved",
-        "label": "Query -> Approve Requirement",
-        "color": "#10B981"
+        "value": "Property Registered/Sold Out",
+        "label": "Property Registered/Sold Out",
+        "color": "#22C55E"
       },
       {
-        "value": "Query_ClosedWon",
-        "label": "Query -> Close Deal Successfully",
-        "color": "#059669"
+        "value": "IN active listings",
+        "label": "IN active listings",
+        "color": "#0F172A"
+      },
+      {
+        "value": "Sold By Someone/Deal Lost",
+        "label": "Sold By Someone/Deal Lost",
+        "color": "#EF4444"
       }
     ],
     "attendanceStatus": [
@@ -2860,6 +2868,11 @@
         "value": "Industrial",
         "label": "Industrial",
         "color": "#10B981"
+      },
+      {
+        "value": "Land",
+        "label": "Land",
+        "color": "#8B5CF6"
       }
     ],
     "locationTypes": [
@@ -3084,59 +3097,39 @@
     ],
     "pitchStatus": [
       {
-        "value": "Pitched",
-        "label": "Pitched",
-        "color": "#3B82F6"
-      },
-      {
-        "value": "Interested",
-        "label": "Interested",
-        "color": "#10B981"
-      },
-      {
-        "value": "Not Interested",
-        "label": "Not Interested",
-        "color": "#EF4444"
-      },
-      {
-        "value": "Site Visit Scheduled",
-        "label": "Site Visit Scheduled",
-        "color": "#8B5CF6"
-      },
-      {
-        "value": "Site Visit Completed",
-        "label": "Site Visit Completed",
-        "color": "#EC4899"
-      },
-      {
-        "value": "Negotiation",
-        "label": "Negotiation",
-        "color": "#F59E0B"
-      },
-      {
-        "value": "Token Received",
-        "label": "Token Received",
+        "value": "Token/Booking Amount Recieved",
+        "label": "Token/Booking Amount Recieved",
         "color": "#14B8A6"
       },
       {
-        "value": "Deal Closed",
-        "label": "Deal Closed",
-        "color": "#1E293B"
+        "value": "Sales Agreement",
+        "label": "Sales Agreement",
+        "color": "#3B82F6"
       },
       {
-        "value": "Rejected",
-        "label": "Rejected",
+        "value": "NOC",
+        "label": "NOC",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Part Payment",
+        "label": "Part Payment",
+        "color": "#F59E0B"
+      },
+      {
+        "value": "Property Registered/Sold Out",
+        "label": "Property Registered/Sold Out",
+        "color": "#22C55E"
+      },
+      {
+        "value": "IN active listings",
+        "label": "IN active listings",
+        "color": "#0F172A"
+      },
+      {
+        "value": "Sold By Someone/Deal Lost",
+        "label": "Sold By Someone/Deal Lost",
         "color": "#EF4444"
-      },
-      {
-        "value": "Hold",
-        "label": "On Hold",
-        "color": "#6B7280"
-      },
-      {
-        "value": "Follow-up Required",
-        "label": "Follow-up Required",
-        "color": "#EAB308"
       }
     ],
     "pitchMethods": [

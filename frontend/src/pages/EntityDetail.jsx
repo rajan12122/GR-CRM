@@ -79,6 +79,18 @@ const EntityDetail = () => {
       return prev;
     });
   };
+
+  const getPropertyName = (propId) => {
+    if (!propId) return '---';
+    if (String(propId).startsWith('PROJ-')) {
+      const list = moduleData.projects || [];
+      const p = list.find(x => String(x.id) === String(propId));
+      return p ? (p.name || `Project: ${propId}`) : `Project: ${propId}`;
+    }
+    const list = moduleData.properties || [];
+    const p = list.find(x => String(x.id) === String(propId));
+    return p ? (p.propertyName || p.name || `Property: ${propId}`) : `Property: ${propId}`;
+  };
   
   // Custom dialogs & form states for ERP features
   const [queryDialogOpen, setQueryDialogOpen] = useState(false);
@@ -958,8 +970,8 @@ const EntityDetail = () => {
                           <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
                             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                               <Box display="flex" alignItems="center" gap={1}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
-                                  Property: {p.propertyId}
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(p.propertyId?.startsWith('PROJ-') ? `/module/projects/${p.propertyId}` : `/module/properties/${p.propertyId}`)}>
+                                  {getPropertyName(p.propertyId)}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
                               </Box>
@@ -1140,8 +1152,8 @@ const EntityDetail = () => {
                               <Grid container spacing={2}>
                                 <Grid item xs={6} sm={4}>
                                   <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Property ID:</Typography>
-                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${d.propertyId}`)}>
-                                    {d.propertyId}
+                                  <Typography variant="body2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(d.propertyId?.startsWith('PROJ-') ? `/module/projects/${d.propertyId}` : `/module/properties/${d.propertyId}`)}>
+                                    {getPropertyName(d.propertyId)}
                                   </Typography>
                                 </Grid>
                                 <Grid item xs={6} sm={4}>
@@ -1984,8 +1996,8 @@ const EntityDetail = () => {
                           <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
                             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                               <Box display="flex" alignItems="center" gap={1}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
-                                  Property: {p.propertyId}
+                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(p.propertyId?.startsWith('PROJ-') ? `/module/projects/${p.propertyId}` : `/module/properties/${p.propertyId}`)}>
+                                  {getPropertyName(p.propertyId)}
                                 </Typography>
                                 <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
                               </Box>
@@ -2190,8 +2202,8 @@ const EntityDetail = () => {
                                     <Paper key={p.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
                                       <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
                                         <Box display="flex" alignItems="center" gap={1}>
-                                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(`/module/properties/${p.propertyId}`)}>
-                                            Property: {p.propertyId}
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#2563EB', cursor: 'pointer', textDecoration: 'underline' }} onClick={() => navigate(p.propertyId?.startsWith('PROJ-') ? `/module/projects/${p.propertyId}` : `/module/properties/${p.propertyId}`)}>
+                                            {getPropertyName(p.propertyId)}
                                           </Typography>
                                           <Typography variant="caption" sx={{ color: '#64748B' }}>({p.id})</Typography>
                                         </Box>
@@ -2245,7 +2257,7 @@ const EntityDetail = () => {
                                   connections.site_visits.map((sv, idx) => (
                                     <Paper key={idx} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none', backgroundColor: 'white' }}>
                                       <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                                        Property: <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(`/module/properties/${sv.propertyId}`)}>{sv.propertyId}</span>
+                                        <span style={{ cursor: 'pointer', textDecoration: 'underline', color: '#2563EB' }} onClick={() => navigate(sv.propertyId?.startsWith('PROJ-') ? `/module/projects/${sv.propertyId}` : `/module/properties/${sv.propertyId}`)}>{getPropertyName(sv.propertyId)}</span>
                                       </Typography>
                                       <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mt: 0.5 }}>
                                         Visited on: {sv.date} • Conducted by: {sv.employeeId} • Outcome: <strong>{sv.result}</strong>
@@ -3484,46 +3496,162 @@ const EntityDetail = () => {
                       )}
 
                       <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>R/C/I Segment</InputLabel>
+                          <Select
+                            value={nestedPropertyData.r_c_i || 'Residential'}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
+                            label="R/C/I Segment"
+                          >
+                            <MenuItem value="Residential">Residential</MenuItem>
+                            <MenuItem value="Commercial">Commercial</MenuItem>
+                            <MenuItem value="Industrial">Industrial</MenuItem>
+                            <MenuItem value="Land">Land</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      <Grid item xs={12} sm={6}>
+                        <FormControl fullWidth size="small">
+                          <InputLabel>Property Type</InputLabel>
+                          <Select
+                            value={nestedPropertyData.propertyType || ''}
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
+                            label="Property Type"
+                          >
+                            {(() => {
+                              const currentRCI = nestedPropertyData.r_c_i || 'Residential';
+                              const mapping = {
+                                Residential: ['Plots', 'LOI', 'Villa', 'Kothi', 'Apartment', 'Farm House'],
+                                Commercial: ['Bay Shop', 'Booth', 'Booth Built Up', 'Showroom', 'SCO Plot'],
+                                Industrial: ['Built up', 'Plot', 'LOI', 'Floors'],
+                                Land: []
+                              };
+                              const allowed = mapping[currentRCI] || [];
+                              return [
+                                ...allowed.map(val => <MenuItem key={val} value={val}>{val}</MenuItem>),
+                                <MenuItem key="Other" value="Other">Other</MenuItem>
+                              ];
+                            })()}
+                          </Select>
+                        </FormControl>
+                      </Grid>
+
+                      {nestedPropertyData.propertyType === 'Showroom' && (
+                        <Grid item xs={12} sm={6}>
+                          <TextField 
+                            label="No. of Floors" 
+                            size="small" 
+                            fullWidth 
+                            value={nestedPropertyData.no_of_floors || ''} 
+                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, no_of_floors: e.target.value }))} 
+                          />
+                        </Grid>
+                      )}
+
+                      <Grid item xs={12} sm={6}>
                         <TextField label="Locality" size="small" fullWidth value={nestedPropertyData.locality || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, locality: e.target.value }))} />
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <TextField label="Sector/Block" size="small" fullWidth value={nestedPropertyData.sector_block || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, sector_block: e.target.value }))} />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField label="Size of Property" size="small" fullWidth value={nestedPropertyData.size || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size: e.target.value }))} />
-                      </Grid>
+
+                      {(() => {
+                        const currentRCI = nestedPropertyData.r_c_i || 'Residential';
+                        const units = ['Sq. ft.', 'Sq. yd.', 'Marla', 'Kanal', 'Acre'];
+                        if (currentRCI === 'Land') {
+                          return (
+                            <Grid item xs={12}>
+                              <Typography variant="caption" sx={{ fontWeight: 700, mb: 1, display: 'block', color: '#475569' }}>
+                                Property Size (Land Components)
+                              </Typography>
+                              <Grid container spacing={1}>
+                                <Grid item xs={4}>
+                                  <Box display="flex" gap={0.5}>
+                                    <TextField 
+                                      label="Size 1" 
+                                      size="small" 
+                                      value={nestedPropertyData.size_comp1 || ''} 
+                                      onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_comp1: e.target.value }))} 
+                                    />
+                                    <FormControl size="small" fullWidth>
+                                      <Select 
+                                        value={nestedPropertyData.size_unit1 || 'Acre'} 
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit1: e.target.value }))}
+                                      >
+                                        {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                      </Select>
+                                    </FormControl>
+                                  </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                  <Box display="flex" gap={0.5}>
+                                    <TextField 
+                                      label="Size 2" 
+                                      size="small" 
+                                      value={nestedPropertyData.size_comp2 || ''} 
+                                      onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_comp2: e.target.value }))} 
+                                    />
+                                    <FormControl size="small" fullWidth>
+                                      <Select 
+                                        value={nestedPropertyData.size_unit2 || 'Kanal'} 
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit2: e.target.value }))}
+                                      >
+                                        {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                      </Select>
+                                    </FormControl>
+                                  </Box>
+                                </Grid>
+                                <Grid item xs={4}>
+                                  <Box display="flex" gap={0.5}>
+                                    <TextField 
+                                      label="Size 3" 
+                                      size="small" 
+                                      value={nestedPropertyData.size_comp3 || ''} 
+                                      onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_comp3: e.target.value }))} 
+                                    />
+                                    <FormControl size="small" fullWidth>
+                                      <Select 
+                                        value={nestedPropertyData.size_unit3 || 'Marla'} 
+                                        onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit3: e.target.value }))}
+                                      >
+                                        {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                      </Select>
+                                    </FormControl>
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                            </Grid>
+                          );
+                        } else {
+                          return (
+                            <Grid item xs={12} sm={6}>
+                              <Box display="flex" gap={1} alignItems="flex-start">
+                                <TextField 
+                                  label="Property Size" 
+                                  size="small"
+                                  fullWidth 
+                                  value={nestedPropertyData.size_val || ''} 
+                                  onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_val: e.target.value }))} 
+                                />
+                                <FormControl size="small" style={{ minWidth: 100 }}>
+                                  <InputLabel>Unit</InputLabel>
+                                  <Select 
+                                    value={nestedPropertyData.size_unit || 'Sq. yd.'} 
+                                    onChange={(e) => setNestedPropertyData(prev => ({ ...prev, size_unit: e.target.value }))}
+                                    label="Unit"
+                                  >
+                                    {units.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                  </Select>
+                                </FormControl>
+                              </Box>
+                            </Grid>
+                          );
+                        }
+                      })()}
+
                       <Grid item xs={12} sm={6}>
                         <TextField label="Demand (Price)" size="small" fullWidth value={nestedPropertyData.demand || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, demand: e.target.value }))} />
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>Property Type</InputLabel>
-                          <Select
-                            value={nestedPropertyData.propertyType || 'Plot'}
-                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, propertyType: e.target.value }))}
-                            label="Property Type"
-                          >
-                            <MenuItem value="Villa">Luxury Villa</MenuItem>
-                            <MenuItem value="Plot">Residential Land Plot</MenuItem>
-                            <MenuItem value="Apartment">Multistory Apartment</MenuItem>
-                            <MenuItem value="Commercial">Retail/Office Space</MenuItem>
-                            <MenuItem value="LOI">LOI</MenuItem>
-                          </Select>
-                        </FormControl>
-                      </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <FormControl fullWidth size="small">
-                          <InputLabel>R/C/I</InputLabel>
-                          <Select
-                            value={nestedPropertyData.r_c_i || 'Residential'}
-                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, r_c_i: e.target.value }))}
-                            label="R/C/I"
-                          >
-                            <MenuItem value="Residential">Residential</MenuItem>
-                            <MenuItem value="Commercial">Commercial</MenuItem>
-                            <MenuItem value="Industrial">Industrial</MenuItem>
-                          </Select>
-                        </FormControl>
                       </Grid>
                       <Grid item xs={12} sm={6}>
                         <FormControl fullWidth size="small">
@@ -3848,8 +3976,33 @@ const EntityDetail = () => {
                     return alert(dealerRes.message || "Failed to auto-create property dealer");
                   }
                 }
+                const compileSize = (payload) => {
+                  const currentRCI = payload.r_c_i || 'Residential';
+                  if (currentRCI === 'Land') {
+                    const parts = [];
+                    if (payload.size_comp1) parts.push(`${payload.size_comp1} ${payload.size_unit1 || 'Acre'}`);
+                    if (payload.size_comp2) parts.push(`${payload.size_comp2} ${payload.size_unit2 || 'Kanal'}`);
+                    if (payload.size_comp3) parts.push(`${payload.size_comp3} ${payload.size_unit3 || 'Marla'}`);
+                    payload.size = parts.join(', ');
+                  } else {
+                    payload.size = payload.size_val ? `${payload.size_val} ${payload.size_unit || 'Sq. yd.'}` : '';
+                  }
+                  delete payload.size_val;
+                  delete payload.size_unit;
+                  delete payload.size_comp1;
+                  delete payload.size_unit1;
+                  delete payload.size_comp2;
+                  delete payload.size_unit2;
+                  delete payload.size_comp3;
+                  delete payload.size_unit3;
+                  return payload;
+                };
+
+                let propPayload = { ...nestedPropertyData };
+                propPayload = compileSize(propPayload);
+
                 const propRes = await createRecord('properties', {
-                  ...nestedPropertyData,
+                  ...propPayload,
                   dealerId: finalDealerIdVal,
                   date: new Date().toLocaleDateString('en-IN')
                 });

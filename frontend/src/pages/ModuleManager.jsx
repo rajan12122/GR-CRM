@@ -91,11 +91,22 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
                     {f.label}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 700, fontSize: '13px' }}>
-                    {f.type === 'ref' || f.type === 'multiref' ? (
-                      <span style={{ color: '#2563EB', cursor: 'pointer', fontWeight: 700 }} onClick={() => handleInspectClick(f.refModule, val)}>
-                        {val}
-                      </span>
-                    ) : (
+                    {f.type === 'ref' || f.type === 'multiref' ? (() => {
+                      let resolvedModule = f.refModule;
+                      if (f.refModule === 'customers' && String(val).startsWith('LEAD-')) {
+                        resolvedModule = 'leads';
+                      } else if (f.refModule === 'customers' && String(val).startsWith('CUST-')) {
+                        resolvedModule = 'customers';
+                      }
+                      const list = moduleData[resolvedModule] || [];
+                      const record = list.find(r => String(r.id) === String(val));
+                      const resolvedName = record ? (record.propertyName || record.name || record.title || record.firm_name || record.person_name || 'Unnamed') : val;
+                      return (
+                        <span style={{ color: '#2563EB', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }} onClick={() => handleInspectClick(resolvedModule, val)}>
+                          {resolvedName}
+                        </span>
+                      );
+                    })() : (
                       displayVal
                     )}
                   </Typography>

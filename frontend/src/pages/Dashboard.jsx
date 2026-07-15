@@ -51,6 +51,95 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [swiperIndex, setSwiperIndex] = useState(0);
 
+  // Attendance shift timer states
+  const [elapsedTimeStr, setElapsedTimeStr] = useState('00:00:00');
+  const [timerStatus, setTimerStatus] = useState('Not Checked In');
+
+  const todayDateStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayRecord = useMemo(() => {
+    return (moduleData.attendance || []).find(
+      a => String(a.employeeId) === String(user?.id) && a.date === todayDateStr
+    );
+  }, [moduleData.attendance, user, todayDateStr]);
+
+  useEffect(() => {
+    let intervalId = null;
+
+    const parseTime = (timeStr, dateStr) => {
+      if (!timeStr || timeStr === '--') return null;
+      try {
+        const timeMatch = timeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+        if (!timeMatch) return null;
+        let hours = parseInt(timeMatch[1]);
+        const minutes = parseInt(timeMatch[2]);
+        const ampm = timeMatch[3].toUpperCase();
+        if (ampm === 'PM' && hours < 12) hours += 12;
+        if (ampm === 'AM' && hours === 12) hours = 0;
+        
+        const [year, month, day] = dateStr.split('-').map(Number);
+        const d = new Date(year, month - 1, day);
+        d.setHours(hours, minutes, 0, 0);
+        return d;
+      } catch (e) {
+        console.error("Error parsing time:", e);
+        return null;
+      }
+    };
+
+    const updateTimer = () => {
+      if (!todayRecord) {
+        setElapsedTimeStr('00:00:00');
+        setTimerStatus('Not Checked In');
+        return;
+      }
+
+      const checkInTime = parseTime(todayRecord.inTime, todayRecord.date);
+      if (!checkInTime) {
+        setElapsedTimeStr('00:00:00');
+        setTimerStatus('Not Checked In');
+        return;
+      }
+
+      if (todayRecord.outTime && todayRecord.outTime !== '--') {
+        const checkOutTime = parseTime(todayRecord.outTime, todayRecord.date);
+        if (checkOutTime) {
+          const diffMs = Math.max(0, checkOutTime.getTime() - checkInTime.getTime());
+          const hours = Math.floor(diffMs / 3600000);
+          const minutes = Math.floor((diffMs % 3600000) / 60000);
+          const seconds = Math.floor((diffMs % 60000) / 1000);
+          setElapsedTimeStr(
+            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+          );
+          setTimerStatus('Checked Out');
+        } else {
+          setElapsedTimeStr('00:00:00');
+          setTimerStatus('Checked Out');
+        }
+        return;
+      }
+
+      setTimerStatus('Active Shift');
+      const now = new Date();
+      const diffMs = Math.max(0, now.getTime() - checkInTime.getTime());
+      const hours = Math.floor(diffMs / 3600000);
+      const minutes = Math.floor((diffMs % 3600000) / 60000);
+      const seconds = Math.floor((diffMs % 60000) / 1000);
+      setElapsedTimeStr(
+        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      );
+    };
+
+    updateTimer();
+
+    if (todayRecord && (!todayRecord.outTime || todayRecord.outTime === '--')) {
+      intervalId = setInterval(updateTimer, 1000);
+    }
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [todayRecord]);
+
   // Dashboard quick-add dropdown menu controls
   const [addMenuAnchor, setAddMenuAnchor] = useState(null);
   const addMenuOpen = Boolean(addMenuAnchor);
@@ -461,55 +550,115 @@ const Dashboard = () => {
       {/* KPI Cards Row (Upgraded with Revenue Intelligence & Mobile Smart Lead Swiper) */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         
-        {/* Column 1: Revenue Intelligence */}
+        {/* Column 1: Duty Punch Timer */}
         <Grid item xs={12} md={6}>
-          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
-            <CardContent sx={{ p: 3 }}>
+          <Card sx={{ 
+            border: '1px solid #E2E8F0', 
+            borderRadius: '16px',
+            background: timerStatus === 'Active Shift' 
+              ? 'linear-gradient(135deg, #1E1B4B 0%, #311042 100%)' // premium dark space gradient for active
+              : 'linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)', // light grey gradient for inactive
+            color: timerStatus === 'Active Shift' ? '#FFFFFF' : '#1E293B',
+            boxShadow: timerStatus === 'Active Shift' ? '0 10px 25px -5px rgba(30, 27, 75, 0.4)' : 'none',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'all 0.3s ease-in-out'
+          }}>
+            <CardContent sx={{ p: 3, position: 'relative', zIndex: 2 }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start">
                 <Box>
-                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase', tracking: '0.05em' }}>
-                    Revenue Intelligence
+                  <Typography variant="caption" sx={{ 
+                    color: timerStatus === 'Active Shift' ? '#A5B4FC' : '#64748B', 
+                    fontWeight: 700, 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.05em' 
+                  }}>
+                    Duty Shift Timer
                   </Typography>
-                  <Typography variant="h3" sx={{ fontWeight: 800, mt: 1, fontFamily: 'Poppins', color: '#10B981' }}>
-                    ₹{(totalSalesVal / 100000).toFixed(1)}L
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={1.5} sx={{ mt: 1.5 }}>
+                    <Icons.Clock size={28} color={timerStatus === 'Active Shift' ? '#818CF8' : '#64748B'} />
+                    <Typography variant="h3" sx={{ 
+                      fontWeight: 800, 
+                      fontFamily: 'Poppins', 
+                      letterSpacing: '-0.02em',
+                      textShadow: timerStatus === 'Active Shift' ? '0 2px 10px rgba(99, 102, 241, 0.3)' : 'none'
+                    }}>
+                      {elapsedTimeStr}
+                    </Typography>
+                  </Box>
                 </Box>
-                <Chip label="Target: ₹3.0Cr" size="small" variant="outlined" sx={{ fontWeight: 700, color: '#64748B' }} />
+                
+                <Chip 
+                  label={timerStatus === 'Active Shift' ? 'ON DUTY' : (timerStatus === 'Checked Out' ? 'OFF DUTY' : 'NOT PUNCHED')} 
+                  size="small" 
+                  sx={{ 
+                    fontWeight: 700, 
+                    backgroundColor: timerStatus === 'Active Shift' ? '#22C55E' : (timerStatus === 'Checked Out' ? '#3B82F6' : '#94A3B8'),
+                    color: '#FFFFFF',
+                    border: 'none',
+                    px: 1,
+                    '& .MuiChip-label': { px: 1 }
+                  }} 
+                />
               </Box>
 
-              <Box sx={{ mt: 2, mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
-                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Goal Realised</Typography>
-                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#10B981' }}>
-                    {((totalSalesVal / 30000000) * 100).toFixed(1)}% Completed
+              <Box sx={{ mt: 3, mb: 1.5 }}>
+                {timerStatus === 'Active Shift' ? (
+                  <Box display="flex" alignItems="center" gap={1}>
+                    <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: '#22C55E', animation: 'pulse 1.5s infinite' }} />
+                    <Typography variant="body2" sx={{ color: '#E2E8F0', fontWeight: 500 }}>
+                      Shift started at <strong>{todayRecord?.inTime}</strong>. Keep up the great work!
+                    </Typography>
+                  </Box>
+                ) : timerStatus === 'Checked Out' ? (
+                  <Typography variant="body2" sx={{ color: '#475569', fontWeight: 500 }}>
+                    Today's shift: <strong>{todayRecord?.inTime}</strong> to <strong>{todayRecord?.outTime}</strong>.
                   </Typography>
-                </Box>
-                <Box sx={{ height: 8, borderRadius: 4, backgroundColor: '#F1F5F9', overflow: 'hidden' }}>
-                  <Box sx={{ width: `${Math.min(100, (totalSalesVal / 30000000) * 100)}%`, height: '100%', backgroundColor: '#10B981', borderRadius: 4 }} />
-                </Box>
+                ) : (
+                  <Typography variant="body2" sx={{ color: '#64748B', fontWeight: 500 }}>
+                    You have not checked in today yet. Please start your shift to log activities.
+                  </Typography>
+                )}
               </Box>
 
-              <Divider sx={{ mb: 2, borderStyle: 'dashed' }} />
+              <Divider sx={{ my: 2, borderColor: timerStatus === 'Active Shift' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', borderStyle: 'dashed' }} />
 
-              <Grid container spacing={2}>
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Today</Typography>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenueToday / 100000).toFixed(1)}L</Typography>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Last 7 Days</Typography>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenue7Days / 100000).toFixed(1)}L</Typography>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Last 30 Days</Typography>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenue30Days / 100000).toFixed(1)}L</Typography>
-                </Grid>
-                <Grid item xs={6} sm={3}>
-                  <Typography variant="caption" sx={{ color: '#64748B', display: 'block' }}>Last Quarter</Typography>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A' }}>₹{(revenueQuarter / 100000).toFixed(1)}L</Typography>
-                </Grid>
-              </Grid>
+              <Box display="flex" justifyContent="space-between" alignItems="center">
+                <Typography variant="caption" sx={{ color: timerStatus === 'Active Shift' ? '#C7D2FE' : '#64748B', fontWeight: 600 }}>
+                  Logged Employee: <strong>{user?.name} ({user?.id})</strong>
+                </Typography>
+                <Button 
+                  size="small" 
+                  variant={timerStatus === 'Active Shift' ? 'contained' : 'outlined'}
+                  color={timerStatus === 'Active Shift' ? 'error' : 'primary'}
+                  onClick={() => navigate('/module/attendance')}
+                  sx={{ 
+                    borderRadius: '8px', 
+                    textTransform: 'none', 
+                    fontWeight: 600,
+                    boxShadow: 'none',
+                    '&:hover': { boxShadow: 'none' }
+                  }}
+                >
+                  {timerStatus === 'Active Shift' ? 'Punch Out Terminal' : 'Punch In Terminal'}
+                </Button>
+              </Box>
             </CardContent>
+            
+            {/* Ambient Background Glow for Active State */}
+            {timerStatus === 'Active Shift' && (
+              <Box sx={{
+                position: 'absolute',
+                top: '-50%',
+                right: '-30%',
+                width: '200px',
+                height: '200px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, rgba(99,102,241,0) 70%)',
+                zIndex: 1,
+                pointerEvents: 'none'
+              }} />
+            )}
           </Card>
         </Grid>
 

@@ -500,7 +500,7 @@ function handleDealStatusChange(d, db, req) {
     prop.current_owner_id = d.customerId;
     prop.contact_person_name = buyerName;
     prop.contact_number = buyerCust ? buyerCust.phone : (prop.contact_number || '');
-    prop.status = 'Sold';
+    prop.status = 'Property Registered/Sold Out';
     
     prop.ownership_documents = prop.ownership_documents || { old_owner: [], new_owner: [] };
     if (prop.ownership_documents.new_owner && prop.ownership_documents.new_owner.length > 0) {
@@ -563,7 +563,7 @@ function handlePitchStatusChange(p, db, req) {
     try { syncToSheets('follow_ups'); } catch(e) {}
   }
 
-  if (p.status !== 'Property Registered/Sold Out') return;
+  if (p.status !== 'Deal Closed') return;
 
   // Convert Lead to Customer if Pitch closed for a Lead ID
   let finalCustomerId = p.customerId;
@@ -635,7 +635,7 @@ function handlePitchStatusChange(p, db, req) {
     prop.current_owner_id = finalCustomerId;
     prop.contact_person_name = buyerName;
     prop.contact_number = buyerCust ? buyerCust.phone : (prop.contact_number || '');
-    prop.status = 'Sold';
+    prop.status = 'Property Registered/Sold Out';
     
     prop.ownership_documents = prop.ownership_documents || { old_owner: [], new_owner: [] };
     if (prop.ownership_documents.new_owner && prop.ownership_documents.new_owner.length > 0) {
@@ -3058,8 +3058,8 @@ app.listen(PORT, () => {
       const propIndex = (db.properties || []).findIndex(p => String(p.id) === String(d.propertyId));
       if (propIndex !== -1) {
         const prop = db.properties[propIndex];
-        if (prop.status !== 'Sold') {
-          prop.status = 'Sold';
+        if (prop.status !== 'Property Registered/Sold Out') {
+          prop.status = 'Property Registered/Sold Out';
           updated = true;
         }
         if (prop.current_owner_id !== d.customerId) {

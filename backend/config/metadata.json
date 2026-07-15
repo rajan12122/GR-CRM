@@ -2493,54 +2493,39 @@
     ],
     "propertyStatus": [
       {
-        "value": "Available",
-        "label": "Available for Purchase",
-        "color": "#22C55E"
+        "value": "Token/Booking Amount Recieved",
+        "label": "Token/Booking Amount Recieved",
+        "color": "#14B8A6"
       },
       {
-        "value": "Reserved",
-        "label": "Reserved Deposit Received",
-        "color": "#F59E0B"
-      },
-      {
-        "value": "Booked",
-        "label": "Token Money Booked",
+        "value": "Sales Agreement",
+        "label": "Sales Agreement",
         "color": "#3B82F6"
       },
       {
-        "value": "Agreement",
-        "label": "Sales Agreement Signed",
+        "value": "NOC",
+        "label": "NOC",
         "color": "#8B5CF6"
       },
       {
-        "value": "Registered",
-        "label": "Property Registered / Deed Done",
-        "color": "#EC4899"
+        "value": "Part Payment",
+        "label": "Part Payment",
+        "color": "#F59E0B"
       },
       {
-        "value": "Sold",
-        "label": "Sold out completely",
-        "color": "#111827"
+        "value": "Property Registered/Sold Out",
+        "label": "Property Registered/Sold Out",
+        "color": "#22C55E"
       },
       {
-        "value": "Blocked",
-        "label": "Blocked by Builder",
+        "value": "IN active listings",
+        "label": "IN active listings",
+        "color": "#0F172A"
+      },
+      {
+        "value": "Sold By Someone/Deal Lost",
+        "label": "Sold By Someone/Deal Lost",
         "color": "#EF4444"
-      },
-      {
-        "value": "Agreement Done",
-        "label": "Agreement Done",
-        "color": "#8B5CF6"
-      },
-      {
-        "value": "Registry Done",
-        "label": "Registry Done",
-        "color": "#EC4899"
-      },
-      {
-        "value": "Inactive",
-        "label": "Inactive Listing",
-        "color": "#6B7280"
       }
     ],
     "builders": [
@@ -3097,39 +3082,59 @@
     ],
     "pitchStatus": [
       {
-        "value": "Token/Booking Amount Recieved",
-        "label": "Token/Booking Amount Recieved",
-        "color": "#14B8A6"
-      },
-      {
-        "value": "Sales Agreement",
-        "label": "Sales Agreement",
+        "value": "Pitched",
+        "label": "Pitched",
         "color": "#3B82F6"
       },
       {
-        "value": "NOC",
-        "label": "NOC",
+        "value": "Interested",
+        "label": "Interested",
+        "color": "#10B981"
+      },
+      {
+        "value": "Not Interested",
+        "label": "Not Interested",
+        "color": "#EF4444"
+      },
+      {
+        "value": "Site Visit Scheduled",
+        "label": "Site Visit Scheduled",
         "color": "#8B5CF6"
       },
       {
-        "value": "Part Payment",
-        "label": "Part Payment",
+        "value": "Site Visit Completed",
+        "label": "Site Visit Completed",
+        "color": "#EC4899"
+      },
+      {
+        "value": "Negotiation",
+        "label": "Negotiation",
         "color": "#F59E0B"
       },
       {
-        "value": "Property Registered/Sold Out",
-        "label": "Property Registered/Sold Out",
-        "color": "#22C55E"
+        "value": "Token Received",
+        "label": "Token Received",
+        "color": "#14B8A6"
       },
       {
-        "value": "IN active listings",
-        "label": "IN active listings",
-        "color": "#0F172A"
+        "value": "Deal Closed",
+        "label": "Deal Closed",
+        "color": "#1E293B"
       },
       {
-        "value": "Sold By Someone/Deal Lost",
-        "label": "Sold By Someone/Deal Lost",
+        "value": "Rejected",
+        "label": "Rejected",
         "color": "#EF4444"
+      },
+      {
+        "value": "Hold",
+        "label": "On Hold",
+        "color": "#6B7280"
+      },
+      {
+        "value": "Follow-up Required",
+        "label": "Follow-up Required",
+        "color": "#EAB308"
       }
     ],
     "pitchMethods": [

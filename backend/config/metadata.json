@@ -1995,6 +1995,15 @@
           "editable": true
         },
         {
+          "name": "propertyStatus",
+          "label": "Property Pipeline Stage",
+          "type": "select",
+          "chipGroup": "propertyStatus",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "interestLevel",
           "label": "Customer Interest Level",
           "type": "select",
@@ -2628,38 +2637,43 @@
         "color": "#64748B"
       },
       {
-        "value": "Token/Booking Amount Recieved",
-        "label": "Token/Booking Amount Recieved",
-        "color": "#14B8A6"
-      },
-      {
-        "value": "Sales Agreement",
-        "label": "Sales Agreement",
+        "value": "New Lead",
+        "label": "Fresh Lead",
         "color": "#3B82F6"
       },
       {
-        "value": "NOC",
-        "label": "NOC",
+        "value": "Contacted",
+        "label": "Contacted",
         "color": "#8B5CF6"
       },
       {
-        "value": "Part Payment",
-        "label": "Part Payment",
+        "value": "Interested",
+        "label": "Interested / Nurture",
         "color": "#F59E0B"
       },
       {
-        "value": "Property Registered/Sold Out",
-        "label": "Property Registered/Sold Out",
-        "color": "#22C55E"
+        "value": "Site Visit",
+        "label": "Site Visit Arranged",
+        "color": "#EC4899"
       },
       {
-        "value": "IN active listings",
-        "label": "IN active listings",
-        "color": "#0F172A"
+        "value": "Negotiation",
+        "label": "Under Negotiation",
+        "color": "#10B981"
       },
       {
-        "value": "Sold By Someone/Deal Lost",
-        "label": "Sold By Someone/Deal Lost",
+        "value": "Booked",
+        "label": "Property Booked",
+        "color": "#059669"
+      },
+      {
+        "value": "Closed",
+        "label": "Deal Closed",
+        "color": "#111827"
+      },
+      {
+        "value": "Lost",
+        "label": "Lost Lead",
         "color": "#EF4444"
       }
     ],

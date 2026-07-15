@@ -551,6 +551,15 @@ function handleDealStatusChange(d, db, req) {
 function handlePitchStatusChange(p, db, req) {
   if (!p.id) return;
 
+  if (p.propertyId && p.propertyStatus) {
+    const propIndex = (db.properties || []).findIndex(pr => String(pr.id) === String(p.propertyId));
+    if (propIndex !== -1) {
+      db.properties[propIndex].status = p.propertyStatus;
+      writeDb(db);
+      try { syncToSheets('properties'); } catch(e) {}
+    }
+  }
+
   // Auto-complete call follow-up if pitched via call
   if (p.pitchMethod === 'Call') {
     db.follow_ups = db.follow_ups || [];
@@ -881,6 +890,13 @@ function handleFollowUpPipelineAction(f, db, req) {
       }
       writeDb(db);
       try { syncToSheets('leads'); } catch(e) {}
+    }
+  } else if (customerId && String(customerId).startsWith('CUST-')) {
+    const cust = (db.customers || []).find(c => String(c.id) === String(customerId));
+    if (cust) {
+      cust.stage = action;
+      writeDb(db);
+      try { syncToSheets('customers'); } catch(e) {}
     }
   }
 }

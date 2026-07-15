@@ -110,6 +110,7 @@ const EntityDetail = () => {
   const [pitchMethod, setPitchMethod] = useState('Call');
   const [pitchInterest, setPitchInterest] = useState('Interested');
   const [pitchStatus, setPitchStatus] = useState('Pitched');
+  const [pitchPropertyStatus, setPitchPropertyStatus] = useState('');
   const [pitchPrice, setPitchPrice] = useState('');
   const [pitchFollowUp, setPitchFollowUp] = useState('');
   const [pitchRemarks, setPitchRemarks] = useState('');
@@ -957,10 +958,11 @@ const EntityDetail = () => {
                             setPitchPrice('');
                             setPitchRemarks('');
                             setPitchWarning('');
+                            setPitchPropertyStatus('');
                             setPitchDialogOpen(true);
                           }}
                         >
-                          Log New Pitch
+                          Log Pitch
                         </Button>
                       </Box>
                       {connections.pitches?.length === 0 ? (
@@ -988,6 +990,7 @@ const EntityDetail = () => {
                                     setPitchRemarks(p.remarks);
                                     setPitchInterest(p.interestLevel);
                                     setPitchStatus(p.status);
+                                    setPitchPropertyStatus(p.propertyStatus || '');
                                     setPitchMethod(p.pitchMethod);
                                     setPitchFollowUp(p.followUpDate || '');
                                     setPitchWarning('');
@@ -1978,6 +1981,7 @@ const EntityDetail = () => {
                             setPitchPrice('');
                             setPitchRemarks('');
                             setPitchWarning('');
+                            setPitchPropertyStatus('');
                             setPitchDialogOpen(true);
                           }}
                         >
@@ -2220,6 +2224,7 @@ const EntityDetail = () => {
                                               setPitchRemarks(p.remarks);
                                               setPitchInterest(p.interestLevel);
                                               setPitchStatus(p.status);
+                                              setPitchPropertyStatus(p.propertyStatus || '');
                                               setPitchMethod(p.pitchMethod);
                                               setPitchFollowUp(p.followUpDate || '');
                                               setPitchWarning('');
@@ -3945,6 +3950,19 @@ const EntityDetail = () => {
                 <MenuItem value="Hold">On Hold</MenuItem>
               </Select>
             </FormControl>
+            <FormControl fullWidth>
+              <InputLabel>Property Pipeline Stage</InputLabel>
+              <Select value={pitchPropertyStatus} onChange={(e) => setPitchPropertyStatus(e.target.value)} label="Property Pipeline Stage">
+                <MenuItem value="">-- Keep Current / None --</MenuItem>
+                <MenuItem value="Token/Booking Amount Recieved">Token/Booking Amount Recieved</MenuItem>
+                <MenuItem value="Sales Agreement">Sales Agreement</MenuItem>
+                <MenuItem value="NOC">NOC</MenuItem>
+                <MenuItem value="Part Payment">Part Payment</MenuItem>
+                <MenuItem value="Property Registered/Sold Out">Property Registered/Sold Out</MenuItem>
+                <MenuItem value="IN active listings">IN active listings</MenuItem>
+                <MenuItem value="Sold By Someone/Deal Lost">Sold By Someone/Deal Lost</MenuItem>
+              </Select>
+            </FormControl>
             <TextField label="Quoted Pitch Price Offer" type="number" fullWidth value={pitchPrice} onChange={(e) => setPitchPrice(e.target.value)} />
             <TextField label="Next Followup Date" type="date" InputLabelProps={{ shrink: true }} fullWidth value={pitchFollowUp} onChange={(e) => setPitchFollowUp(e.target.value)} />
             <TextField label="Meeting Remarks" multiline rows={3} fullWidth value={pitchRemarks} onChange={(e) => setPitchRemarks(e.target.value)} />
@@ -4042,6 +4060,7 @@ const EntityDetail = () => {
               pitchMethod,
               interestLevel: pitchInterest,
               status: pitchStatus,
+              propertyStatus: pitchPropertyStatus,
               quotedPrice: Number(pitchPrice || 0),
               followUpDate: pitchFollowUp,
               remarks: pitchRemarks,

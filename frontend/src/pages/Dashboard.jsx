@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Capacitor } from '@capacitor/core';
 import { 
   Box, 
   Grid, 
@@ -45,7 +46,9 @@ const Dashboard = () => {
     user,
     metadata,
     hasPermission,
-    updateRecord
+    updateRecord,
+    createRecord,
+    logEmployeeLocation
   } = useApp();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -139,6 +142,60 @@ const Dashboard = () => {
       if (intervalId) clearInterval(intervalId);
     };
   }, [todayRecord]);
+
+  const handlePunchIn = async () => {
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 30);
+      const statusStr = isLate ? 'Late' : 'Present';
+      
+      const payload = {
+        employeeId: user?.id || 'EMP-001',
+        date: todayDateStr,
+        inTime: timeStr,
+        outTime: '--',
+        status: statusStr
+      };
+      await createRecord('attendance', payload);
+      fetchModuleData('attendance');
+      
+      // Auto share location
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await logEmployeeLocation(user?.id, todayDateStr, "Check In via Dashboard");
+        } catch (err) {
+          console.error("Location share error:", err);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handlePunchOut = async () => {
+    if (!todayRecord) return;
+    try {
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+      await updateRecord('attendance', todayRecord.id, {
+        ...todayRecord,
+        outTime: timeStr
+      });
+      fetchModuleData('attendance');
+      
+      // Auto stop/log location check-out
+      if (Capacitor.isNativePlatform()) {
+        try {
+          await logEmployeeLocation(user?.id, todayDateStr, "Check Out via Dashboard");
+        } catch (err) {
+          console.error("Location share error:", err);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   // Dashboard quick-add dropdown menu controls
   const [addMenuAnchor, setAddMenuAnchor] = useState(null);
@@ -627,21 +684,57 @@ const Dashboard = () => {
                 <Typography variant="caption" sx={{ color: timerStatus === 'Active Shift' ? '#C7D2FE' : '#64748B', fontWeight: 600 }}>
                   Logged Employee: <strong>{user?.name} ({user?.id})</strong>
                 </Typography>
-                <Button 
-                  size="small" 
-                  variant={timerStatus === 'Active Shift' ? 'contained' : 'outlined'}
-                  color={timerStatus === 'Active Shift' ? 'error' : 'primary'}
-                  onClick={() => navigate('/module/attendance')}
-                  sx={{ 
-                    borderRadius: '8px', 
-                    textTransform: 'none', 
-                    fontWeight: 600,
-                    boxShadow: 'none',
-                    '&:hover': { boxShadow: 'none' }
-                  }}
-                >
-                  {timerStatus === 'Active Shift' ? 'Punch Out Terminal' : 'Punch In Terminal'}
-                </Button>
+                <Box display="flex" gap={1}>
+                  {timerStatus !== 'Active Shift' && timerStatus !== 'Checked Out' && (
+                    <Button 
+                      size="small" 
+                      variant="contained"
+                      color="success"
+                      onClick={handlePunchIn}
+                      sx={{ 
+                        borderRadius: '8px', 
+                        textTransform: 'none', 
+                        fontWeight: 700,
+                        boxShadow: 'none',
+                        '&:hover': { boxShadow: 'none' }
+                      }}
+                    >
+                      Punch In
+                    </Button>
+                  )}
+                  {timerStatus === 'Active Shift' && (
+                    <Button 
+                      size="small" 
+                      variant="contained"
+                      color="error"
+                      onClick={handlePunchOut}
+                      sx={{ 
+                        borderRadius: '8px', 
+                        textTransform: 'none', 
+                        fontWeight: 700,
+                        boxShadow: 'none',
+                        '&:hover': { boxShadow: 'none' }
+                      }}
+                    >
+                      Punch Out
+                    </Button>
+                  )}
+                  <Button 
+                    size="small" 
+                    variant="outlined"
+                    sx={{ 
+                      borderRadius: '8px', 
+                      textTransform: 'none', 
+                      fontWeight: 600,
+                      color: timerStatus === 'Active Shift' ? '#A5B4FC' : '#475569',
+                      borderColor: timerStatus === 'Active Shift' ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.15)',
+                      '&:hover': { borderColor: timerStatus === 'Active Shift' ? '#FFFFFF' : '#2563EB' }
+                    }}
+                    onClick={() => navigate('/module/attendance')}
+                  >
+                    Terminal
+                  </Button>
+                </Box>
               </Box>
             </CardContent>
             

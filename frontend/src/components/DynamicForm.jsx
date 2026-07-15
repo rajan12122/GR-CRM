@@ -57,6 +57,9 @@ const DynamicForm = ({
     }
     if (moduleKey === 'queries') {
       const type = formData.queryType;
+      if (f.name === 'title') {
+        return type === 'Buy Property';
+      }
       if (type === 'Buy Property') {
         if (f.name === 'demand') return false;
       }
@@ -66,6 +69,7 @@ const DynamicForm = ({
       }
     }
     if (moduleKey === 'properties') {
+      if (f.name === 'current_owner_id') return false;
       if (f.name === 'dealerId' || f.name === 'dealer_deal_type') {
         return formData.dealer_owner_booked === 'Dealer';
       }
@@ -246,13 +250,26 @@ const DynamicForm = ({
 
   useEffect(() => {
     if (showSellerPropertyForm) {
+      let ownerName = formData.name || formData.person_name || '';
+      let ownerPhone = formData.phone || formData.contact_num || '';
+      
+      if (!ownerName && formData.customerId) {
+        const custs = moduleData.customers || [];
+        const leadsList = moduleData.leads || [];
+        const found = custs.find(c => String(c.id) === String(formData.customerId)) || leadsList.find(l => String(l.id) === String(formData.customerId));
+        if (found) {
+          ownerName = found.name || found.person_name || '';
+          ownerPhone = found.phone || found.contact_num || '';
+        }
+      }
+
       setNestedPropertyData(prev => ({
         ...prev,
-        contact_person_name: prev.contact_person_name || formData.name || formData.person_name || '',
-        contact_number: prev.contact_number || formData.phone || formData.contact_num || ''
+        contact_person_name: prev.contact_person_name || ownerName,
+        contact_number: prev.contact_number || ownerPhone
       }));
     }
-  }, [showSellerPropertyForm, formData.name, formData.person_name, formData.phone, formData.contact_num]);
+  }, [showSellerPropertyForm, formData.name, formData.person_name, formData.phone, formData.contact_num, formData.customerId, moduleData.customers, moduleData.leads]);
 
   const handleNestedPropertyChange = (name, val) => {
     setNestedPropertyData(prev => ({
@@ -723,7 +740,7 @@ const DynamicForm = ({
                                           >
                                             <MenuItem value="">-- Select --</MenuItem>
                                             {(moduleData.dealers || []).map(d => (
-                                              <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
+                                              <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.id})</MenuItem>
                                             ))}
                                             <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
                                               + Add New Property Dealer
@@ -1086,7 +1103,10 @@ const DynamicForm = ({
                           return searchStr.includes(dealerSearch.toLowerCase());
                         }).map(opt => (
                           <MenuItem key={opt.id} value={opt.id}>
-                            {opt.name ? `${opt.name} (${opt.id})` : opt.id}
+                            {f.refModule === 'dealers'
+                              ? `${opt.firm_name || opt.person_name || 'Dealer'} (${opt.id})`
+                              : opt.name ? `${opt.name} (${opt.id})` : opt.id
+                            }
                           </MenuItem>
                         ))}
                         {f.refModule === 'dealers' && (

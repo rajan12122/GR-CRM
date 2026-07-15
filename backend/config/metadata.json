@@ -445,14 +445,6 @@
           "editable": true
         },
         {
-          "name": "dealer_firm_name",
-          "label": "Dealer Firm Name",
-          "type": "text",
-          "required": false,
-          "showInTable": true,
-          "editable": true
-        },
-        {
           "name": "r_c_i",
           "label": "R/C/I",
           "type": "select",

@@ -178,6 +178,16 @@ const EntityDetail = () => {
   const [querySize, setQuerySize] = useState('');
   const [queryRemarks, setQueryRemarks] = useState('');
 
+  useEffect(() => {
+    if (queryDialogOpen && queryType === 'Sell Property' && record) {
+      setNestedPropertyData(prev => ({
+        ...prev,
+        contact_person_name: prev.contact_person_name || record.name || record.person_name || '',
+        contact_number: prev.contact_number || record.phone || record.contact_num || ''
+      }));
+    }
+  }, [queryDialogOpen, queryType, record]);
+
   const [callDuration, setCallDuration] = useState('');
   const [callOutcomeOption, setCallOutcomeOption] = useState('Call Done');
   const [callBudget, setCallBudget] = useState('');
@@ -3424,7 +3434,7 @@ const EntityDetail = () => {
                                   const searchStr = `${name} ${d.id}`.toLowerCase();
                                   return searchStr.includes(dealerSearch.toLowerCase());
                                 }).map(d => (
-                                  <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.person_name})</MenuItem>
+                                  <MenuItem key={d.id} value={d.id}>{d.firm_name} ({d.id})</MenuItem>
                                 ))}
                                 <MenuItem value="Other_Dealer" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
                                   + Add New Property Dealer
@@ -3688,17 +3698,7 @@ const EntityDetail = () => {
                           onChange={(e) => setNestedPropertyData(prev => ({ ...prev, date: e.target.value }))} 
                         />
                       </Grid>
-                      {nestedPropertyData.dealer_owner_booked === 'Dealer' && (
-                        <Grid item xs={12} sm={6}>
-                          <TextField 
-                            label="Dealer Firm Name" 
-                            size="small" 
-                            fullWidth 
-                            value={nestedPropertyData.dealer_firm_name || ''} 
-                            onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_firm_name: e.target.value }))} 
-                          />
-                        </Grid>
-                      )}
+
                       <Grid item xs={12} sm={6}>
                         <TextField 
                           label="Address/Number" 

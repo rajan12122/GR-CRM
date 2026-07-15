@@ -848,9 +848,7 @@ const QuickAdd = () => {
                       <Grid item xs={12} sm={6}>
                         <TextField label="Date" type="date" size="small" fullWidth InputLabelProps={{ shrink: true }} value={nestedPropertyData.date || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, date: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
-                        <TextField label="Dealer Firm Name" size="small" fullWidth value={nestedPropertyData.dealer_firm_name || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, dealer_firm_name: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
-                      </Grid>
+
                       <Grid item xs={12} sm={6}>
                         <TextField label="Address Number" size="small" fullWidth value={nestedPropertyData.address_number || ''} onChange={(e) => setNestedPropertyData(prev => ({ ...prev, address_number: e.target.value }))} sx={{ input: { color: '#FFFFFF' }, '.MuiInputLabel-root': { color: '#94A3B8' }, '& .MuiOutlinedInput-root': { backgroundColor: '#0F172A', '& .MuiOutlinedInput-notchedOutline': { borderColor: '#334155' } } }} />
                       </Grid>

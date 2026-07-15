@@ -33,6 +33,7 @@ import { useApp } from '../context/AppContext';
 import DynamicTable from '../components/DynamicTable';
 import DynamicForm from '../components/DynamicForm';
 const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDeleteClick, moduleName }) => {
+  const { moduleData } = useApp();
   const [expanded, setExpanded] = useState(false);
   const primaryFields = fields.filter(f => f.showInTable && f.name !== 'id' && f.name !== 'status');
   

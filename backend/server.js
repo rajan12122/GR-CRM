@@ -1326,22 +1326,24 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       if (!db.queries) db.queries = [];
       db.queries.push(newQuery);
 
-      // Automatically schedule a follow up task for the auto-created query
-      db.follow_ups = db.follow_ups || [];
-      const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
-      const newFollowUp = {
-        id: followUpId,
-        customerId: existingCust.id,
-        queryId: queryId,
-        employeeId: payload.assignedEmployeeId || existingCust.assignedEmployeeId || 'EMP-001',
-        date: new Date().toLocaleDateString('en-IN'),
-        time: '12:00 PM',
-        status: 'Pending Call',
-        pipelineAction: 'Fresh Lead',
-        remarks: `Auto-scheduled follow up for auto-created duplicate check Query ${queryId}.`
-      };
-      db.follow_ups.push(newFollowUp);
-      try { syncToSheets('follow_ups'); } catch(e) {}
+      if (newQuery.queryType !== 'Sell Property') {
+        // Automatically schedule a follow up task for the auto-created query
+        db.follow_ups = db.follow_ups || [];
+        const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
+        const newFollowUp = {
+          id: followUpId,
+          customerId: existingCust.id,
+          queryId: queryId,
+          employeeId: payload.assignedEmployeeId || existingCust.assignedEmployeeId || 'EMP-001',
+          date: new Date().toLocaleDateString('en-IN'),
+          time: '12:00 PM',
+          status: 'Pending Call',
+          pipelineAction: 'Fresh Lead',
+          remarks: `Auto-scheduled follow up for auto-created duplicate check Query ${queryId}.`
+        };
+        db.follow_ups.push(newFollowUp);
+        try { syncToSheets('follow_ups'); } catch(e) {}
+      }
       
       const log = {
         id: `LOG-${Date.now()}`,
@@ -1398,22 +1400,24 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   if (module === 'queries') {
     handleQueryStageChange(payload, db, req);
     
-    // Automatically schedule a follow up task for the new query
-    db.follow_ups = db.follow_ups || [];
-    const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
-    const newFollowUp = {
-      id: followUpId,
-      customerId: payload.customerId,
-      queryId: payload.id,
-      employeeId: payload.assignedEmployeeId || 'EMP-001',
-      date: new Date().toLocaleDateString('en-IN'),
-      time: '12:00 PM',
-      status: 'Pending Call',
-      pipelineAction: 'Fresh Lead',
-      remarks: `Auto-scheduled follow up for new Query ${payload.id}: ${payload.remarks || 'No notes'}`
-    };
-    db.follow_ups.push(newFollowUp);
-    try { syncToSheets('follow_ups'); } catch(e) {}
+    if (module === 'queries' && payload.queryType !== 'Sell Property') {
+      // Automatically schedule a follow up task for the new query
+      db.follow_ups = db.follow_ups || [];
+      const followUpId = `FOLLOW-${String((db.follow_ups || []).length + 1).padStart(3, '0')}`;
+      const newFollowUp = {
+        id: followUpId,
+        customerId: payload.customerId,
+        queryId: payload.id,
+        employeeId: payload.assignedEmployeeId || 'EMP-001',
+        date: new Date().toLocaleDateString('en-IN'),
+        time: '12:00 PM',
+        status: 'Pending Call',
+        pipelineAction: 'Fresh Lead',
+        remarks: `Auto-scheduled follow up for new Query ${payload.id}: ${payload.remarks || 'No notes'}`
+      };
+      db.follow_ups.push(newFollowUp);
+      try { syncToSheets('follow_ups'); } catch(e) {}
+    }
   }
   if (module === 'deals') handleDealStatusChange(payload, db, req);
   if (module === 'property_pitch_history') handlePitchStatusChange(payload, db, req);
@@ -1670,6 +1674,12 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     });
     try { syncToSheets('properties'); } catch(e) {}
   }
+  if (module === 'queries') {
+    db.follow_ups = (db.follow_ups || []).filter(f => String(f.queryId) !== String(id));
+    db.properties = (db.properties || []).filter(p => String(p.linkedQueryId) !== String(id));
+    try { syncToSheets('follow_ups'); } catch(e) {}
+    try { syncToSheets('properties'); } catch(e) {}
+  }
   // Auto-shift sequential IDs to close the gap and update references globally
   const prefixMap = {
     employees: 'EMP',
@@ -1766,6 +1776,14 @@ app.post('/api/data/:module/bulk-delete', authenticateToken, checkPermission('se
         }
       });
     });
+    try { syncToSheets('properties'); } catch(e) {}
+  }
+  if (module === 'queries') {
+    ids.forEach(id => {
+      db.follow_ups = (db.follow_ups || []).filter(f => String(f.queryId) !== String(id));
+      db.properties = (db.properties || []).filter(p => String(p.linkedQueryId) !== String(id));
+    });
+    try { syncToSheets('follow_ups'); } catch(e) {}
     try { syncToSheets('properties'); } catch(e) {}
   }
 
@@ -2271,7 +2289,8 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
       return p === cleanPhone || (cleanEmail && e === cleanEmail);
     });
     data.queries = allQueries.filter(q => String(q.customerId) === String(id));
-    data.propertiesOwned = allProperties.filter(p => String(p.current_owner_id) === String(id));
+    data.properties = allProperties.filter(p => String(p.current_owner_id) === String(id));
+    data.propertiesOwned = data.properties;
     data.deals = allDeals.filter(d => String(d.customerId) === String(id) || String(d.sellerCustomerId) === String(id));
     data.purchaseHistory = allDeals.filter(d => String(d.customerId) === String(id) && d.status === 'Closed');
     data.saleHistory = allDeals.filter(d => String(d.sellerCustomerId) === String(id) && d.status === 'Closed');

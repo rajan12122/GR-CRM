@@ -257,12 +257,16 @@ export const AppProvider = ({ children }) => {
 
   // Admin: Update metadata schemas (reorder, add column, chip configurations)
   const saveMetadata = async (newMetadata) => {
+    // Optimistic UI update: update local state immediately so user sees changes instantly (high refresh rate feel)
+    const prevMetadata = metadata;
+    setMetadata(newMetadata);
     try {
       await axios.post(`${API_BASE_URL}/metadata`, newMetadata);
-      setMetadata(newMetadata);
       return { success: true };
     } catch (err) {
       console.error('Save metadata failed:', err);
+      // Rollback to original metadata state on network/backend failure
+      setMetadata(prevMetadata);
       return { success: false, message: err.response?.data?.message || 'Failed to update configuration.' };
     }
   };

@@ -138,20 +138,31 @@ syncFromSheets().then(res => {
   }
 });
 
-// Helper functions to read/write DB and Metadata
+// Helper functions to read/write DB and Metadata with in-memory caching
+let dbCache = null;
+let metadataCache = null;
+
 function readDb() {
-  return JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  if (!dbCache) {
+    dbCache = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  }
+  return dbCache;
 }
 
 function writeDb(data) {
+  dbCache = data;
   fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
 }
 
 function readMetadata() {
-  return JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+  if (!metadataCache) {
+    metadataCache = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+  }
+  return metadataCache;
 }
 
 function writeMetadata(data) {
+  metadataCache = data;
   fs.writeFileSync(metadataPath, JSON.stringify(data, null, 2), 'utf8');
 }
 

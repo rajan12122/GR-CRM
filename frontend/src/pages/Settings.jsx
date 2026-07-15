@@ -433,6 +433,28 @@ const Settings = () => {
     }
   };
 
+  const handleShiftChip = async (groupName, index, direction) => {
+    const updated = { ...metadata };
+    if (!updated.chips || !updated.chips[groupName]) return;
+    const array = [...updated.chips[groupName]];
+    
+    if (direction === 'up' && index > 0) {
+      const temp = array[index];
+      array[index] = array[index - 1];
+      array[index - 1] = temp;
+    } else if (direction === 'down' && index < array.length - 1) {
+      const temp = array[index];
+      array[index] = array[index + 1];
+      array[index + 1] = temp;
+    }
+
+    updated.chips[groupName] = array;
+    const res = await saveMetadata(updated);
+    if (!res.success) {
+      showStatus('error', res.message);
+    }
+  };
+
   const handleFieldLabelChange = (val) => {
     setNewFieldLabel(val);
     const slug = val.toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '');
@@ -975,25 +997,75 @@ const Settings = () => {
                 <Divider sx={{ mb: 3 }} />
 
                 {/* List Current Chip Choices */}
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Available Chip values</Typography>
-                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 4, p: 2, border: '1px solid #E2E8F0', borderRadius: '8px', backgroundColor: '#F8FAFC' }}>
-                  {metadata.chips[selectedChipGroup]?.length === 0 ? (
-                    <Typography variant="body2" sx={{ color: '#94A3B8' }}>No options listed.</Typography>
-                  ) : (
-                    metadata.chips[selectedChipGroup]?.map(chip => (
-                      <Chip 
-                        key={chip.value}
-                        label={chip.label}
-                        onDelete={() => handleDeleteChip(chip.value)}
-                        sx={{ 
-                          backgroundColor: `${chip.color}15`, 
-                          color: chip.color, 
-                          border: `1px solid ${chip.color}30`, 
-                          fontWeight: 700 
-                        }}
-                      />
-                    ))
-                  )}
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Available Chip values & Ordering</Typography>
+                <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', overflow: 'hidden', mb: 4 }}>
+                  <Table size="small">
+                    <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 700 }}>Label / Preview</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }}>Value Code</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }} align="center">Reorder</TableCell>
+                        <TableCell sx={{ fontWeight: 700 }} align="right">Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {!metadata.chips[selectedChipGroup] || metadata.chips[selectedChipGroup].length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={4} align="center" sx={{ py: 3, color: '#94A3B8' }}>
+                            No options listed for this category.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        metadata.chips[selectedChipGroup].map((chip, index) => (
+                          <TableRow key={chip.value} hover>
+                            <TableCell>
+                              <Chip 
+                                label={chip.label}
+                                sx={{ 
+                                  backgroundColor: `${chip.color}15`, 
+                                  color: chip.color, 
+                                  border: `1px solid ${chip.color}30`, 
+                                  fontWeight: 700 
+                                }}
+                              />
+                            </TableCell>
+                            <TableCell sx={{ fontFamily: 'monospace', color: '#475569' }}>
+                              {chip.value}
+                            </TableCell>
+                            <TableCell align="center">
+                              <Box display="flex" justifyContent="center" gap={0.5}>
+                                <IconButton 
+                                  size="small" 
+                                  disabled={index === 0} 
+                                  onClick={() => handleShiftChip(selectedChipGroup, index, 'up')}
+                                  sx={{ color: '#2563EB' }}
+                                >
+                                  <Icons.ArrowUp size={16} />
+                                </IconButton>
+                                <IconButton 
+                                  size="small" 
+                                  disabled={index === metadata.chips[selectedChipGroup].length - 1} 
+                                  onClick={() => handleShiftChip(selectedChipGroup, index, 'down')}
+                                  sx={{ color: '#2563EB' }}
+                                >
+                                  <Icons.ArrowDown size={16} />
+                                </IconButton>
+                              </Box>
+                            </TableCell>
+                            <TableCell align="right">
+                              <IconButton 
+                                size="small" 
+                                color="error" 
+                                onClick={() => handleDeleteChip(chip.value)}
+                              >
+                                <Icons.Trash2 size={16} />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
                 </Box>
 
                 <Divider sx={{ mb: 3 }} />

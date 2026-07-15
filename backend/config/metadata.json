@@ -701,6 +701,15 @@
           "chipGroup": "projectStatus"
         },
         {
+          "name": "constructionStatus",
+          "label": "Construction Status",
+          "type": "select",
+          "required": false,
+          "showInTable": true,
+          "editable": true,
+          "chipGroup": "projectStatus"
+        },
+        {
           "name": "rera_approved",
           "label": "RERA Approved",
           "type": "select",

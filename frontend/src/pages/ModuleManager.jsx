@@ -32,6 +32,17 @@ import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import DynamicTable from '../components/DynamicTable';
 import DynamicForm from '../components/DynamicForm';
+
+const getSingularLabel = (label) => {
+  if (!label) return '';
+  if (label.toLowerCase() === 'queries') return 'Query';
+  if (label.toLowerCase() === 'leaves') return 'Leave';
+  if (label.toLowerCase() === 'attendance') return 'Attendance';
+  if (label.endsWith('ies')) return label.slice(0, -3) + 'y';
+  if (label.endsWith('s')) return label.slice(0, -1);
+  return label;
+};
+
 const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDeleteClick, moduleName }) => {
   const { moduleData } = useApp();
   const [expanded, setExpanded] = useState(false);
@@ -525,7 +536,7 @@ const ModuleManager = () => {
             onClick={handleCreateClick}
             sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' }, textTransform: 'none', borderRadius: '8px', fontWeight: 700 }}
           >
-            Add {moduleConfig.label.slice(0, -1)}
+            Add {getSingularLabel(moduleConfig.label)}
           </Button>
         </Box>
       </Box>

@@ -22,6 +22,16 @@ import {
 import { useApp } from '../context/AppContext';
 import { Home } from 'lucide-react';
 
+const getSingularLabel = (label) => {
+  if (!label) return '';
+  if (label.toLowerCase() === 'queries') return 'Query';
+  if (label.toLowerCase() === 'leaves') return 'Leave';
+  if (label.toLowerCase() === 'attendance') return 'Attendance';
+  if (label.endsWith('ies')) return label.slice(0, -3) + 'y';
+  if (label.endsWith('s')) return label.slice(0, -1);
+  return label;
+};
+
 const DynamicForm = ({ 
   open, 
   onClose, 
@@ -525,7 +535,7 @@ const DynamicForm = ({
       }}
     >
       <DialogTitle sx={{ fontWeight: 700, fontSize: '20px', fontFamily: 'Poppins', pb: 1 }}>
-        {initialData ? `Edit Record: ${initialData.id}` : `Register New ${metadata?.modules[moduleKey]?.label.slice(0, -1) || 'Record'}`}
+        {initialData ? `Edit Record: ${initialData.id}` : `Register New ${getSingularLabel(metadata?.modules[moduleKey]?.label) || 'Record'}`}
       </DialogTitle>
       
       <form onSubmit={handleSubmit}>

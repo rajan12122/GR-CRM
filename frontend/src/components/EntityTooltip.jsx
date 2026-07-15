@@ -2,6 +2,16 @@ import React from 'react';
 import { Tooltip } from '@mui/material';
 import { useApp } from '../context/AppContext';
 
+const getSingularLabel = (label) => {
+  if (!label) return '';
+  if (label.toLowerCase() === 'queries') return 'Query';
+  if (label.toLowerCase() === 'leaves') return 'Leave';
+  if (label.toLowerCase() === 'attendance') return 'Attendance';
+  if (label.endsWith('ies')) return label.slice(0, -3) + 'y';
+  if (label.endsWith('s')) return label.slice(0, -1);
+  return label;
+};
+
 const EntityTooltip = ({ moduleName, id, children }) => {
   const { moduleData } = useApp();
   if (!id) return children;
@@ -13,7 +23,7 @@ const EntityTooltip = ({ moduleName, id, children }) => {
     : `ID: ${id}`;
   
   return (
-    <Tooltip title={`${moduleName.slice(0, -1).toUpperCase()}: ${resolvedName}`} arrow placement="top">
+    <Tooltip title={`${getSingularLabel(moduleName).toUpperCase()}: ${resolvedName}`} arrow placement="top">
       <span style={{ cursor: 'help' }}>{children}</span>
     </Tooltip>
   );

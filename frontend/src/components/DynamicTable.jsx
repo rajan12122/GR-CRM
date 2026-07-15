@@ -33,6 +33,16 @@ import * as Icons from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import EntityTooltip from './EntityTooltip';
 
+const getSingularLabel = (label) => {
+  if (!label) return '';
+  if (label.toLowerCase() === 'queries') return 'Query';
+  if (label.toLowerCase() === 'leaves') return 'Leave';
+  if (label.toLowerCase() === 'attendance') return 'Attendance';
+  if (label.endsWith('ies')) return label.slice(0, -3) + 'y';
+  if (label.endsWith('s')) return label.slice(0, -1);
+  return label;
+};
+
 const EntityChip = ({ moduleName, id, onClick }) => {
   const { moduleData } = useApp();
   
@@ -48,7 +58,7 @@ const EntityChip = ({ moduleName, id, onClick }) => {
   const resolvedName = record ? (record.propertyName || record.name || record.title || record.firm_name || record.person_name || record.id || 'Unnamed') : id;
   
   return (
-    <Tooltip title={`${resolvedModule.slice(0, -1).toUpperCase()}: ${resolvedName}`} arrow placement="top">
+    <Tooltip title={`${getSingularLabel(resolvedModule).toUpperCase()}: ${resolvedName}`} arrow placement="top">
       <Chip 
         label={resolvedName} 
         size="small"

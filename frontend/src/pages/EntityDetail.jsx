@@ -42,6 +42,16 @@ import * as Icons from 'lucide-react';
 import { useApp, API_BASE_URL } from '../context/AppContext';
 import EntityTooltip from '../components/EntityTooltip';
 
+const getSingularLabel = (label) => {
+  if (!label) return '';
+  if (label.toLowerCase() === 'queries') return 'Query';
+  if (label.toLowerCase() === 'leaves') return 'Leave';
+  if (label.toLowerCase() === 'attendance') return 'Attendance';
+  if (label.endsWith('ies')) return label.slice(0, -3) + 'y';
+  if (label.endsWith('s')) return label.slice(0, -1);
+  return label;
+};
+
 const formatCurrency = (val) => {
   return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
@@ -619,7 +629,7 @@ const EntityDetail = () => {
       <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
           <Typography variant="caption" sx={{ textTransform: 'uppercase', color: '#2563EB', fontWeight: 800 }}>
-            {moduleConfig.label.slice(0, -1)} 360° Profile View
+            {getSingularLabel(moduleConfig.label)} 360° Profile View
           </Typography>
           <Typography variant="h2" sx={{ fontWeight: 800, fontSize: '28px', color: '#0F172A', fontFamily: 'Poppins' }}>
             {record.name || record.title || record.id}

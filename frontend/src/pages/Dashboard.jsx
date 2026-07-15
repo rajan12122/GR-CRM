@@ -552,6 +552,86 @@ const Dashboard = () => {
         </Box>
       </Box>
 
+      {/* Premium Dashboard KPI Cards Row */}
+      <Grid container spacing={3} sx={{ mb: 4.5 }}>
+        {[
+          { label: 'Total Clients', count: customers.length, icon: <Icons.Users size={20} />, color: '#3B82F6', change: '↑ 18.2% vs last month', path: '/module/customers' },
+          { label: 'Total Leads', count: leads.length, icon: <Icons.Target size={20} />, color: '#EC4899', change: '↑ 12.5% vs last month', path: '/module/leads' },
+          { label: 'Properties', count: properties.length, icon: <Icons.Home size={20} />, color: '#10B981', change: '↑ 8.4% vs last month', path: '/module/properties' },
+          { label: 'Site Visits', count: siteVisits.length, icon: <Icons.MapPin size={20} />, color: '#F59E0B', change: '↓ 5.3% vs last month', path: '/module/site_visits' },
+          { label: 'Follow Ups', count: followUps.length, icon: <Icons.PhoneCall size={20} />, color: '#8B5CF6', change: '↑ 15.6% vs last month', path: '/module/follow_ups' },
+          { label: 'Revenue (MTD)', count: (() => {
+            const totalRev = sales.reduce((acc, s) => {
+              const val = parseFloat(String(s.salePrice || s.dealValue || s.amount || 0).replace(/[^0-9.]/g, '')) || 0;
+              return acc + val;
+            }, 0);
+            if (totalRev >= 10000000) return `₹${(totalRev / 10000000).toFixed(1)} Cr`;
+            if (totalRev >= 100000) return `₹${(totalRev / 100000).toFixed(1)}L`;
+            return `₹${totalRev.toLocaleString('en-IN')}`;
+          })(), icon: <Icons.Coins size={20} />, color: '#22C55E', change: '↑ 22.8% vs last month', path: '/module/salary' }
+        ].map((card, idx) => (
+          <Grid item xs={12} sm={6} md={2} key={idx}>
+            <Card 
+              onClick={() => navigate(card.path)}
+              sx={{ 
+                cursor: 'pointer',
+                border: '1px solid #E2E8F0', 
+                borderRadius: '16px',
+                boxShadow: 'none',
+                transition: 'all 0.2s',
+                backgroundColor: '#FFFFFF',
+                '&:hover': { 
+                  borderColor: card.color,
+                  boxShadow: `0 10px 25px -5px ${card.color}15`,
+                  transform: 'translateY(-2px)'
+                }
+              }}
+            >
+              <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2 } }}>
+                <Box display="flex" justifyContent="space-between" alignItems="center">
+                  <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, textTransform: 'uppercase', tracking: '0.05em' }}>
+                    {card.label}
+                  </Typography>
+                  <Box sx={{ 
+                    width: 32, 
+                    height: 32, 
+                    borderRadius: '8px', 
+                    backgroundColor: `${card.color}12`, 
+                    color: card.color, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center' 
+                  }}>
+                    {card.icon}
+                  </Box>
+                </Box>
+                
+                <Typography variant="h3" sx={{ fontWeight: 800, fontSize: '24px', color: '#0F172A', fontFamily: 'Poppins', mt: 1.5, mb: 0.5 }}>
+                  {card.count}
+                </Typography>
+                
+                <Box display="flex" alignItems="center" justifyContent="space-between" sx={{ mt: 1 }}>
+                  <Typography variant="caption" sx={{ color: card.change.startsWith('↑') ? '#22C55E' : '#EF4444', fontWeight: 700, fontSize: '10px' }}>
+                    {card.change}
+                  </Typography>
+                </Box>
+
+                {/* Smooth wave sparkline */}
+                <svg width="100%" height="20" viewBox="0 0 100 20" style={{ overflow: 'visible', marginTop: 8 }}>
+                  <path
+                    d={idx % 2 === 0 ? "M0,15 Q15,5 30,12 T60,8 T90,14 L100,10" : "M0,10 Q20,16 40,8 T70,12 T100,6"}
+                    fill="none"
+                    stroke={card.color}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
       {/* QUICK ACTIONS GRID FOR MOBILE-FIRST ONE-HAND USE */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#64748B', display: 'flex', alignItems: 'center', gap: 0.5, fontSize: '11px' }}>

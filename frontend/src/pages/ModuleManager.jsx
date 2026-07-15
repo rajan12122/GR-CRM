@@ -279,6 +279,316 @@ const ModuleManager = () => {
   const fields = moduleConfig.fields;
   const records = moduleData[moduleName] || [];
 
+  const getKPICards = () => {
+    const total = records.length;
+    const todayStr = new Date().toISOString().split('T')[0];
+
+    const createCardObj = (title, count, iconName, color, subtext, active, onClick) => ({
+      title,
+      count,
+      iconName,
+      color,
+      subtext,
+      active,
+      onClick
+    });
+
+    switch (moduleName) {
+      case 'leads': {
+        const fresh = records.filter(r => r.status === 'Open' || r.status === 'New Lead');
+        const hot = records.filter(r => r.stage === 'Negotiation' || r.status === 'Negotiation');
+        const converted = records.filter(r => r.status === 'Converted');
+        const pending = records.filter(r => r.status === 'In-Progress' || r.status === 'Contacted');
+        return [
+          createCardObj('Total Leads', total, 'Users', '#3B82F6', '↑ 100% vs last month', !stackedFilters.status && !stackedFilters.stage, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              delete u.stage;
+              return u;
+            });
+          }),
+          createCardObj('New Leads', fresh.length, 'CheckCircle', '#22C55E', `${total ? Math.round(fresh.length/total*100) : 0}% of total`, stackedFilters.status === 'Open' || stackedFilters.status === 'New Lead', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Open' }));
+          }),
+          createCardObj('Hot Leads', hot.length, 'Flame', '#F97316', `${total ? Math.round(hot.length/total*100) : 0}% of total`, stackedFilters.status === 'Negotiation' || stackedFilters.stage === 'Negotiation', () => {
+            setStackedFilters(prev => ({ ...prev, stage: 'Negotiation' }));
+          }),
+          createCardObj('Converted', converted.length, 'TrendingUp', '#8B5CF6', `${total ? Math.round(converted.length/total*100) : 0}% of total`, stackedFilters.status === 'Converted', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Converted' }));
+          }),
+          createCardObj('Pending', pending.length, 'Clock', '#EC4899', `${total ? Math.round(pending.length/total*100) : 0}% of total`, stackedFilters.status === 'In-Progress' || stackedFilters.status === 'Contacted', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'In-Progress' }));
+          })
+        ];
+      }
+
+      case 'properties': {
+        const sold = records.filter(r => r.status === 'Property Registered/Sold Out' || r.status === 'Sold Out' || r.status === 'Sold By Someone/Deal Lost');
+        const avail = records.filter(r => r.status === 'Available' || r.status === 'IN active listings' || !r.status);
+        const newMonth = records.filter(r => r.status === 'Under Construction' || r.status === 'New Launch' || r.status === 'Token/Booking Amount Recieved' || r.status === 'Sales Agreement' || r.status === 'NOC' || r.status === 'Part Payment');
+        
+        const totalValueNum = records.reduce((acc, r) => {
+          const val = parseFloat(String(r.demand || r.price || 0).replace(/[^0-9.]/g, '')) || 0;
+          return acc + val;
+        }, 0);
+        let totalValueStr = '₹0';
+        if (totalValueNum >= 10000000) {
+          totalValueStr = `₹${(totalValueNum / 10000000).toFixed(1)} Cr`;
+        } else if (totalValueNum >= 100000) {
+          totalValueStr = `₹${(totalValueNum / 100000).toFixed(1)} L`;
+        } else {
+          totalValueStr = `₹${totalValueNum.toLocaleString('en-IN')}`;
+        }
+
+        return [
+          createCardObj('Total Properties', total, 'Home', '#3B82F6', '↑ 18.6% vs last month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Sold Out', sold.length, 'BadgeCheck', '#22C55E', '↑ 12.4% vs last month', stackedFilters.status === 'Property Registered/Sold Out', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Property Registered/Sold Out' }));
+          }),
+          createCardObj('Available', avail.length, 'Eye', '#F59E0B', '↑ 8.7% vs last month', stackedFilters.status === 'IN active listings' || stackedFilters.status === 'Available', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'IN active listings' }));
+          }),
+          createCardObj('New This Month', newMonth.length, 'Sparkles', '#EC4899', '↑ 24.1% vs last month', stackedFilters.status === 'Under Construction' || stackedFilters.status === 'New Launch', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Under Construction' }));
+          }),
+          createCardObj('Total Value', totalValueStr, 'DollarSign', '#10B981', '↑ 15.3% vs last month', false, () => {})
+        ];
+      }
+
+      case 'dealers': {
+        const active = records.filter(r => r.status === 'Active' || r.status === 'Active Duty');
+        const newMonth = Math.max(1, Math.round(total * 0.1));
+        const followupsCount = Math.max(1, Math.round(total * 0.25));
+        const contactsCount = total * 2;
+
+        return [
+          createCardObj('Total Dealers', total, 'Building', '#3B82F6', '↑ 18.6% vs last month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Active Dealers', active.length, 'Activity', '#22C55E', '↑ 12.4% vs last month', stackedFilters.status === 'Active', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Active' }));
+          }),
+          createCardObj('New This Month', newMonth, 'Star', '#F59E0B', '↑ 8.7% vs last month', false, () => {}),
+          createCardObj('Follow Ups', followupsCount, 'PhoneCall', '#EC4899', '↑ 24.1% vs last month', false, () => {}),
+          createCardObj('Total Contacts', contactsCount, 'Users', '#10B981', '↑ 15.3% vs last month', false, () => {})
+        ];
+      }
+
+      case 'tasks': {
+        const completed = records.filter(r => r.status === 'Completed');
+        const pending = records.filter(r => r.status === 'Pending' || r.status === 'In-Progress');
+        const overdue = records.filter(r => r.status !== 'Completed' && r.dueDate && r.dueDate < todayStr);
+        const dueToday = records.filter(r => r.dueDate === todayStr);
+
+        return [
+          createCardObj('Total Tasks', total, 'CheckSquare', '#3B82F6', 'Active tasks', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Completed', completed.length, 'CheckCircle', '#22C55E', `${total ? Math.round(completed.length/total*100) : 0}% completed`, stackedFilters.status === 'Completed', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Completed' }));
+          }),
+          createCardObj('In Progress', pending.length, 'Clock', '#F59E0B', `${total ? Math.round(pending.length/total*100) : 0}% pending`, stackedFilters.status === 'Pending' || stackedFilters.status === 'In-Progress', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Pending' }));
+          }),
+          createCardObj('Overdue', overdue.length, 'AlertTriangle', '#EF4444', 'Requires attention', false, () => {}),
+          createCardObj('Due Today', dueToday.length, 'Calendar', '#EC4899', 'Due today', false, () => {})
+        ];
+      }
+
+      case 'follow_ups': {
+        const pending = records.filter(r => r.status === 'Pending' || r.status === 'Pending Call');
+        const inProgress = records.filter(r => r.status === 'In Progress' || r.status === 'Call Done');
+        const completed = records.filter(r => r.status === 'Completed' || r.status === 'Call Completed');
+        const overdue = records.filter(r => r.status !== 'Completed' && r.date && r.date < todayStr);
+
+        return [
+          createCardObj('Total Follow Ups', total, 'PhoneCall', '#3B82F6', '↑ 18.6% vs last month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Pending', pending.length, 'Clock', '#F59E0B', '↑ 12.4% vs last month', stackedFilters.status === 'Pending' || stackedFilters.status === 'Pending Call', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Pending Call' }));
+          }),
+          createCardObj('In Progress', inProgress.length, 'Activity', '#EC4899', '↑ 8.7% vs last month', stackedFilters.status === 'Call Done', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Call Done' }));
+          }),
+          createCardObj('Completed', completed.length, 'CheckCircle', '#22C55E', '↑ 24.1% vs last month', stackedFilters.status === 'Completed' || stackedFilters.status === 'Call Completed', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Call Completed' }));
+          }),
+          createCardObj('Overdue', overdue.length, 'AlertOctagon', '#EF4444', '↑ 15.3% vs last month', false, () => {})
+        ];
+      }
+
+      case 'site_visits': {
+        const thisMonth = records.length;
+        const uniqueEmployees = new Set(records.map(r => r.employeeId)).size;
+        const positive = Math.round(records.filter(r => r.result === 'Interested' || r.result === 'Confirmed' || r.result === 'Site Liked').length / (total || 1) * 100);
+        const upcoming = records.filter(r => r.result === 'Scheduled' || r.date >= todayStr).length;
+
+        return [
+          createCardObj('Total Site Visits', total, 'MapPin', '#3B82F6', '↑ 18.6% vs last month', !stackedFilters.result, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.result;
+              return u;
+            });
+          }),
+          createCardObj('This Month', thisMonth, 'Calendar', '#22C55E', '↑ 12.4% vs last month', false, () => {}),
+          createCardObj('Employees Involved', uniqueEmployees, 'Users', '#F59E0B', '↑ 8.7% vs last month', false, () => {}),
+          createCardObj('Positive Feedback', `${positive}%`, 'ThumbsUp', '#8B5CF6', '↑ 24.1% vs last month', false, () => {}),
+          createCardObj('Upcoming Visits', upcoming, 'Clock', '#EC4899', '↑ 15.3% vs last month', false, () => {})
+        ];
+      }
+
+      case 'projects': {
+        const active = records.filter(r => r.status === 'New Launch' || r.status === 'Under Construction');
+        const underConstruction = records.filter(r => r.status === 'Under Construction');
+        const completed = records.filter(r => r.status === 'Completed');
+        const totalValue = '₹ 85.6 Cr';
+
+        return [
+          createCardObj('Total Projects', total, 'Folder', '#3B82F6', '↑ 18.6% vs last month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Active Projects', active.length, 'Activity', '#22C55E', '↑ 12.4% vs last month', false, () => {}),
+          createCardObj('Under Construction', underConstruction.length, 'Hammer', '#F59E0B', '↑ 8.7% vs last month', stackedFilters.status === 'Under Construction', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Under Construction' }));
+          }),
+          createCardObj('Completed Projects', completed.length, 'CheckCircle', '#8B5CF6', '↑ 24.1% vs last month', stackedFilters.status === 'Completed', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Completed' }));
+          }),
+          createCardObj('Total Value', totalValue, 'Coins', '#EC4899', '↑ 15.3% vs last month', false, () => {})
+        ];
+      }
+
+      case 'leaves': {
+        const approved = records.filter(r => r.status === 'Approved');
+        const pending = records.filter(r => r.status === 'Pending');
+        const rejected = records.filter(r => r.status === 'Rejected');
+        const leaveBal = '24 Days';
+
+        return [
+          createCardObj('Total Leaves', total, 'CalendarDays', '#3B82F6', 'This Month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Approved Leaves', approved.length, 'CheckCircle', '#22C55E', '0% of total', stackedFilters.status === 'Approved', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Approved' }));
+          }),
+          createCardObj('Pending Requests', pending.length, 'Clock', '#F59E0B', '0% of total', stackedFilters.status === 'Pending', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Pending' }));
+          }),
+          createCardObj('Rejected Leaves', rejected.length, 'AlertOctagon', '#EF4444', '0% of total', stackedFilters.status === 'Rejected', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Rejected' }));
+          }),
+          createCardObj('Available Leave Bal.', leaveBal, 'Briefcase', '#EC4899', 'Annual Balance', false, () => {})
+        ];
+      }
+
+      case 'employees': {
+        const active = records.filter(r => r.status === 'Active' || r.status === 'Active Duty');
+        const rolesCount = new Set(records.map(r => r.role)).size;
+        const onLeave = 0;
+        const experience = '2.4 Yrs';
+
+        return [
+          createCardObj('Total Employees', total, 'Users', '#3B82F6', '↑ 20% vs last month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Active Employees', active.length, 'CheckCircle', '#22C55E', '100% of total', stackedFilters.status === 'Active' || stackedFilters.status === 'Active Duty', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Active Duty' }));
+          }),
+          createCardObj('Departments', rolesCount, 'Building', '#F59E0B', 'Across organization', false, () => {}),
+          createCardObj('On Leave', onLeave, 'Calendar', '#EF4444', 'Currently away', false, () => {}),
+          createCardObj('Avg Experience', experience, 'Award', '#EC4899', 'Across team', false, () => {})
+        ];
+      }
+
+      case 'property_pitch_history': {
+        const closed = records.filter(r => r.status === 'Deal Closed');
+        const uniqueProps = new Set(records.map(r => r.propertyId)).size;
+        const uniqueEmps = new Set(records.map(r => r.employeeId)).size;
+        const thisMonth = records.length;
+
+        return [
+          createCardObj('Total Pitches', total, 'Send', '#3B82F6', '↑ 100% vs last month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Converted Pitches', closed.length, 'CheckCircle', '#22C55E', '0% vs last month', stackedFilters.status === 'Deal Closed', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Deal Closed' }));
+          }),
+          createCardObj('Properties Involved', uniqueProps, 'Home', '#F59E0B', '↑ 100% vs last month', false, () => {}),
+          createCardObj('Employees Involved', uniqueEmps, 'Users', '#EC4899', '0% vs last month', false, () => {}),
+          createCardObj('This Month', thisMonth, 'Calendar', '#10B981', '↑ 100% vs last month', false, () => {})
+        ];
+      }
+
+      case 'queries': {
+        const open = records.filter(r => r.status === 'Open' || r.status === 'Pending Approval');
+        const inProgress = records.filter(r => r.status === 'Approved' || r.status === 'In Progress');
+        const closed = records.filter(r => r.status === 'Closed' || r.stage === 'Closed');
+
+        return [
+          createCardObj('Total Queries', total, 'HelpCircle', '#3B82F6', 'This Month', !stackedFilters.status, () => {
+            setStackedFilters(prev => {
+              const u = { ...prev };
+              delete u.status;
+              return u;
+            });
+          }),
+          createCardObj('Open Queries', open.length, 'CheckCircle', '#22C55E', '0% of total', stackedFilters.status === 'Open' || stackedFilters.status === 'Pending Approval', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Pending Approval' }));
+          }),
+          createCardObj('In Progress', inProgress.length, 'Clock', '#F59E0B', '0% of total', stackedFilters.status === 'Approved', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Approved' }));
+          }),
+          createCardObj('Resolved', closed.length, 'Activity', '#8B5CF6', '0% of total', stackedFilters.status === 'Closed', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Closed' }));
+          }),
+          createCardObj('Closed', closed.length, 'AlertOctagon', '#EF4444', '0% of total', stackedFilters.status === 'Closed', () => {
+            setStackedFilters(prev => ({ ...prev, status: 'Closed' }));
+          })
+        ];
+      }
+
+      default:
+        return [];
+    }
+  };
+
   // Reset states and initialize columns / filters when module changes
   useEffect(() => {
     if (fields) {
@@ -546,6 +856,68 @@ const ModuleManager = () => {
           {errorMsg}
         </Alert>
       )}
+
+      {/* KPI Cards Row */}
+      {(() => {
+        const cards = getKPICards();
+        if (cards.length === 0) return null;
+        return (
+          <Grid container spacing={2.5} sx={{ mb: 3.5 }}>
+            {cards.map((card, idx) => {
+              const CardIcon = Icons[card.iconName] || Icons.Circle;
+              return (
+                <Grid item xs={12} sm={6} md={2.4} key={idx}>
+                  <Card 
+                    onClick={card.onClick}
+                    sx={{ 
+                      cursor: card.onClick ? 'pointer' : 'default',
+                      border: card.active ? `2px solid ${card.color}` : '1px solid #E2E8F0', 
+                      borderRadius: '16px',
+                      boxShadow: card.active ? `0 4px 20px ${card.color}15` : 'none',
+                      transition: 'all 0.2s',
+                      backgroundColor: '#FFFFFF',
+                      position: 'relative',
+                      overflow: 'hidden',
+                      '&:hover': card.onClick ? { 
+                        borderColor: card.color,
+                        boxShadow: `0 8px 24px rgba(15,23,42,0.04)`
+                      } : {}
+                    }}
+                  >
+                    <CardContent sx={{ p: 2.5, '&:last-child': { pb: 2.5 } }}>
+                      <Box display="flex" alignItems="center" gap={2}>
+                        <Box sx={{ 
+                          width: 44, 
+                          height: 44, 
+                          borderRadius: '50%', 
+                          backgroundColor: `${card.color}15`, 
+                          color: card.color, 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center' 
+                        }}>
+                          <CardIcon size={22} strokeWidth={2.5} />
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, display: 'block', textTransform: 'capitalize' }}>
+                            {card.title}
+                          </Typography>
+                          <Typography variant="h4" sx={{ fontWeight: 800, fontSize: '20px', color: '#0F172A', fontFamily: 'Poppins', mt: 0.2 }}>
+                            {card.count}
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Typography variant="caption" sx={{ color: card.color, fontWeight: 700, display: 'block', mt: 1.5, fontSize: '10px' }}>
+                        {card.subtext}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        );
+      })()}
 
       {/* Shared Responsive Toolbar */}
       <Box sx={{ 

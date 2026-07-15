@@ -647,6 +647,54 @@ function handlePitchStatusChange(p, db, req) {
     try { syncToSheets('follow_ups'); } catch(e) {}
   }
 
+  // Auto-update follow-up and query pipeline stage matching keywords/meanings
+  const mapPitchStatusToPipelineAction = (statusVal) => {
+    if (!statusVal) return null;
+    const s = String(statusVal).toLowerCase().trim();
+    if (s.includes('closed') || s.includes('won') || s.includes('sold out')) return 'Closed';
+    if (s.includes('visit') || s.includes('showing') || s.includes('scheduled')) return 'Site Visit';
+    if (s.includes('negotiation') || s.includes('token') || s.includes('part payment') || s.includes('agreement') || s.includes('noc')) return 'Negotiation';
+    if (s.includes('interested')) return 'Interested';
+    if (s.includes('pitched') || s.includes('offered')) return 'Contacted';
+    if (s.includes('rejected') || s.includes('lost') || s.includes('no interest')) return 'Lost';
+    return null;
+  };
+
+  const mappedStage = mapPitchStatusToPipelineAction(p.status) || mapPitchStatusToPipelineAction(p.propertyStatus);
+  if (mappedStage) {
+    db.follow_ups = (db.follow_ups || []).map(f => {
+      if (String(f.customerId) === String(p.customerId)) {
+        f.pipelineAction = mappedStage;
+        f.pitchedPropertyId = p.propertyId || f.pitchedPropertyId;
+        f.pitchPrice = p.quotedPrice || f.pitchPrice;
+        f.pitchRemarks = p.remarks || f.pitchRemarks;
+        
+        // Trigger automated post-pipeline action handlers (like auto-creating site visits!)
+        setTimeout(() => {
+          const freshDb = readDb();
+          const freshFollowUp = (freshDb.follow_ups || []).find(x => x.id === f.id);
+          if (freshFollowUp) {
+            handleFollowUpPipelineAction(freshFollowUp, freshDb, req);
+          }
+        }, 10);
+      }
+      return f;
+    });
+    try { syncToSheets('follow_ups'); } catch(e) {}
+
+    db.queries = (db.queries || []).map(q => {
+      if (String(q.customerId) === String(p.customerId)) {
+        q.stage = mappedStage;
+        if (mappedStage === 'Closed') {
+          q.status = 'Closed';
+        }
+      }
+      return q;
+    });
+    try { syncToSheets('queries'); } catch(e) {}
+    writeDb(db);
+  }
+
   const isDealClosed = p.status === 'Deal Closed' || 
                        p.status === 'Property Registered/Sold Out' || 
                        p.propertyStatus === 'Property Registered/Sold Out';
@@ -836,7 +884,11 @@ function handleFollowUpPipelineAction(f, db, req) {
   // Auto-create Site Visit if stage is Site Visit Arranged / Scheduled
   const isSiteVisitStage = action === 'Site Visit Arranged' || action === 'Site Visit' || action === 'Site Visit Scheduled' || action === 'Lead_VisitScheduled';
   if (isSiteVisitStage) {
-    const hasExistingVisit = (db.site_visits || []).some(sv => sv.linkedFollowUpId === f.id);
+    const hasExistingVisit = (db.site_visits || []).some(sv => 
+      sv.linkedFollowUpId === f.id &&
+      sv.propertyId === (f.pitchedPropertyId || 'PROP-001') &&
+      sv.date === f.date
+    );
     if (!hasExistingVisit) {
       const visitId = `VISIT-${String((db.site_visits || []).length + 1).padStart(3, '0')}`;
       const newVisit = {

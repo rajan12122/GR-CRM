@@ -1964,7 +1964,7 @@
         {
           "name": "quotedPrice",
           "label": "Quoted Price (INR)",
-          "type": "number",
+          "type": "text",
           "required": true,
           "showInTable": true,
           "editable": true

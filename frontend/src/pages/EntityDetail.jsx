@@ -4066,17 +4066,17 @@ const EntityDetail = () => {
               </Select>
             </FormControl>
             <FormControl fullWidth>
-              <InputLabel>Interest Level Outcome</InputLabel>
-              <Select value={pitchInterest} onChange={(e) => setPitchInterest(e.target.value)} label="Interest Level Outcome">
-                <MenuItem value="Interested">Highly Interested</MenuItem>
-                <MenuItem value="Follow-up Required">Follow-up Needed</MenuItem>
-                <MenuItem value="Hold">On Hold</MenuItem>
-                <MenuItem value="Not Interested">Not Interested</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth>
               <InputLabel>Property Pitch Pipeline Stage</InputLabel>
-              <Select value={pitchStatus} onChange={(e) => setPitchStatus(e.target.value)} label="Property Pitch Pipeline Stage">
+              <Select 
+                value={pitchStatus} 
+                onChange={(e) => {
+                  setPitchStatus(e.target.value);
+                  if (e.target.value === 'Deal Closed') {
+                    setPitchPropertyStatus('Property Registered/Sold Out');
+                  }
+                }} 
+                label="Property Pitch Pipeline Stage"
+              >
                 <MenuItem value="Pitched">Pitched / Offered</MenuItem>
                 <MenuItem value="Interested">Interested</MenuItem>
                 <MenuItem value="Site Visit Scheduled">Site Visit Scheduled</MenuItem>
@@ -4092,16 +4092,12 @@ const EntityDetail = () => {
               <InputLabel>Property Pipeline Stage</InputLabel>
               <Select value={pitchPropertyStatus} onChange={(e) => setPitchPropertyStatus(e.target.value)} label="Property Pipeline Stage">
                 <MenuItem value="">-- Keep Current / None --</MenuItem>
-                <MenuItem value="Token/Booking Amount Recieved">Token/Booking Amount Recieved</MenuItem>
-                <MenuItem value="Sales Agreement">Sales Agreement</MenuItem>
-                <MenuItem value="NOC">NOC</MenuItem>
-                <MenuItem value="Part Payment">Part Payment</MenuItem>
-                <MenuItem value="Property Registered/Sold Out">Property Registered/Sold Out</MenuItem>
-                <MenuItem value="IN active listings">IN active listings</MenuItem>
-                <MenuItem value="Sold By Someone/Deal Lost">Sold By Someone/Deal Lost</MenuItem>
+                {(metadata?.chips?.propertyStatus || []).map(chip => (
+                  <MenuItem key={chip.value} value={chip.value}>{chip.label}</MenuItem>
+                ))}
               </Select>
             </FormControl>
-            <TextField label="Quoted Pitch Price Offer" type="number" fullWidth value={pitchPrice} onChange={(e) => setPitchPrice(e.target.value)} />
+            <TextField label="Quoted Pitch Price Offer" type="text" fullWidth value={pitchPrice} onChange={(e) => setPitchPrice(e.target.value)} />
             <TextField label="Next Followup Date" type="date" InputLabelProps={{ shrink: true }} fullWidth value={pitchFollowUp} onChange={(e) => setPitchFollowUp(e.target.value)} />
             <TextField label="Meeting Remarks" multiline rows={3} fullWidth value={pitchRemarks} onChange={(e) => setPitchRemarks(e.target.value)} />
           </Box>
@@ -4196,10 +4192,10 @@ const EntityDetail = () => {
               employeeId: pitchEmployeeId,
               employeeName: (moduleData.employees || []).find(e => e.id === pitchEmployeeId)?.name || pitchEmployeeId,
               pitchMethod,
-              interestLevel: pitchInterest,
+              interestLevel: pitchStatus || '',
               status: pitchStatus,
               propertyStatus: pitchPropertyStatus,
-              quotedPrice: Number(pitchPrice || 0),
+              quotedPrice: pitchPrice || '',
               followUpDate: pitchFollowUp,
               remarks: pitchRemarks,
               pitchDate: editingPitch ? (editingPitch.pitchDate || new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN')) : new Date().toLocaleDateString('en-IN') + ' ' + new Date().toLocaleTimeString('en-IN')

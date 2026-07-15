@@ -441,43 +441,107 @@ function handleDealerVisitAssignment(payload, db, req, oldPayload = null) {
   }
 }
 
+function convertLeadToCustomer(leadId, db, remarks = '') {
+  if (!leadId || !leadId.startsWith('LEAD-')) return null;
+
+  const lead = (db.leads || []).find(l => String(l.id) === String(leadId));
+  if (!lead) return null;
+
+  const cleanPhone = String(lead.phone || '').trim();
+  let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
+
+  if (!existingCust) {
+    const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
+    existingCust = {
+      id: custId,
+      name: lead.name,
+      email: lead.email || '',
+      phone: lead.phone,
+      stage: 'Converted Buyer Deal Closed',
+      assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
+      budget: lead.budget || '',
+      city: lead.locality || '',
+      requirements: lead.remarks || remarks || `Converted from Lead ${leadId}`,
+      dateAdded: new Date().toISOString().split('T')[0]
+    };
+    db.customers = db.customers || [];
+    db.customers.push(existingCust);
+    try { syncToSheets('customers'); } catch(e) {}
+  }
+
+  // Mark lead status as Converted
+  lead.status = 'Converted';
+  try { syncToSheets('leads'); } catch(e) {}
+
+  // Update references across all database tables to preserve history and log mappings
+  const newCustId = existingCust.id;
+
+  // 1. Follow-ups
+  db.follow_ups = (db.follow_ups || []).map(f => {
+    if (String(f.customerId) === String(leadId)) {
+      return { ...f, customerId: newCustId };
+    }
+    return f;
+  });
+  try { syncToSheets('follow_ups'); } catch(e) {}
+
+  // 2. Queries
+  db.queries = (db.queries || []).map(q => {
+    if (String(q.customerId) === String(leadId)) {
+      return { ...q, customerId: newCustId };
+    }
+    return q;
+  });
+  try { syncToSheets('queries'); } catch(e) {}
+
+  // 3. Site visits
+  db.site_visits = (db.site_visits || []).map(sv => {
+    if (String(sv.customerId) === String(leadId)) {
+      return { ...sv, customerId: newCustId };
+    }
+    return sv;
+  });
+  try { syncToSheets('site_visits'); } catch(e) {}
+
+  // 4. Sales Bookings
+  db.sales = (db.sales || []).map(s => {
+    if (String(s.customerId) === String(leadId)) {
+      return { ...s, customerId: newCustId };
+    }
+    return s;
+  });
+  try { syncToSheets('sales'); } catch(e) {}
+
+  // 5. Property Pitch History
+  db.property_pitch_history = (db.property_pitch_history || []).map(p => {
+    if (String(p.customerId) === String(leadId)) {
+      return { ...p, customerId: newCustId };
+    }
+    return p;
+  });
+  try { syncToSheets('property_pitch_history'); } catch(e) {}
+
+  // 6. Properties Ownership
+  db.properties = (db.properties || []).map(prop => {
+    if (String(prop.current_owner_id) === String(leadId)) {
+      return { ...prop, current_owner_id: newCustId };
+    }
+    return prop;
+  });
+  try { syncToSheets('properties'); } catch(e) {}
+
+  writeDb(db);
+  return existingCust;
+}
+
 function handleDealStatusChange(d, db, req) {
   if (!d.id || d.status !== 'Closed') return;
   
   // Convert Lead to Customer if Deal closed for a Lead ID
   if (d.customerId && String(d.customerId).startsWith('LEAD-')) {
-    const leadId = d.customerId;
-    const lead = (db.leads || []).find(l => String(l.id) === String(leadId));
-    if (lead) {
-      const cleanPhone = String(lead.phone).trim();
-      let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
-      if (!existingCust) {
-        const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
-        existingCust = {
-          id: custId,
-          name: lead.name,
-          email: lead.email || '',
-          phone: lead.phone,
-          stage: 'Converted Buyer Deal Closed',
-          assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
-          budget: lead.budget || '',
-          city: lead.locality || '',
-          requirements: lead.remarks || `Converted via Closed Deal ${d.id}`,
-          dateAdded: new Date().toISOString().split('T')[0]
-        };
-        db.customers = db.customers || [];
-        db.customers.push(existingCust);
-        writeDb(db);
-        try { syncToSheets('customers'); } catch(e) {}
-      }
-      
-      // Update deal reference to customer
-      d.customerId = existingCust.id;
-      
-      // Update lead status
-      lead.status = 'Converted';
-      writeDb(db);
-      try { syncToSheets('leads'); } catch(e) {}
+    const cust = convertLeadToCustomer(d.customerId, db, `Converted via Closed Deal ${d.id}`);
+    if (cust) {
+      d.customerId = cust.id;
     }
   }
 
@@ -592,39 +656,10 @@ function handlePitchStatusChange(p, db, req) {
   // Convert Lead to Customer if Pitch closed for a Lead ID
   let finalCustomerId = p.customerId;
   if (p.customerId && String(p.customerId).startsWith('LEAD-')) {
-    const leadId = p.customerId;
-    const lead = (db.leads || []).find(l => String(l.id) === String(leadId));
-    if (lead) {
-      const cleanPhone = String(lead.phone).trim();
-      let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
-      if (!existingCust) {
-        const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
-        existingCust = {
-          id: custId,
-          name: lead.name,
-          email: lead.email || '',
-          phone: lead.phone,
-          stage: 'Converted Buyer Deal Closed',
-          assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
-          budget: lead.budget || '',
-          city: lead.locality || '',
-          requirements: lead.remarks || `Converted via Closed Pitch ${p.id}`,
-          dateAdded: new Date().toISOString().split('T')[0]
-        };
-        db.customers = db.customers || [];
-        db.customers.push(existingCust);
-        writeDb(db);
-        try { syncToSheets('customers'); } catch(e) {}
-      }
-      
-      // Update pitch reference to customer
-      p.customerId = existingCust.id;
-      finalCustomerId = existingCust.id;
-      
-      // Update lead status
-      lead.status = 'Converted';
-      writeDb(db);
-      try { syncToSheets('leads'); } catch(e) {}
+    const cust = convertLeadToCustomer(p.customerId, db, `Converted via Closed Pitch ${p.id}`);
+    if (cust) {
+      p.customerId = cust.id;
+      finalCustomerId = cust.id;
     }
   }
 
@@ -829,33 +864,9 @@ function handleFollowUpPipelineAction(f, db, req) {
     // 1. If customerId is a Lead, convert to Customer first
     let finalCustomerId = customerId;
     if (customerId && String(customerId).startsWith('LEAD-')) {
-      const lead = (db.leads || []).find(l => String(l.id) === String(customerId));
-      if (lead) {
-        const cleanPhone = String(lead.phone).trim();
-        let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
-        if (!existingCust) {
-          const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
-          existingCust = {
-            id: custId,
-            name: lead.name,
-            email: lead.email || '',
-            phone: lead.phone,
-            stage: 'Converted Buyer Deal Closed',
-            assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
-            budget: lead.budget || '',
-            city: lead.locality || '',
-            requirements: lead.remarks || `Converted via Follow-Up close action.`,
-            dateAdded: new Date().toISOString().split('T')[0]
-          };
-          db.customers = db.customers || [];
-          db.customers.push(existingCust);
-          writeDb(db);
-          try { syncToSheets('customers'); } catch(e) {}
-        }
-        finalCustomerId = existingCust.id;
-        lead.status = 'Converted';
-        writeDb(db);
-        try { syncToSheets('leads'); } catch(e) {}
+      const cust = convertLeadToCustomer(customerId, db, `Converted via Follow-Up close action.`);
+      if (cust) {
+        finalCustomerId = cust.id;
       }
     }
 

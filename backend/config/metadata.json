@@ -234,6 +234,22 @@
           "chipGroup": "leadSources"
         },
         {
+          "name": "referrer_type",
+          "label": "Referrer Type",
+          "type": "text",
+          "required": false,
+          "showInTable": false,
+          "editable": false
+        },
+        {
+          "name": "referrer_id",
+          "label": "Referrer Reference",
+          "type": "text",
+          "required": false,
+          "showInTable": true,
+          "editable": true
+        },
+        {
           "name": "leadType",
           "label": "Lead Type",
           "type": "select",
@@ -2421,9 +2437,19 @@
         "color": "#E1306C"
       },
       {
-        "value": "Referral",
-        "label": "Agent Referral",
+        "value": "Employee Referral",
+        "label": "Employee Referral",
         "color": "#10B981"
+      },
+      {
+        "value": "Client Referral",
+        "label": "Client Referral",
+        "color": "#8B5CF6"
+      },
+      {
+        "value": "Dealer Referral",
+        "label": "Dealer Referral",
+        "color": "#F59E0B"
       },
       {
         "value": "Walk-in",

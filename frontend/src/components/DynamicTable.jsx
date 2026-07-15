@@ -99,9 +99,25 @@ const DynamicTable = ({
   onInspectClick,
   onLogCallClick
 }) => {
-  const { metadata, moduleData, updateRecord } = useApp();
+  const { user, metadata, moduleData, updateRecord } = useApp();
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+
+  const permittedFields = useMemo(() => {
+    return fields.filter(f => {
+      if (!user || user.role === 'Admin') return true;
+      if (metadata?.userColumnPermissions?.[user.id]?.[moduleKey]) {
+        const userOverriden = metadata.userColumnPermissions[user.id][moduleKey][f.name];
+        if (userOverriden !== undefined) {
+          return userOverriden.includes('view');
+        }
+      }
+      if (metadata?.fieldPermissions?.[user.role]?.[moduleKey]) {
+        return metadata.fieldPermissions[user.role][moduleKey].includes(f.name);
+      }
+      return true;
+    });
+  }, [fields, user, metadata, moduleKey]);
 
   // Paginated records based on pre-sorted pre-filtered records
   const paginatedRecords = useMemo(() => {
@@ -297,7 +313,7 @@ const DynamicTable = ({
                 />
               </TableCell>
               
-              {fields.map(f => {
+              {permittedFields.map(f => {
                 if (!visibleColumns[f.name]) return null;
                 return (
                   <TableCell 
@@ -323,7 +339,7 @@ const DynamicTable = ({
           <TableBody>
             {paginatedRecords.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={fields.length + 2} align="center" sx={{ py: 6, color: '#64748B' }}>
+                <TableCell colSpan={permittedFields.length + 2} align="center" sx={{ py: 6, color: '#64748B' }}>
                   <Icons.FolderOpen size={36} style={{ marginBottom: 8, opacity: 0.5 }} />
                   <Typography variant="body2">No matching records found in database.</Typography>
                 </TableCell>
@@ -331,9 +347,9 @@ const DynamicTable = ({
             ) : (
               paginatedRecords.map((rec) => (
                 <TableRow 
-                  key={rec.id}
-                  hover
-                  selected={selectedRows.includes(rec.id)}
+                   key={rec.id}
+                   hover
+                   selected={selectedRows.includes(rec.id)}
                 >
                   <TableCell padding="checkbox">
                     <Checkbox 
@@ -342,7 +358,7 @@ const DynamicTable = ({
                     />
                   </TableCell>
 
-                  {fields.map(f => {
+                  {permittedFields.map(f => {
                     if (!visibleColumns[f.name]) return null;
                     return (
                       <TableCell key={f.name} sx={{ whiteSpace: 'nowrap' }}>
@@ -445,7 +461,7 @@ const DynamicTable = ({
         <DialogTitle sx={{ fontWeight: 700, fontFamily: 'Poppins' }}>Configure Display Columns</DialogTitle>
         <DialogContent>
           <FormGroup sx={{ mt: 1 }}>
-            {fields.map(f => (
+            {permittedFields.map(f => (
               <FormControlLabel
                 key={f.name}
                 control={

@@ -57,6 +57,7 @@ const Settings = () => {
   const [passwordSelectedEmp, setPasswordSelectedEmp] = useState('');
   const [newPasswordVal, setNewPasswordVal] = useState('');
   const [selectedUserForPerms, setSelectedUserForPerms] = useState('');
+  const [userPermSelectedModule, setUserPermSelectedModule] = useState('leads');
 
   // Lead Rotation local form states
   const [rotationActive, setRotationActive] = useState(false);
@@ -554,11 +555,47 @@ const Settings = () => {
     }
   };
 
+  const handleUserColumnPermissionToggle = async (userId, moduleKey, columnName, action) => {
+    const updated = { ...metadata };
+    if (!updated.userColumnPermissions) {
+      updated.userColumnPermissions = {};
+    }
+    if (!updated.userColumnPermissions[userId]) {
+      updated.userColumnPermissions[userId] = {};
+    }
+    if (!updated.userColumnPermissions[userId][moduleKey]) {
+      updated.userColumnPermissions[userId][moduleKey] = {};
+    }
+    if (!updated.userColumnPermissions[userId][moduleKey][columnName]) {
+      updated.userColumnPermissions[userId][moduleKey][columnName] = ["view", "edit"];
+    }
+
+    const current = updated.userColumnPermissions[userId][moduleKey][columnName];
+    if (current.includes(action)) {
+      updated.userColumnPermissions[userId][moduleKey][columnName] = current.filter(a => a !== action);
+    } else {
+      updated.userColumnPermissions[userId][moduleKey][columnName].push(action);
+    }
+
+    const res = await saveMetadata(updated);
+    if (!res.success) {
+      showStatus('error', res.message);
+    }
+  };
+
   const handleResetUserPermissions = async (userId) => {
     if (!window.confirm("Are you sure you want to reset this user's custom permissions? They will revert to default role permissions.")) return;
     const updated = { ...metadata };
+    let changed = false;
     if (updated.userPermissions && updated.userPermissions[userId]) {
       delete updated.userPermissions[userId];
+      changed = true;
+    }
+    if (updated.userColumnPermissions && updated.userColumnPermissions[userId]) {
+      delete updated.userColumnPermissions[userId];
+      changed = true;
+    }
+    if (changed) {
       const res = await saveMetadata(updated);
       if (res.success) {
         showStatus('success', 'Reset user permissions to default role permissions.');
@@ -1237,6 +1274,52 @@ const Settings = () => {
                       </Box>
                     );
                   })()}
+
+                  {selectedUserForPerms && (
+                    <Box sx={{ mt: 4, p: 3, border: '1px solid #E2E8F0', borderRadius: '12px', backgroundColor: '#F8FAFC' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1, color: '#0F172A', fontFamily: 'Poppins' }}>
+                        Custom Column (Field) Permissions for {(moduleData.employees || []).find(e => String(e.id) === String(selectedUserForPerms))?.name}
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                        Check columns to allow this employee to view and edit them. Uncheck to hide them.
+                      </Typography>
+
+                      <FormControl size="small" sx={{ mb: 3, minWidth: 200 }}>
+                        <InputLabel>Select Module</InputLabel>
+                        <Select
+                          label="Select Module"
+                          value={userPermSelectedModule || 'leads'}
+                          onChange={(e) => setUserPermSelectedModule(e.target.value)}
+                        >
+                          {Object.keys(metadata.modules).map(key => (
+                            <MenuItem key={key} value={key}>{metadata.modules[key].label}</MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
+
+                      <Grid container spacing={2}>
+                        {metadata.modules[userPermSelectedModule || 'leads'].fields.map(field => {
+                          const userOverriden = metadata.userColumnPermissions?.[selectedUserForPerms]?.[userPermSelectedModule || 'leads']?.[field.name];
+                          const isChecked = userOverriden !== undefined ? userOverriden.includes('view') : true;
+
+                          return (
+                            <Grid item xs={12} sm={6} md={4} key={field.name}>
+                              <FormControlLabel
+                                control={
+                                  <Checkbox
+                                    checked={isChecked}
+                                    onChange={() => handleUserColumnPermissionToggle(selectedUserForPerms, userPermSelectedModule || 'leads', field.name, 'view')}
+                                    sx={{ '&.Mui-checked': { color: '#2563EB' } }}
+                                  />
+                                }
+                                label={field.label}
+                              />
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                    </Box>
+                  )}
                 </Box>
 
                 <Box sx={{ mt: 5 }}>

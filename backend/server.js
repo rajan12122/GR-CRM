@@ -2265,6 +2265,7 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     data.remarks = allRemarks.filter(r => r.targetModule === 'employees' && String(r.targetId) === String(id));
     data.documents = allDocs.filter(d => d.targetModule === 'employees' && String(d.targetId) === String(id));
     data.salaries = (db.salaries || []).filter(s => String(s.employeeId) === String(id));
+    data.referrals = (db.leads || []).filter(l => l.referrer_type === 'employees' && String(l.referrer_id) === String(id));
   } else if (module === 'customers') {
     const cust = allCustomers.find(c => String(c.id) === String(id));
     data.employee = allEmployees.find(e => String(e.id) === String(cust && cust.assignedEmployeeId));
@@ -2295,6 +2296,7 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     data.purchaseHistory = allDeals.filter(d => String(d.customerId) === String(id) && d.status === 'Closed');
     data.saleHistory = allDeals.filter(d => String(d.sellerCustomerId) === String(id) && d.status === 'Closed');
     data.pitches = allPitches.filter(p => String(p.customerId) === String(id));
+    data.referrals = (db.leads || []).filter(l => l.referrer_type === 'customers' && String(l.referrer_id) === String(id));
     data.payments = []; // No payment module exists in GR CRM metadata
   } else if (module === 'properties') {
     const prop = allProperties.find(p => String(p.id) === String(id));
@@ -2355,6 +2357,7 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
       assignedEmployeeName: allEmployees.find(e => String(e.id) === String(m.assignedEmployeeId))?.name || m.assignedEmployeeId
     }));
     data.properties = allProperties.filter(p => String(p.dealerId) === String(id));
+    data.referrals = (db.leads || []).filter(l => l.referrer_type === 'dealers' && String(l.referrer_id) === String(id));
   } else if (module === 'dealer_meetings') {
     const meeting = allDealerMeetings.find(m => String(m.id) === String(id));
     data.meeting = meeting;

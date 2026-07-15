@@ -55,8 +55,25 @@ const DynamicForm = ({
 
   // Dynamic field filtering based on leadType or queryType and dealer conditional checks
   const filteredFields = fields.filter(f => {
+    let allowed = true;
+    if (user && user.role !== 'Admin') {
+      if (metadata?.userColumnPermissions?.[user.id]?.[moduleKey]) {
+        const userOverriden = metadata.userColumnPermissions[user.id][moduleKey][f.name];
+        if (userOverriden !== undefined) {
+          allowed = userOverriden.includes('view');
+        }
+      } else if (metadata?.fieldPermissions?.[user.role]?.[moduleKey]) {
+        allowed = metadata.fieldPermissions[user.role][moduleKey].includes(f.name);
+      }
+    }
+    if (!allowed) return false;
+
     if (moduleKey === 'leads') {
       const type = formData.leadType;
+      if (f.name === 'referrer_type') return false;
+      if (f.name === 'referrer_id') {
+        return ['Employee Referral', 'Client Referral', 'Dealer Referral'].includes(formData.source);
+      }
       if (type === 'Buyer') {
         if (f.name === 'demand') return false;
       }
@@ -104,6 +121,11 @@ const DynamicForm = ({
 
       if (moduleKey === 'leads' || moduleKey === 'follow_ups' || moduleKey === 'queries') {
         fetchModuleData('projects');
+      }
+      if (moduleKey === 'leads') {
+        fetchModuleData('employees');
+        fetchModuleData('customers');
+        fetchModuleData('dealers');
       }
 
       // Populate form data
@@ -263,7 +285,7 @@ const DynamicForm = ({
       let ownerName = formData.name || formData.person_name || '';
       let ownerPhone = formData.phone || formData.contact_num || '';
       
-      if (!ownerName && formData.customerId) {
+      if (formData.customerId) {
         const custs = moduleData.customers || [];
         const leadsList = moduleData.leads || [];
         const found = custs.find(c => String(c.id) === String(formData.customerId)) || leadsList.find(l => String(l.id) === String(formData.customerId));
@@ -273,11 +295,13 @@ const DynamicForm = ({
         }
       }
 
-      setNestedPropertyData(prev => ({
-        ...prev,
-        contact_person_name: prev.contact_person_name || ownerName,
-        contact_number: prev.contact_number || ownerPhone
-      }));
+      if (ownerName || ownerPhone) {
+        setNestedPropertyData(prev => ({
+          ...prev,
+          contact_person_name: ownerName,
+          contact_number: ownerPhone
+        }));
+      }
     }
   }, [showSellerPropertyForm, formData.name, formData.person_name, formData.phone, formData.contact_num, formData.customerId, moduleData.customers, moduleData.leads]);
 
@@ -437,6 +461,7 @@ const DynamicForm = ({
       const propPayload = {
         ...nestedPayload,
         dealerId: finalDealerId,
+        current_owner_id: payload.customerId || '',
         contact_person_name: nestedPropertyData.contact_person_name || payload.name || payload.person_name || '',
         contact_number: nestedPropertyData.contact_number || payload.phone || payload.contact_num || '',
         date: new Date().toLocaleDateString('en-IN')
@@ -550,7 +575,15 @@ const DynamicForm = ({
               if (f.name === 'id' && !initialData) return null; // Hide auto-generated ID field on create
               
               // Primary keys or non-editable fields (like ID on edit) should be read-only
-              const isReadOnly = f.editable === false;
+              let isReadOnly = f.editable === false;
+              if (user && user.role !== 'Admin') {
+                if (metadata?.userColumnPermissions?.[user.id]?.[moduleKey]) {
+                  const userOverriden = metadata.userColumnPermissions[user.id][moduleKey][f.name];
+                  if (userOverriden !== undefined) {
+                    isReadOnly = isReadOnly || !userOverriden.includes('edit');
+                  }
+                }
+              }
 
               // 1. SELECT TYPE FIELD
               if (f.type === 'select' && f.chipGroup && metadata?.chips[f.chipGroup]) {
@@ -1364,6 +1397,58 @@ const DynamicForm = ({
                     </Grid>
                   );
                 }
+              }
+
+              if (f.name === 'referrer_id') {
+                let options = [];
+                let refModuleName = "";
+                if (formData.source === 'Employee Referral') {
+                  options = moduleData.employees || [];
+                  refModuleName = "employees";
+                } else if (formData.source === 'Client Referral') {
+                  options = moduleData.customers || [];
+                  refModuleName = "customers";
+                } else if (formData.source === 'Dealer Referral') {
+                  options = moduleData.dealers || [];
+                  refModuleName = "dealers";
+                }
+
+                return (
+                  <Grid item xs={12} key={f.name}>
+                    <FormControl 
+                      fullWidth 
+                      error={!!errors[f.name]}
+                      size="medium"
+                    >
+                      <InputLabel>{f.label}</InputLabel>
+                      <Select
+                        label={f.label}
+                        value={formData[f.name] || ''}
+                        onChange={(e) => {
+                          handleChange('referrer_id', e.target.value);
+                          handleChange('referrer_type', refModuleName);
+                        }}
+                        disabled={isReadOnly}
+                      >
+                        <MenuItem value="">-- Select Referrer --</MenuItem>
+                        {options.map(opt => {
+                          let labelText = opt.id;
+                          if (refModuleName === 'dealers') {
+                            labelText = `${opt.firm_name || opt.person_name || 'Dealer'} (${opt.id})`;
+                          } else {
+                            labelText = `${opt.name || opt.person_name || 'Referrer'} (${opt.id})`;
+                          }
+                          return (
+                            <MenuItem key={opt.id} value={opt.id}>
+                              {labelText}
+                            </MenuItem>
+                          );
+                        })}
+                      </Select>
+                      {errors[f.name] && <FormHelperText>{errors[f.name]}</FormHelperText>}
+                    </FormControl>
+                  </Grid>
+                );
               }
 
               // 4. STANDARD TEXT/NUMBER/DATE FIELD

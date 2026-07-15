@@ -66,6 +66,7 @@ const EntityDetail = () => {
   const { moduleName, id } = useParams();
   const navigate = useNavigate();
   const { 
+    user,
     metadata, 
     moduleData,
     fetchModuleData,
@@ -309,6 +310,7 @@ const EntityDetail = () => {
       list.push({ label: `Deals (${connections.deals?.length || 0})`, icon: 'Handshake' });
       list.push({ label: 'Activity Timeline', icon: 'Clock' });
       list.push({ label: `Docs & Files (${connections.documents?.length || 0})`, icon: 'FileText' });
+      list.push({ label: `Referrals (${connections.referrals?.length || 0})`, icon: 'UserPlus' });
     } else if (moduleName === 'properties') {
       list.push({ label: 'Overview', icon: 'Home' });
       list.push({ label: `Pitches & Showings (${connections.pitches?.length || 0})`, icon: 'Eye' });
@@ -322,6 +324,7 @@ const EntityDetail = () => {
       list.push({ label: `Pitches & Showings (${connections?.pitches?.length || 0})`, icon: 'Eye' });
       list.push({ label: `Dealer Interaction History (${connections?.calls?.length || 0})`, icon: 'PhoneCall' });
       list.push({ label: `Docs Vault (${connections?.documents?.length || 0})`, icon: 'FolderOpen' });
+      list.push({ label: `Referrals (${connections?.referrals?.length || 0})`, icon: 'UserPlus' });
     } else if (moduleName === 'projects') {
       list.push({ label: 'Project Specifications', icon: 'Home' });
       list.push({ label: `Pitched & Showings History (${connections.pitches?.length || 0})`, icon: 'Eye' });
@@ -337,6 +340,7 @@ const EntityDetail = () => {
       list.push({ label: `Documents/Files (${connections.documents?.length || 0})`, icon: 'FileText' });
       if (moduleName === 'employees') {
         list.push({ label: `Odometer & Travel Logs (${travelLogs.length})`, icon: 'Compass' });
+        list.push({ label: `Referrals (${connections.referrals?.length || 0})`, icon: 'UserPlus' });
       }
     }
     return list;
@@ -648,6 +652,19 @@ const EntityDetail = () => {
           </Typography>
           <Grid container spacing={2.5}>
             {moduleConfig.fields.map(f => {
+              let allowed = true;
+              if (user && user.role !== 'Admin') {
+                if (metadata?.userColumnPermissions?.[user.id]?.[moduleName]) {
+                  const userOverriden = metadata.userColumnPermissions[user.id][moduleName][f.name];
+                  if (userOverriden !== undefined) {
+                    allowed = userOverriden.includes('view');
+                  }
+                } else if (metadata?.fieldPermissions?.[user.role]?.[moduleName]) {
+                  allowed = metadata.fieldPermissions[user.role][moduleName].includes(f.name);
+                }
+              }
+              if (!allowed) return null;
+
               const val = record[f.name];
               return (
                 <Grid item xs={6} sm={4} md={3} lg={2.4} key={f.name}>
@@ -663,6 +680,23 @@ const EntityDetail = () => {
                         size="small" 
                         sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} 
                       />
+                    ) : f.name === 'referrer_id' && record.referrer_type ? (
+                      <EntityTooltip moduleName={record.referrer_type} id={val}>
+                        <Chip 
+                          label={(() => {
+                            const refArray = moduleData[record.referrer_type] || [];
+                            const referencedRecord = refArray.find(r => String(r.id) === String(val));
+                            let disp = val;
+                            if (referencedRecord) {
+                              disp = referencedRecord.firm_name || referencedRecord.name || referencedRecord.person_name || val;
+                            }
+                            return `${disp} (${record.referrer_type.slice(0, -1)})`;
+                          })()} 
+                          size="small" 
+                          onClick={() => navigate(`/module/${record.referrer_type}/${val}`)}
+                          sx={{ height: 20, fontSize: '10px', fontWeight: 700, cursor: 'pointer' }} 
+                        />
+                      </EntityTooltip>
                     ) : f.type === 'ref' ? (
                       <EntityTooltip moduleName={f.refModule} id={val}>
                         <Chip 
@@ -1199,10 +1233,8 @@ const EntityDetail = () => {
                     </Box>
                   )}
 
-
-
-                  {/* Tab 4: Consolidated Timeline */}
-                  {activeTab === 4 && (
+                  {/* Tab 3: Consolidated Timeline */}
+                  {activeTab === 3 && (
                     <Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Consolidated Activity Timeline</Typography>
                       {connections.timeline?.length === 0 ? (
@@ -1237,8 +1269,8 @@ const EntityDetail = () => {
                     </Box>
                   )}
 
-                  {/* Tab 5: Docs & Files */}
-                  {activeTab === 5 && (
+                  {/* Tab 4: Docs & Files */}
+                  {activeTab === 4 && (
                     <Box>
                       <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Documents Vault</Typography>
                       {/* Upload Simulator */}
@@ -1248,51 +1280,32 @@ const EntityDetail = () => {
                         <Box display="flex" alignItems="center" gap={1.5} mb={2}>
                           <input type="file" id="direct-file-input" style={{ display: 'none' }} onChange={handleFileChange} />
                           <label htmlFor="direct-file-input">
-                            <Button variant="outlined" component="span" startIcon={<Icons.Upload size={16} />} sx={{ textTransform: 'none', fontWeight: 600 }}>
-                              Choose Local Document / PDF
+                            <Button variant="outlined" size="small" component="span" startIcon={<Icons.Upload size={16} />}>
+                              Choose File
                             </Button>
                           </label>
-                          {selectedFile && (
-                            <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 500 }}>
-                              Selected: {selectedFile.name}
-                            </Typography>
-                          )}
-                          {uploadingFile && <CircularProgress size={20} />}
+                          <Typography variant="caption" sx={{ color: '#64748B' }}>
+                            {selectedFile ? selectedFile.name : 'No file selected'}
+                          </Typography>
                         </Box>
 
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} sm={5}>
-                            <TextField 
-                              placeholder="Document Title (e.g. Identity Proof, PAN Card)"
-                              size="small"
-                              fullWidth
-                              value={docName}
-                              onChange={(e) => setDocName(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={5}>
-                            <TextField 
-                              placeholder="Direct File URL link"
-                              size="small"
-                              fullWidth
-                              value={docUrl}
-                              onChange={(e) => setDocUrl(e.target.value)}
-                            />
-                          </Grid>
-                          <Grid item xs={12} sm={2}>
-                            <Button type="submit" variant="contained" fullWidth sx={{ py: 1, backgroundColor: '#2563EB' }}>
-                              Link File
-                            </Button>
-                          </Grid>
-                        </Grid>
+                        <TextField 
+                          label="Document Custom Label/Name" 
+                          size="small" 
+                          fullWidth 
+                          value={docName} 
+                          onChange={(e) => setDocName(e.target.value)} 
+                          sx={{ mb: 2 }}
+                          placeholder="e.g. Aadhar Card Scan"
+                        />
+                        <Button variant="contained" size="small" type="submit" sx={{ textTransform: 'none' }} disabled={!selectedFile}>Save Upload</Button>
                       </Box>
 
-                      {/* Linked Docs List */}
                       {connections.documents?.length === 0 ? (
-                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No files attached yet.</Typography>
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No attached documents vault logs detected.</Typography>
                       ) : (
-                        connections.documents.map((doc, index) => (
-                          <Paper key={index} sx={{ p: 2, mb: 1.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid #E2E8F0', boxShadow: 'none' }}>
+                        connections.documents.map(doc => (
+                          <Paper key={doc.id} sx={{ p: 2.5, mb: 2, border: '1px solid #E2E8F0', borderRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: 'none' }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                               <Icons.FileText size={24} color="#2563EB" />
                               <Box>
@@ -1310,6 +1323,45 @@ const EntityDetail = () => {
                             </Box>
                           </Paper>
                         ))
+                      )}
+                    </Box>
+                  )}
+
+                  {/* Tab 5: Referrals List */}
+                  {activeTab === 5 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Referred Leads Log</Typography>
+                      {!connections.referrals || connections.referrals.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No referrals registered under this profile.</Typography>
+                      ) : (
+                        <TableContainer component={Paper} sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                          <Table size="small">
+                            <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
+                              <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead ID</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead Name</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Phone Number</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead Type</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {connections.referrals.map(l => (
+                                <TableRow key={l.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/module/leads/${l.id}`)}>
+                                  <TableCell sx={{ color: '#2563EB', fontWeight: 600 }}>{l.id}</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>{l.name || l.person_name || 'Unnamed'}</TableCell>
+                                  <TableCell>{l.phone || '---'}</TableCell>
+                                  <TableCell>
+                                    <Chip label={l.leadType} size="small" color={l.leadType === 'Buyer' ? 'primary' : 'success'} sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip label={l.status} size="small" variant="outlined" sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
                       )}
                     </Box>
                   )}
@@ -2104,6 +2156,44 @@ const EntityDetail = () => {
                       )}
                     </Box>
                   )}
+                  {/* Tab 4: Referrals List */}
+                  {activeTab === 4 && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Referred Leads Log</Typography>
+                      {!connections.referrals || connections.referrals.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No referrals registered under this profile.</Typography>
+                      ) : (
+                        <TableContainer component={Paper} sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                          <Table size="small">
+                            <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
+                              <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead ID</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead Name</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Phone Number</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead Type</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {connections.referrals.map(l => (
+                                <TableRow key={l.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/module/leads/${l.id}`)}>
+                                  <TableCell sx={{ color: '#2563EB', fontWeight: 600 }}>{l.id}</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>{l.name || l.person_name || 'Unnamed'}</TableCell>
+                                  <TableCell>{l.phone || '---'}</TableCell>
+                                  <TableCell>
+                                    <Chip label={l.leadType} size="small" color={l.leadType === 'Buyer' ? 'primary' : 'success'} sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip label={l.status} size="small" variant="outlined" sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
+                      )}
+                    </Box>
+                  )}
                 </Box>
               )}
               {/* 4. OTHER GENERIC BACKWARD COMPATIBLE TABS */}
@@ -2427,6 +2517,43 @@ const EntityDetail = () => {
                             );
                           })}
                         </Box>
+                      )}
+                    </Box>
+                  )}
+                  {activeTab === 4 && moduleName === 'employees' && (
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, fontFamily: 'Poppins' }}>Referred Leads Log</Typography>
+                      {!connections.referrals || connections.referrals.length === 0 ? (
+                        <Typography variant="body2" sx={{ color: '#94A3B8' }}>No referrals registered under this profile.</Typography>
+                      ) : (
+                        <TableContainer component={Paper} sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', boxShadow: 'none' }}>
+                          <Table size="small">
+                            <TableHead sx={{ backgroundColor: '#F8FAFC' }}>
+                              <TableRow>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead ID</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead Name</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Phone Number</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Lead Type</TableCell>
+                                <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
+                              </TableRow>
+                            </TableHead>
+                            <TableBody>
+                              {connections.referrals.map(l => (
+                                <TableRow key={l.id} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/module/leads/${l.id}`)}>
+                                  <TableCell sx={{ color: '#2563EB', fontWeight: 600 }}>{l.id}</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>{l.name || l.person_name || 'Unnamed'}</TableCell>
+                                  <TableCell>{l.phone || '---'}</TableCell>
+                                  <TableCell>
+                                    <Chip label={l.leadType} size="small" color={l.leadType === 'Buyer' ? 'primary' : 'success'} sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} />
+                                  </TableCell>
+                                  <TableCell>
+                                    <Chip label={l.status} size="small" variant="outlined" sx={{ height: 20, fontSize: '10px', fontWeight: 700 }} />
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </TableContainer>
                       )}
                     </Box>
                   )}
@@ -3225,6 +3352,7 @@ const EntityDetail = () => {
               const propPayload = {
                 ...nestedPropertyData,
                 dealerId: finalDealerId,
+                current_owner_id: record.id || '',
                 contact_person_name: nestedPropertyData.contact_person_name || record.name || record.person_name || '',
                 contact_number: nestedPropertyData.contact_number || record.phone || record.contact_num || '',
                 date: new Date().toLocaleDateString('en-IN')

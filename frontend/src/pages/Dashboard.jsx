@@ -559,18 +559,9 @@ const Dashboard = () => {
           { label: 'Total Leads', count: leads.length, icon: <Icons.Target size={20} />, color: '#EC4899', change: '↑ 12.5% vs last month', path: '/module/leads' },
           { label: 'Properties', count: properties.length, icon: <Icons.Home size={20} />, color: '#10B981', change: '↑ 8.4% vs last month', path: '/module/properties' },
           { label: 'Site Visits', count: siteVisits.length, icon: <Icons.MapPin size={20} />, color: '#F59E0B', change: '↓ 5.3% vs last month', path: '/module/site_visits' },
-          { label: 'Follow Ups', count: followUps.length, icon: <Icons.PhoneCall size={20} />, color: '#8B5CF6', change: '↑ 15.6% vs last month', path: '/module/follow_ups' },
-          { label: 'Revenue (MTD)', count: (() => {
-            const totalRev = sales.reduce((acc, s) => {
-              const val = parseFloat(String(s.salePrice || s.dealValue || s.amount || 0).replace(/[^0-9.]/g, '')) || 0;
-              return acc + val;
-            }, 0);
-            if (totalRev >= 10000000) return `₹${(totalRev / 10000000).toFixed(1)} Cr`;
-            if (totalRev >= 100000) return `₹${(totalRev / 100000).toFixed(1)}L`;
-            return `₹${totalRev.toLocaleString('en-IN')}`;
-          })(), icon: <Icons.Coins size={20} />, color: '#22C55E', change: '↑ 22.8% vs last month', path: '/module/salary' }
+          { label: 'Follow Ups', count: followUps.length, icon: <Icons.PhoneCall size={20} />, color: '#8B5CF6', change: '↑ 15.6% vs last month', path: '/module/follow_ups' }
         ].map((card, idx) => (
-          <Grid item xs={12} sm={6} md={2} key={idx}>
+          <Grid item xs={12} sm={6} md={2.4} key={idx}>
             <Card 
               onClick={() => navigate(card.path)}
               sx={{ 

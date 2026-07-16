@@ -40,7 +40,7 @@ const PipelineView = () => {
     targetModule = 'properties';
     stageField = 'status';
     stages = metadata.chips.propertyStatus || [];
-    title = 'Property Pipeline (Kanban)';
+    title = 'Property Pipeline';
     subtitle = 'Track inventory status updates (Available, Booked, Agreement, Sold) in real time.';
   } else if (pipelineType === 'property_pitches') {
     targetModule = 'property_pitch_history';

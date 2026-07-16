@@ -2528,6 +2528,11 @@
     ],
     "propertyStatus": [
       {
+        "value": "Available for Purchase",
+        "label": "Available for Purchase",
+        "color": "#3B82F6"
+      },
+      {
         "value": "Token/Booking Amount Recieved",
         "label": "Token/Booking Amount Recieved",
         "color": "#14B8A6"

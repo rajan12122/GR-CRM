@@ -286,6 +286,64 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
   // 6. CRM SEARCH SERVICE ROUTER
   const result = CRMSearchService.search(prompt, context);
 
+  if (result.type === 'entity360') {
+    const info = result.data;
+    const rec = info.record;
+    
+    // Build field summary list
+    const fieldDetails = info.fields
+      .filter(f => f.name !== 'id' && rec[f.name])
+      .map(f => `- **${f.label}:** ${rec[f.name]}`)
+      .join('\n');
+      
+    // Build parent connections
+    const parentList = Object.keys(info.parents).map(pKey => {
+      const pRec = info.parents[pKey];
+      const pName = pRec.name || pRec.person_name || pRec.firm_name || pRec.propertyName || pRec.title || pRec.id;
+      return `- **Connected ${pKey}:** [${pName} (${pRec.id})](file:///module/${pKey})`;
+    }).join('\n');
+
+    // Build related items lists
+    const relatedList = Object.keys(info.related).map(rKey => {
+      const list = info.related[rKey];
+      return `\n#### 🔗 Related ${rKey.toUpperCase()} (${list.length})
+${list.slice(0, 5).map(item => {
+  const name = item.name || item.person_name || item.firm_name || item.propertyName || item.title || item.id;
+  const status = item.status || item.stage || item.result || '';
+  return `- [${name} (${item.id})](file:///module/${rKey}) ${status ? `• Status: ${status}` : ''}`;
+}).join('\n')}`;
+    }).join('\n');
+
+    return `### 🗂️ CRM 360° Profile: ${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id} (${rec.id})
+- **Module:** **${info.moduleLabel}**
+${fieldDetails}
+
+${parentList ? `#### 📌 Associations\n${parentList}\n` : ''}
+${relatedList || ''}
+
+#### 🧠 CRM Manager Insights & Recommendations
+This record is connected across your database. RM should follow up within 24 hours to ensure high operational success.`;
+  }
+
+  if (result.type === 'multipleMatches') {
+    return `### 🔍 Multiple Matches Found
+We found multiple records matching your query in the CRM:
+${result.data.map(m => `- **[${m.name} (${m.id})](file:///module/${m.moduleKey})** [${m.moduleLabel}] ${m.details ? `• Status: ${m.details}` : ''}`).join('\n')}
+Please search using a specific ID or Full Name to view their 360° profile.`;
+  }
+
+  if (result.type === 'moduleList') {
+    const info = result.data;
+    return `### 📁 ${info.moduleLabel} Module Overview
+Here are the active records in this module:
+${info.records.map(rec => {
+  const name = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id;
+  const status = rec.status || rec.stage || rec.role || '';
+  return `- **[${name} (${rec.id})](file:///module/${info.moduleKey})** ${status ? `• Status: ${status}` : ''}`;
+}).join('\n')}
+Click the links above to inspect any record in detail.`;
+  }
+
   if (result.type === 'employee360') {
     const emp = result.data.details;
     return `### 👤 AI Employee 360° Profile: ${emp.name} (${emp.id})

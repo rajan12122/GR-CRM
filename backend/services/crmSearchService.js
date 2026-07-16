@@ -51,6 +51,74 @@ function filterDb(rawDb) {
   return db;
 }
 
+function getRelatedRecords(moduleKey, entityId, db, metadata) {
+  const related = {};
+  const modules = metadata.modules || {};
+  
+  for (const mKey in modules) {
+    if (mKey === moduleKey) continue;
+    const mConfig = modules[mKey];
+    const fields = mConfig.fields || [];
+    
+    // 1. Check metadata ref module types
+    const refFields = fields.filter(f => f.type === 'ref' && f.refModule === moduleKey);
+    if (refFields.length > 0) {
+      const records = getActiveList(db[mKey]);
+      const matched = records.filter(rec => {
+        return refFields.some(f => String(rec[f.name]) === String(entityId));
+      });
+      if (matched.length > 0) {
+        related[mKey] = matched;
+      }
+    }
+    
+    // 2. Fallback matching fields dynamically using common naming patterns
+    const singularIdKey = moduleKey.endsWith('s') ? `${moduleKey.slice(0, -1)}Id` : `${moduleKey}Id`;
+    const camelIdKey = moduleKey.endsWith('s') ? `${moduleKey.slice(0, -1)}ID` : `${moduleKey}ID`;
+    
+    const idFields = fields.filter(f => 
+      f.name === singularIdKey || 
+      f.name === camelIdKey || 
+      (f.name === 'customerId' && moduleKey === 'customers') || 
+      (f.name === 'employeeId' && moduleKey === 'employees') || 
+      (f.name === 'propertyId' && moduleKey === 'properties') || 
+      (f.name === 'projectId' && moduleKey === 'projects') || 
+      (f.name === 'dealerId' && moduleKey === 'dealers')
+    );
+    if (idFields.length > 0 && !related[mKey]) {
+      const records = getActiveList(db[mKey]);
+      const matched = records.filter(rec => {
+        return idFields.some(f => String(rec[f.name]) === String(entityId));
+      });
+      if (matched.length > 0) {
+        related[mKey] = matched;
+      }
+    }
+  }
+  return related;
+}
+
+function getParentEntities(moduleKey, rec, db, metadata) {
+  const parents = {};
+  const mConfig = metadata.modules?.[moduleKey];
+  if (!mConfig) return parents;
+  
+  const fields = mConfig.fields || [];
+  const refFields = fields.filter(f => f.type === 'ref');
+  
+  for (const f of refFields) {
+    const parentModule = f.refModule;
+    const parentId = rec[f.name];
+    if (parentId && db[parentModule]) {
+      const parentRec = getActiveList(db[parentModule]).find(p => String(p.id) === String(parentId));
+      if (parentRec) {
+        parents[parentModule] = parentRec;
+      }
+    }
+  }
+  return parents;
+}
+
 class Customer360Service {
   static getProfile(customerId, rawDb) {
     const db = filterDb(rawDb);
@@ -58,9 +126,9 @@ class Customer360Service {
               (db.leads || []).find(ld => String(ld.id) === String(customerId));
     if (!c) return null;
 
-    const followups = (db.followups || []).filter(f => String(f.customerId) === String(customerId));
-    const siteVisits = (db.siteVisits || []).filter(v => String(v.customerId) === String(customerId));
-    const pitches = (db.pitches || []).filter(p => String(p.customerId) === String(customerId));
+    const followups = (db.followups || db.follow_ups || []).filter(f => String(f.customerId) === String(customerId));
+    const siteVisits = (db.siteVisits || db.site_visits || []).filter(v => String(v.customerId) === String(customerId));
+    const pitches = (db.pitches || db.property_pitch_history || []).filter(p => String(p.customerId) === String(customerId));
     const deals = (db.deals || []).filter(d => String(d.customerId) === String(customerId));
     const tasks = (db.tasks || []).filter(t => String(t.customerId) === String(customerId));
 
@@ -98,8 +166,8 @@ class Employee360Service {
 
     const leads = db.leads || [];
     const customers = db.customers || [];
-    const followups = db.followups || [];
-    const siteVisits = db.siteVisits || [];
+    const followups = db.followups || db.follow_ups || [];
+    const siteVisits = db.siteVisits || db.site_visits || [];
     const deals = db.deals || [];
     const tasks = db.tasks || [];
     const leaves = db.leaves || [];
@@ -141,8 +209,8 @@ class Property360Service {
     const p = (db.properties || []).find(prop => String(prop.id) === String(propertyId));
     if (!p) return null;
 
-    const pitches = db.pitches || [];
-    const siteVisits = db.siteVisits || [];
+    const pitches = db.pitches || db.property_pitch_history || [];
+    const siteVisits = db.siteVisits || db.site_visits || [];
     const deals = db.deals || [];
 
     const propertyPitches = pitches.filter(h => String(h.propertyId) === String(propertyId));
@@ -183,7 +251,7 @@ class AnalyticsService {
       };
     }
 
-    if (qLower.includes("highest sales") || qLower.includes("highest selling") || qLower.includes("who has the highest sales") || qLower.includes("highest sales")) {
+    if (qLower.includes("highest sales") || qLower.includes("highest selling") || qLower.includes("who has the highest sales")) {
       return {
         type: 'Highest Sales',
         topPerformer: "Rajan Sharma",
@@ -228,62 +296,97 @@ class CRMSearchService {
     const db = filterDb(rawDb);
     const qLower = query.toLowerCase().trim();
     
-    // Scan employees
-    const matchedEmp = (db.employees || []).find(e => 
-      e.name.toLowerCase().includes(qLower) || 
-      e.id.toLowerCase() === qLower
-    );
-    if (matchedEmp) {
-      return {
-        type: 'employee360',
-        data: Employee360Service.getProfile(matchedEmp.id, db)
-      };
+    // Read metadata dynamically
+    const metadataPath = path.join(__dirname, '..', 'config', 'metadata.json');
+    let metadata = {};
+    try {
+      if (fs.existsSync(metadataPath)) {
+        metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+      }
+    } catch (e) {
+      console.error("Failed to read metadata.json in CRMSearchService:", e);
+    }
+    
+    const modules = metadata.modules || {};
+    
+    // Check if query is looking for analytics / conversions / revenue
+    if (qLower.includes("conversion") || qLower.includes("highest sales") || qLower.includes("highest selling") || qLower.includes("zero bookings") || qLower.includes("revenue") || qLower.includes("monthly sales") || qLower.includes("inactive")) {
+      const analyticsData = AnalyticsService.getMetrics(query, db);
+      if (analyticsData) {
+        return {
+          type: 'analytics',
+          data: analyticsData
+        };
+      }
     }
 
-    // Scan customers & leads
-    const matchedCust = (db.customers || []).find(c => 
-      c.name.toLowerCase().includes(qLower) || 
-      c.id.toLowerCase() === qLower ||
-      (c.phone && String(c.phone).includes(qLower))
-    ) || (db.leads || []).find(l => 
-      l.name.toLowerCase().includes(qLower) || 
-      l.id.toLowerCase() === qLower ||
-      (l.phone && String(l.phone).includes(qLower))
-    );
-
-    if (matchedCust) {
+    // Step 2: Search ALL modules dynamically
+    const matchedResults = []; // array of { moduleKey, rec }
+    
+    for (const mKey in modules) {
+      const mConfig = modules[mKey];
+      const fields = mConfig.fields || [];
+      const records = getActiveList(db[mKey] || db[mConfig.id]);
+      
+      for (const rec of records) {
+        let match = false;
+        
+        for (const f of fields) {
+          const val = rec[f.name];
+          if (val === undefined || val === null) continue;
+          const valStr = String(val).toLowerCase();
+          
+          if (valStr === qLower || valStr.includes(qLower)) {
+            match = true;
+            break;
+          }
+        }
+        
+        if (match) {
+          matchedResults.push({ moduleKey: mKey, rec });
+        }
+      }
+    }
+    
+    // Step 3: Handle single match (return 360 degree overview)
+    if (matchedResults.length === 1) {
+      const match = matchedResults[0];
+      const rec = match.rec;
+      const mKey = match.moduleKey;
+      
+      const parents = getParentEntities(mKey, rec, db, metadata);
+      const related = getRelatedRecords(mKey, rec.id, db, metadata);
+      
       return {
-        type: 'customer360',
-        data: Customer360Service.getProfile(matchedCust.id, db)
+        type: 'entity360',
+        data: {
+          moduleKey: mKey,
+          moduleLabel: modules[mKey]?.label || mKey,
+          record: rec,
+          parents,
+          related,
+          fields: modules[mKey]?.fields || []
+        }
       };
     }
-
-    // Scan properties & projects
-    const matchedProp = (db.properties || []).find(p => 
-      (p.name && p.name.toLowerCase().includes(qLower)) ||
-      (p.propertyName && p.propertyName.toLowerCase().includes(qLower)) ||
-      p.id.toLowerCase() === qLower ||
-      (p.locality && p.locality.toLowerCase().includes(qLower))
-    );
-    if (matchedProp) {
+    
+    // Handle multiple matches
+    if (matchedResults.length > 1) {
       return {
-        type: 'property360',
-        data: Property360Service.getProfile(matchedProp.id, db)
+        type: 'multipleMatches',
+        data: matchedResults.map(m => ({
+          moduleKey: m.moduleKey,
+          moduleLabel: modules[m.moduleKey]?.label || m.moduleKey,
+          id: m.rec.id,
+          name: m.rec.name || m.rec.person_name || m.rec.firm_name || m.rec.propertyName || m.rec.title || `Record ${m.rec.id}`,
+          details: m.rec.status || m.rec.stage || m.rec.role || ''
+        }))
       };
     }
-
-    // Scan analytics keywords
-    const analyticsData = AnalyticsService.getMetrics(query, db);
-    if (analyticsData) {
-      return {
-        type: 'analytics',
-        data: analyticsData
-      };
-    }
-
-    // Keyword list scanners
+    
+    // Keyword lists
     if (qLower.includes("hot lead") || qLower.includes("hot leads")) {
-      const hotLeads = (db.leads || []).filter(l => {
+      const hotLeads = getActiveList(db.leads || []).filter(l => {
         const interest = String(l.interest_level || l.interestLevel || "").toLowerCase();
         return interest.includes("hot") || interest.includes("high");
       });
@@ -294,7 +397,7 @@ class CRMSearchService {
     }
 
     if (qLower.includes("follow-up") || qLower.includes("follow up") || qLower.includes("followups")) {
-      const activeFollowups = (db.followups || []).filter(f => f.status !== 'Completed');
+      const activeFollowups = getActiveList(db.follow_ups || []).filter(f => f.status !== 'Completed');
       return {
         type: 'followupsList',
         data: activeFollowups
@@ -302,7 +405,7 @@ class CRMSearchService {
     }
 
     if (qLower.includes("budget") || qLower.includes("above")) {
-      const highValueLeads = (db.leads || []).filter(l => {
+      const highValueLeads = getActiveList(db.leads || []).filter(l => {
         const b = parseFloat(String(l.budget || 0).replace(/[^0-9.]/g, '')) || 0;
         return b >= 10000000;
       });
@@ -311,16 +414,40 @@ class CRMSearchService {
         data: highValueLeads
       };
     }
+    
+    // Direct module searches (e.g. "Property Dealers", "Employees")
+    for (const mKey in modules) {
+      const labelLower = (modules[mKey].label || '').toLowerCase();
+      if (qLower === mKey || qLower === labelLower || qLower.includes(mKey) || qLower.includes(labelLower)) {
+        const list = getActiveList(db[mKey] || db[modules[mKey].id]);
+        if (list.length > 0) {
+          return {
+            type: 'moduleList',
+            data: {
+              moduleKey: mKey,
+              moduleLabel: modules[mKey].label || mKey,
+              records: list.slice(0, 10),
+              fields: modules[mKey].fields || []
+            }
+          };
+        }
+      }
+    }
 
-    // Default: Spelling suggestions
-    const suggestions = [
-      ...(db.customers || []).map(c => ({ name: c.name, type: 'Customer' })),
-      ...(db.leads || []).map(l => ({ name: l.name, type: 'Lead' })),
-      ...(db.employees || []).map(e => ({ name: e.name, type: 'Employee' }))
-    ].filter(item => 
-      item.name && 
-      (item.name.toLowerCase().includes(qLower) || qLower.includes(item.name.toLowerCase()))
-    );
+    // Default suggestions lookup
+    const suggestions = [];
+    for (const mKey in modules) {
+      const list = getActiveList(db[mKey] || db[modules[mKey].id]);
+      for (const rec of list) {
+        const name = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title;
+        if (name && (name.toLowerCase().includes(qLower) || qLower.includes(name.toLowerCase()))) {
+          suggestions.push({
+            name,
+            type: modules[mKey].label || mKey
+          });
+        }
+      }
+    }
 
     return {
       type: 'suggestions',

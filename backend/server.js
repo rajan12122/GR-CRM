@@ -3164,6 +3164,7 @@ app.post('/api/leads/:id/drop', authenticateToken, (req, res) => {
 
 // --- AI ASSISTANT API ENDPOINTS ---
 const { generateAIResponse } = require('./utils/aiProvider');
+const { filterDb } = require('./services/crmSearchService');
 
 // Helper to resolve employee name
 function getEmployeeName(empId, db) {
@@ -3173,7 +3174,7 @@ function getEmployeeName(empId, db) {
 
 app.post('/api/ai/customer-summary', authenticateToken, (req, res) => {
   const { customerId } = req.body;
-  const db = readDb();
+  const db = filterDb(readDb());
   
   const customer = (db.customers || []).find(c => String(c.id) === String(customerId)) ||
                    (db.leads || []).find(l => String(l.id) === String(customerId));
@@ -3212,7 +3213,7 @@ app.post('/api/ai/customer-summary', authenticateToken, (req, res) => {
 
 app.post('/api/ai/lead-scoring', authenticateToken, (req, res) => {
   const { customerId } = req.body;
-  const db = readDb();
+  const db = filterDb(readDb());
 
   const customer = (db.customers || []).find(c => String(c.id) === String(customerId)) ||
                    (db.leads || []).find(l => String(l.id) === String(customerId));
@@ -3248,7 +3249,7 @@ app.post('/api/ai/lead-scoring', authenticateToken, (req, res) => {
 
 app.post('/api/ai/property-recommendations', authenticateToken, (req, res) => {
   const { customerId } = req.body;
-  const db = readDb();
+  const db = filterDb(readDb());
 
   const customer = (db.customers || []).find(c => String(c.id) === String(customerId)) ||
                    (db.leads || []).find(l => String(l.id) === String(customerId));
@@ -3277,7 +3278,7 @@ app.post('/api/ai/property-recommendations', authenticateToken, (req, res) => {
 
 app.post('/api/ai/generate-content', authenticateToken, (req, res) => {
   const { type, customerId, projectName } = req.body;
-  const db = readDb();
+  const db = filterDb(readDb());
 
   const customer = (db.customers || []).find(c => String(c.id) === String(customerId)) ||
                    (db.leads || []).find(l => String(l.id) === String(customerId));
@@ -3315,7 +3316,7 @@ app.post('/api/ai/generate-content', authenticateToken, (req, res) => {
 
 app.post('/api/ai/daily-evening-summary', authenticateToken, (req, res) => {
   const { type } = req.body;
-  const db = readDb();
+  const db = filterDb(readDb());
 
   const todayStr = new Date().toISOString().split('T')[0];
   const followups = (db.follow_ups || []).filter(f => f.date === new Date().toLocaleDateString('en-IN') || f.date === todayStr);
@@ -3348,7 +3349,7 @@ app.post('/api/ai/daily-evening-summary', authenticateToken, (req, res) => {
 });
 
 app.post('/api/ai/insights', authenticateToken, (req, res) => {
-  const db = readDb();
+  const db = filterDb(readDb());
   const contextData = {
     leads: db.leads || [],
     deals: db.deals || [],
@@ -3377,19 +3378,11 @@ app.post('/api/ai/insights', authenticateToken, (req, res) => {
 
 app.post('/api/ai/chat', authenticateToken, (req, res) => {
   const { message } = req.body;
-  const db = readDb();
+  const db = filterDb(readDb());
 
-  const systemPrompt = `You are Gagan Realtech Copilot. Answer the user queries using actual database lists: Leads (${(db.leads || []).length} items), Customers (${(db.customers || []).length}), Properties (${(db.properties || []).length}), Projects (${(db.projects || []).length}), Dealers (${(db.dealers || []).length}). Keep replies professional, short, and data-centric. If data is missing or query cannot be answered, respond "No active matching record was found in the CRM."`;
+  const systemPrompt = `You are Gagan Realtech Copilot. Answer the user queries using actual database lists. Keep replies professional, short, and data-centric. If data is missing or query cannot be answered, respond "No active matching record was found in the CRM."`;
   
-  const contextData = {
-    leads: db.leads || [],
-    customers: db.customers || [],
-    properties: db.properties || [],
-    projects: db.projects || [],
-    dealers: db.dealers || [],
-    employees: db.employees || [],
-    deals: db.deals || []
-  };
+  const contextData = db;
 
   generateAIResponse(message, systemPrompt, contextData)
     .then(reply => res.json({ reply }))

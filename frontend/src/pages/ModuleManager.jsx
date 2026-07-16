@@ -393,16 +393,12 @@ const ModuleManager = () => {
       }
 
       case 'dealers': {
-        const active = records.filter(r => r.visitStatus || r.callOutcome);
         const newMonth = Math.max(1, Math.round(total * 0.1));
         const followupsCount = records.filter(r => r.visitStatus === 'Assigned' || r.callOutcome === 'Call Done').length;
 
         return [
           createCardObj('Total Dealers', total, 'Building', '#3B82F6', 'Total dealers', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
-          }),
-          createCardObj('Active Dealers', active.length, 'Activity', '#22C55E', 'Active dealers', stackedFilters._special === 'activeDealers', () => {
-            setStackedFilters({ _special: 'activeDealers' });
           }),
           createCardObj('New This Month', newMonth, 'Star', '#F59E0B', 'New this month', stackedFilters._special === 'newDealers', () => {
             setStackedFilters({ _special: 'newDealers' });

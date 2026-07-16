@@ -4209,18 +4209,15 @@ const EntityDetail = () => {
                         <FormControl fullWidth size="small">
                           <InputLabel>Status</InputLabel>
                           <Select
-                            value={nestedPropertyData.status || 'Available'}
+                            value={nestedPropertyData.status || (metadata.chips?.propertyStatus?.[0]?.value || 'Available for Purchase')}
                             onChange={(e) => setNestedPropertyData(prev => ({ ...prev, status: e.target.value }))}
                             label="Status"
                           >
-                            <MenuItem value="Available">Available</MenuItem>
-                            <MenuItem value="Booked By Client">Booked By Client</MenuItem>
-                            <MenuItem value="Booked By Outside Dealer">Booked By Outside Dealer</MenuItem>
-                            <MenuItem value="Hold">Hold</MenuItem>
-                            <MenuItem value="Sold Out">Sold Out</MenuItem>
-                            <MenuItem value="Not Interested">Not Interested</MenuItem>
-                            <MenuItem value="Wrong Number">Wrong Number</MenuItem>
-                            <MenuItem value="No Response">No Response</MenuItem>
+                            {(metadata.chips?.propertyStatus || []).map(opt => (
+                              <MenuItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </MenuItem>
+                            ))}
                           </Select>
                         </FormControl>
                       </Grid>

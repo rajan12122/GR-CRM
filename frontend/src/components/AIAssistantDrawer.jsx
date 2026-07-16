@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
   Drawer, 
@@ -20,10 +21,104 @@ import * as Icons from 'lucide-react';
 import { useApp, API_BASE_URL } from '../context/AppContext';
 
 export default function AIAssistantDrawer() {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'assistant', content: 'Hello! I am your Gagan Realtech AI Copilot. How can I help you manage your sales, properties, or leads today?' }
   ]);
+
+  const renderMessageContent = (text, isUser) => {
+    if (isUser) {
+      return (
+        <Typography variant="body2" sx={{ lineHeight: 1.6, whiteSpace: 'pre-wrap', fontWeight: 500, fontSize: '13px' }}>
+          {text}
+        </Typography>
+      );
+    }
+
+    // Matches [Label](file:///module/...)
+    const regex = /\[([^\]]+)\]\((file:\/\/\/[^\)]+)\)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      const startIndex = match.index;
+      if (startIndex > lastIndex) {
+        parts.push(text.substring(lastIndex, startIndex));
+      }
+      const label = match[1];
+      const url = match[2];
+      const targetPath = url.replace('file://', '');
+
+      parts.push(
+        <Button
+          key={startIndex}
+          variant="contained"
+          size="small"
+          onClick={() => {
+            navigate(targetPath);
+            setOpen(false);
+          }}
+          sx={{
+            textTransform: 'none',
+            fontSize: '11px',
+            fontWeight: 700,
+            borderRadius: '8px',
+            padding: '2px 8px',
+            margin: '2px 4px',
+            backgroundColor: '#1E3A8A',
+            color: '#FFFFFF',
+            boxShadow: 'none',
+            '&:hover': {
+              backgroundColor: '#1D4ED8',
+              boxShadow: '0 2px 8px rgba(30, 58, 138, 0.3)'
+            },
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}
+        >
+          <Icons.ExternalLink size={12} />
+          {label}
+        </Button>
+      );
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+
+    return (
+      <Box sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, fontWeight: 500, fontSize: '13px' }}>
+        {parts.map((part, index) => {
+          if (typeof part === 'string') {
+            const boldRegex = /\*\*([^*]+)\*\*/g;
+            const subParts = [];
+            let subLastIndex = 0;
+            let subMatch;
+            while ((subMatch = boldRegex.exec(part)) !== null) {
+              if (subMatch.index > subLastIndex) {
+                subParts.push(part.substring(subLastIndex, subMatch.index));
+              }
+              subParts.push(
+                <strong key={subMatch.index} style={{ fontWeight: 800, color: '#1E3A8A' }}>
+                  {subMatch[1]}
+                </strong>
+              );
+              subLastIndex = boldRegex.lastIndex;
+            }
+            if (subLastIndex < part.length) {
+              subParts.push(part.substring(subLastIndex));
+            }
+            return <span key={index}>{subParts}</span>;
+          }
+          return part;
+        })}
+      </Box>
+    );
+  };
   const [inputValue, setInputValue] = useState('');
   const [loading, setLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -217,9 +312,7 @@ export default function AIAssistantDrawer() {
                   boxShadow: m.role === 'user' ? 'none' : '0 2px 8px rgba(0,0,0,0.02)'
                 }}
               >
-                <Typography variant="body2" sx={{ lineHeight: 1.6, whiteSpace: 'pre-wrap', fontWeight: 500, fontSize: '13px' }}>
-                  {m.content}
-                </Typography>
+                {renderMessageContent(m.content, m.role === 'user')}
               </Paper>
             </Box>
           ))}

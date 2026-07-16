@@ -281,6 +281,59 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
       "Direct referrals from existing clients show 12% higher booking rate.",
       "Property segment 'Commercial Booths' is experiencing maximum click activity."
     ], null, 2);
+  }  // Helper maps & functions
+  const moduleIcons = {
+    employees: '👤',
+    customers: '🤝',
+    leads: '📌',
+    properties: '🏠',
+    projects: '🏗️',
+    attendance: '📅',
+    leaves: '🗓️',
+    salaries: '💵',
+    tasks: '📋',
+    follow_ups: '📞',
+    deals: '🧾',
+    sales_bookings: '🧾',
+    queries: '❓',
+    property_pitches: '💡',
+    daily_price_lists: '📊',
+    employee_notices: '📢',
+    live_track_map: '📍',
+    settings: '⚙️',
+    metadata: '🗄️',
+    permission_matrix: '🔐',
+    documents: '📄'
+  };
+
+  const moduleButtonLabels = {
+    employees: 'Open Employee Profile',
+    customers: 'Open Customer Profile',
+    leads: 'Open Lead',
+    properties: 'View Property',
+    projects: 'View Project',
+    attendance: 'View Attendance',
+    leaves: 'View Leave Details',
+    salaries: 'View Salary Details',
+    tasks: 'Open Task',
+    follow_ups: 'Open Follow-up',
+    deals: 'Open Deal',
+    sales_bookings: 'Open Booking',
+    queries: 'Open Query',
+    property_pitches: 'Open Pitch',
+    daily_price_lists: 'View Price List',
+    employee_notices: 'View Notice',
+    live_track_map: 'View Map',
+    settings: 'Open Settings',
+    metadata: 'Open Metadata',
+    permission_matrix: 'Open Permission Matrix',
+    documents: 'Open Document'
+  };
+
+  function getModulePath(mKey, id) {
+    if (mKey === 'attendance') return 'attendance';
+    if (mKey === 'salaries' || mKey === 'salary') return 'salary';
+    return `${mKey}/${id}`;
   }
 
   // 6. CRM SEARCH SERVICE ROUTER
@@ -290,6 +343,10 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
   if (result.type === 'entity360') {
     const info = result.data;
     const rec = info.record;
+    const mKey = info.moduleKey;
+    const icon = moduleIcons[mKey] || '📄';
+    const btnLabel = moduleButtonLabels[mKey] || 'View Details';
+    const linkPath = getModulePath(mKey, rec.id);
     
     // Build field summary list
     const fieldDetails = info.fields
@@ -301,7 +358,9 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
     const parentList = Object.keys(info.parents).map(pKey => {
       const pRec = info.parents[pKey];
       const pName = pRec.name || pRec.person_name || pRec.firm_name || pRec.propertyName || pRec.title || pRec.id;
-      return `- **Connected ${pKey}:** [${pName} (${pRec.id})](file:///module/${pKey})`;
+      const pLinkPath = getModulePath(pKey, pRec.id);
+      const pBtnLabel = moduleButtonLabels[pKey] || 'View';
+      return `- **Connected ${pKey}:** [${pName} (${pRec.id})](file:///module/${pLinkPath})`;
     }).join('\n');
 
     // Build related items lists
@@ -309,45 +368,48 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
       const list = info.related[rKey];
       return `\n#### 🔗 Related ${rKey.toUpperCase()} (${list.length})
 ${list.slice(0, 5).map(item => {
-  const name = item.name || item.person_name || item.firm_name || item.propertyName || item.title || item.id;
-  const status = item.status || item.stage || item.result || '';
-  return `- [${name} (${item.id})](file:///module/${rKey}) ${status ? `• Status: ${status}` : ''}`;
-}).join('\n')}`;
+    const name = item.name || item.person_name || item.firm_name || item.propertyName || item.title || item.id;
+    const status = item.status || item.stage || item.result || '';
+    const rLinkPath = getModulePath(rKey, item.id);
+    return `- [${name} (${item.id})](file:///module/${rLinkPath}) ${status ? `• Status: ${status}` : ''}`;
+  }).join('\n')}`;
     }).join('\n');
 
-    return rankHeader + `### 🗂️ CRM 360° Profile: ${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id} (${rec.id})
-- **Module:** **${info.moduleLabel}**
-${fieldDetails}
-
-${parentList ? `#### 📌 Associations\n${parentList}\n` : ''}
-${relatedList || ''}
-
-#### 🧠 CRM Manager Insights & Recommendations
-This record is connected across your database. RM should follow up within 24 hours to ensure high operational success.`;
+    return rankHeader + `${icon} **${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n\n- **Module:** **${info.moduleLabel}**\n${fieldDetails}\n\n${parentList ? `#### 📌 Associations\n${parentList}\n` : ''}${relatedList || ''}\n\n#### 🧠 CRM Manager Insights & Recommendations\nThis record is connected across your database. RM should follow up within 24 hours to ensure high operational success.`;
   }
 
   if (result.type === 'multipleMatches') {
-    return rankHeader + `### 🔍 Multiple Matches Found
-We found multiple records matching your query in the CRM:
-${result.data.map(m => `- **[${m.name} (${m.id})](file:///module/${m.moduleKey})** [${m.moduleLabel}] ${m.details ? `• Status: ${m.details}` : ''}`).join('\n')}
-Please search using a specific ID or Full Name to view their 360° profile.`;
+    const matchesText = result.data.map(m => {
+      const icon = moduleIcons[m.moduleKey] || '📄';
+      const btnLabel = moduleButtonLabels[m.moduleKey] || 'Open';
+      const linkPath = getModulePath(m.moduleKey, m.id);
+      return `${icon} **${m.name}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n*Module:* **${m.moduleLabel}** ${m.details ? `\n*Status:* **${m.details}**` : ''}`;
+    }).join('\n\n');
+
+    return rankHeader + `### 🔍 Multiple Matches Found\n\nWe found multiple records matching your query in the CRM:\n\n${matchesText}\n\nPlease search using a specific ID or Full Name to view their 360° profile.`;
   }
 
   if (result.type === 'moduleList') {
     const info = result.data;
-    return rankHeader + `### 📁 ${info.moduleLabel} Module Overview
-Here are the active records in this module:
-${info.records.map(rec => {
-  const name = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id;
-  const status = rec.status || rec.stage || rec.role || '';
-  return `- **[${name} (${rec.id})](file:///module/${info.moduleKey})** ${status ? `• Status: ${status}` : ''}`;
-}).join('\n')}
-Click the links above to inspect any record in detail.`;
+    const mKey = info.moduleKey;
+    const icon = moduleIcons[mKey] || '📁';
+    const btnLabel = moduleButtonLabels[mKey] || 'Open';
+    
+    const recordsText = info.records.map(rec => {
+      const name = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id;
+      const status = rec.status || rec.stage || rec.role || '';
+      const linkPath = getModulePath(mKey, rec.id);
+      return `${icon} **${name}**\n🔗 [${btnLabel}](file:///module/${linkPath})${status ? `\n*Status:* **${status}**` : ''}`;
+    }).join('\n\n');
+
+    return rankHeader + `### 📁 ${info.moduleLabel} Module Overview\n\nHere are the active records in this module:\n\n${recordsText}\n\nClick the links above to inspect any record in detail.`;
   }
 
   if (result.type === 'employee360') {
     const emp = result.data.details;
-    return `### 👤 AI Employee 360° Profile: ${emp.name} (${emp.id})
+    return `### 👤 AI Employee 360° Profile: **${emp.name}** (${emp.id})
+🔗 [Open Employee Profile](file:///module/employees/${emp.id})
+
 - **Role / Profile:** ${emp.role}
 - **Current Status:** ${emp.status}
 - **Contact Details:** Phone: ${emp.contact.phone} • Email: ${emp.contact.email}
@@ -373,7 +435,9 @@ ${emp.name} is demonstrating strong client engagement metrics. With ₹${result.
 
   if (result.type === 'customer360') {
     const c = result.data.basicDetails;
-    return `### 🤝 AI Customer 360° Profile: ${c.name} (${c.id})
+    return `### 🤝 AI Customer 360° Profile: **${c.name}** (${c.id})
+🔗 [Open Customer Profile](file:///module/customers/${c.id})
+
 - **Contact Details:** Phone: ${c.phone} • Email: ${c.email}
 - **Current CRM Stage:** **${c.status}**
 - **Budget Constraint:** **${result.data.budget}**
@@ -383,8 +447,8 @@ ${emp.name} is demonstrating strong client engagement metrics. With ₹${result.
 
 #### 📞 Interaction & Journey History
 - **Total Calls/Follow-ups logged:** **${result.data.totalCalls}** contacts.
-- **Logged Site Visits:** **${result.data.siteVisits.length}** visits completed.
-- **Sales Bookings Closed:** **${result.data.bookings.length}** bookings.
+- **Logged Site Visits:** ${result.data.siteVisits.length} visits completed.
+- **Sales Bookings Closed:** ${result.data.bookings.length} bookings.
 
 #### 📋 Tasks Checklist
 - **Outstanding Tasks:** ${result.data.pendingTasks.length} pending reminders.
@@ -396,7 +460,9 @@ Customer is in the **${result.data.stage}** stage with a budget of ${result.data
 
   if (result.type === 'property360') {
     const p = result.data;
-    return `### 🏠 AI Property 360° Profile: ${p.name}
+    return `### 🏠 AI Property 360° Profile: **${p.name}** (${p.id})
+🔗 [View Property](file:///module/properties/${p.id})
+
 - **Project Name:** ${p.project}
 - **Builder Details:** ${p.builder}
 - **Current Status:** **${p.status}**
@@ -450,7 +516,7 @@ ${data.customers.map(c => `- **${c.name}** (${c.id}) - Last Active: ${c.lastActi
     }
     return `### 🔥 Live Hot Leads
 Here are the active leads tagged as high-priority:
-${result.data.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget || 'N/A'} • Assigned to: ${l.assignedEmployeeId || 'RM'}`).join('\n')}
+${result.data.map(l => `- **[${l.name || l.person_name} (${l.id})](file:///module/leads/${l.id})** - Budget: ${l.budget || 'N/A'} • Assigned to: ${l.assignedEmployeeId || 'RM'}`).join('\n')}
 **Next Action:** RMs should call today to present the newly updated project sheets.`;
   }
 
@@ -460,7 +526,7 @@ ${result.data.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l
     }
     return `### 📞 Today's Active Follow-ups
 Here are the scheduled follow-up actions:
-${result.data.slice(0, 5).map(f => `- **Client ID:** ${f.customerId || 'N/A'} • **RM Assigned:** ${f.employeeId || 'EMP-001'} • **Status:** ${f.status || 'Pending'} • **Next Action:** Call to follow up.`).join('\n')}`;
+${result.data.slice(0, 5).map(f => `- **[Follow-up (${f.id})](file:///module/follow_ups/${f.id})** • Client: ${f.customerId || 'N/A'} • RM Assigned: ${f.employeeId || 'EMP-001'} • Status: ${f.status || 'Pending'}`).join('\n')}`;
   }
 
   if (result.type === 'highValueLeadsList') {
@@ -469,7 +535,7 @@ ${result.data.slice(0, 5).map(f => `- **Client ID:** ${f.customerId || 'N/A'} �
     }
     return `### 💎 Premium Leads (Above ₹1 Cr)
 Here are the active high-value client leads:
-${result.data.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget} (Interest: ${l.interest_level || 'Warm'})`).join('\n')}`;
+${result.data.map(l => `- **[${l.name || l.person_name} (${l.id})](file:///module/leads/${l.id})** - Budget: ${l.budget} (Interest: ${l.interest_level || 'Warm'})`).join('\n')}`;
   }
 
   if (result.type === 'clarification') {

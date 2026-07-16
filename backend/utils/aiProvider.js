@@ -420,7 +420,7 @@ ${result.data.map(s => `- **${s.name}** (${s.type})`).join('\n')}`;
     }
   }
 
-  return "No matching records were found in your CRM.";
+  return "No active matching record was found in the CRM.";
 }
 
 module.exports = {

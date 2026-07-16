@@ -1,8 +1,59 @@
 const fs = require('fs');
 const path = require('path');
 
+function isActiveRecord(rec) {
+  if (!rec) return false;
+  if (rec.deleted === true || rec.deleted === 'true') return false;
+  if (rec.isDeleted === true || rec.isDeleted === 'true') return false;
+  if (rec.archived === true || rec.archived === 'true') return false;
+  if (rec.active === false || rec.active === 'false') return false;
+  
+  if (rec.status) {
+    const statusLower = String(rec.status).toLowerCase();
+    if (statusLower === 'deleted' || 
+        statusLower === 'archived' || 
+        statusLower === 'removed' || 
+        statusLower === 'cancelled' ||
+        statusLower === 'inactive') {
+      return false;
+    }
+  }
+  
+  if (rec.propertyStatus) {
+    const statusLower = String(rec.propertyStatus).toLowerCase();
+    if (statusLower === 'deleted' || 
+        statusLower === 'archived' || 
+        statusLower === 'removed' || 
+        statusLower === 'cancelled' ||
+        statusLower === 'inactive') {
+      return false;
+    }
+  }
+  
+  return true;
+}
+
+function getActiveList(list) {
+  if (!Array.isArray(list)) return [];
+  return list.filter(isActiveRecord);
+}
+
+function filterDb(rawDb) {
+  if (!rawDb) return {};
+  const db = {};
+  for (const key in rawDb) {
+    if (Array.isArray(rawDb[key])) {
+      db[key] = getActiveList(rawDb[key]);
+    } else {
+      db[key] = rawDb[key];
+    }
+  }
+  return db;
+}
+
 class Customer360Service {
-  static getProfile(customerId, db) {
+  static getProfile(customerId, rawDb) {
+    const db = filterDb(rawDb);
     const c = (db.customers || []).find(cust => String(cust.id) === String(customerId)) ||
               (db.leads || []).find(ld => String(ld.id) === String(customerId));
     if (!c) return null;
@@ -40,7 +91,8 @@ class Customer360Service {
 }
 
 class Employee360Service {
-  static getProfile(employeeId, db) {
+  static getProfile(employeeId, rawDb) {
+    const db = filterDb(rawDb);
     const emp = (db.employees || []).find(e => String(e.id) === String(employeeId));
     if (!emp) return null;
 
@@ -84,7 +136,8 @@ class Employee360Service {
 }
 
 class Property360Service {
-  static getProfile(propertyId, db) {
+  static getProfile(propertyId, rawDb) {
+    const db = filterDb(rawDb);
     const p = (db.properties || []).find(prop => String(prop.id) === String(propertyId));
     if (!p) return null;
 
@@ -115,7 +168,8 @@ class Property360Service {
 }
 
 class AnalyticsService {
-  static getMetrics(query, db) {
+  static getMetrics(query, rawDb) {
+    const db = filterDb(rawDb);
     const qLower = query.toLowerCase();
     
     if (qLower.includes("lowest conversion")) {
@@ -170,7 +224,8 @@ class AnalyticsService {
 }
 
 class CRMSearchService {
-  static search(query, db) {
+  static search(query, rawDb) {
+    const db = filterDb(rawDb);
     const qLower = query.toLowerCase().trim();
     
     // Scan employees
@@ -279,5 +334,8 @@ module.exports = {
   Customer360Service,
   Employee360Service,
   Property360Service,
-  AnalyticsService
+  AnalyticsService,
+  isActiveRecord,
+  getActiveList,
+  filterDb
 };

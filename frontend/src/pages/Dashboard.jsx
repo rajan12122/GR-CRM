@@ -16,7 +16,8 @@ import {
   Chip,
   Menu,
   MenuItem,
-  TextField
+  TextField,
+  CircularProgress
 } from '@mui/material';
 import EntityTooltip from '../components/EntityTooltip';
 import * as Icons from 'lucide-react';
@@ -34,7 +35,7 @@ import {
   Pie,
   Cell
 } from 'recharts';
-import { useApp } from '../context/AppContext';
+import { useApp, API_BASE_URL } from '../context/AppContext';
 
 const COLORS = ['#22C55E', '#3B82F6', '#8B5CF6', '#F59E0B', '#EF4444', '#EC4899', '#6B7280'];
 
@@ -76,7 +77,7 @@ const Dashboard = () => {
     const fetchBriefing = async () => {
       setAiBriefingLoading(true);
       try {
-        const res = await fetch('/api/ai/daily-evening-summary', {
+        const res = await fetch(`${API_BASE_URL}/api/ai/daily-evening-summary`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -99,7 +100,7 @@ const Dashboard = () => {
     const fetchInsights = async () => {
       setAiInsightsLoading(true);
       try {
-        const res = await fetch('/api/ai/insights', {
+        const res = await fetch(`${API_BASE_URL}/api/ai/insights`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

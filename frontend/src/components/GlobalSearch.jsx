@@ -21,7 +21,7 @@ import {
   Tab
 } from '@mui/material';
 import * as Icons from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp, API_BASE_URL } from '../context/AppContext';
 import { DynamicIcon } from './Sidebar';
 
 const GlobalSearch = ({ open, onClose }) => {
@@ -81,7 +81,7 @@ const GlobalSearch = ({ open, onClose }) => {
       } else {
         // AI search mode
         try {
-          const res = await fetch('/api/ai/chat', {
+          const res = await fetch(`${API_BASE_URL}/api/ai/chat`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

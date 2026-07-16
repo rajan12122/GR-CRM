@@ -17,7 +17,7 @@ import {
   Chip
 } from '@mui/material';
 import * as Icons from 'lucide-react';
-import { useApp } from '../context/AppContext';
+import { useApp, API_BASE_URL } from '../context/AppContext';
 
 export default function AIAssistantDrawer() {
   const [open, setOpen] = useState(false);
@@ -91,7 +91,7 @@ export default function AIAssistantDrawer() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetch(`${API_BASE_URL}/api/ai/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -85,7 +85,7 @@ const GlobalSearch = ({ open, onClose }) => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`
+              'Authorization': `Bearer ${localStorage.getItem('gr_crm_token')}`
             },
             body: JSON.stringify({ message: query })
           });

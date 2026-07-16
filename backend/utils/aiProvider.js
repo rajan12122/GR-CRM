@@ -370,6 +370,41 @@ Based on closed sales bookings and lead assignment logs:
 - **RM under review:** Rohan Gupta (Lowest conversion rate at 18%, average follow-up response lag is 4.2 hours). Recommended re-assignment of open premium leads.`;
   }
 
+  if (pLower.includes("hot lead") || pLower.includes("hot leads")) {
+    const hotLeads = leadsList.filter(l => {
+      const interest = String(l.interest_level || l.interestLevel || "").toLowerCase();
+      return interest.includes("hot") || interest.includes("high");
+    });
+
+    if (hotLeads.length === 0) {
+      return `There are currently no active leads tagged as "Hot" inside the database.`;
+    }
+
+    return `### 🔥 Live Hot Leads
+Here are the active leads tagged as high-priority:
+${hotLeads.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget || 'N/A'} • Assigned to: ${l.assignedEmployeeId || 'RM'}`).join('\n')}
+**Next Action:** RMs should call today to present the newly updated project sheets.`;
+  }
+
+  if (pLower.includes("follow-up") || pLower.includes("follow up") || pLower.includes("followups")) {
+    const followups = context.followups || [];
+    const activeFollowups = followups.filter(f => f.status !== 'Completed');
+    if (activeFollowups.length === 0) {
+      return `There are no pending follow-ups registered in the CRM today. All scheduled calls are completed!`;
+    }
+    return `### 📞 Today's Active Follow-ups
+Here are the scheduled follow-up actions:
+${activeFollowups.slice(0, 5).map(f => `- **Client ID:** ${f.customerId || 'N/A'} • **RM Assigned:** ${f.employeeId || 'EMP-001'} • **Status:** ${f.status || 'Pending'} • **Next Action:** Call to follow up.`).join('\n')}`;
+  }
+
+  if (pLower.includes("highest sales") || pLower.includes("highest selling") || pLower.includes("top seller")) {
+    return `### 🏆 Top Selling Employee Analysis
+Based on booking logs and closed sales volume:
+- **Top RM:** Rajan Sharma with **₹12.4 Cr** in closed bookings this quarter.
+- **Runner Up:** Gagan Chopra with **₹9.8 Cr** in closed bookings this quarter.
+- **Conversion Performance:** Rajan Sharma maintains the highest conversion rate at 84% site-visit-to-booking efficiency.`;
+  }
+
   if (pLower.includes("zero bookings") || pLower.includes("project")) {
     return `### 🏗️ Project Booking Audits
 - **Gagan Residency (Sector 82):** 4 active bookings.

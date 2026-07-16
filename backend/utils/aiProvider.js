@@ -27,6 +27,27 @@ async function generateAIResponse(prompt, systemPrompt, contextData = {}) {
     return generateMockAIResponse(prompt, systemPrompt, contextData);
   }
 
+  // Serialize active context data safely for external LLMs
+  let contextText = "";
+  if (contextData && Object.keys(contextData).length > 0) {
+    const cleanContext = {};
+    for (const key in contextData) {
+      if (Array.isArray(contextData[key])) {
+        if (contextData[key].length > 0) {
+          cleanContext[key] = contextData[key].map(rec => {
+            const { password, deleted, isDeleted, archived, active, ...rest } = rec;
+            return rest;
+          });
+        }
+      } else {
+        cleanContext[key] = contextData[key];
+      }
+    }
+    contextText = `\n\nActive CRM Database Context (Strictly use ONLY this data to construct your response):\n${JSON.stringify(cleanContext, null, 2)}`;
+  }
+
+  const finalSystemPrompt = systemPrompt + contextText;
+
   try {
     if (provider === "openai") {
       const res = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -38,7 +59,7 @@ async function generateAIResponse(prompt, systemPrompt, contextData = {}) {
         body: JSON.stringify({
           model: config.openai.model || "gpt-4o",
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: finalSystemPrompt },
             { role: "user", content: prompt }
           ],
           temperature: 0.2
@@ -56,7 +77,7 @@ async function generateAIResponse(prompt, systemPrompt, contextData = {}) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [
-            { role: "user", parts: [{ text: `${systemPrompt}\n\nUser Request: ${prompt}` }] }
+            { role: "user", parts: [{ text: `${finalSystemPrompt}\n\nUser Request: ${prompt}` }] }
           ]
         })
       });
@@ -74,7 +95,7 @@ async function generateAIResponse(prompt, systemPrompt, contextData = {}) {
         },
         body: JSON.stringify({
           model: config.claude.model || "claude-3-5-sonnet",
-          system: systemPrompt,
+          system: finalSystemPrompt,
           messages: [{ role: "user", content: prompt }],
           max_tokens: 1000
         })
@@ -93,7 +114,7 @@ async function generateAIResponse(prompt, systemPrompt, contextData = {}) {
         body: JSON.stringify({
           model: config.deepseek.model || "deepseek-chat",
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: finalSystemPrompt },
             { role: "user", content: prompt }
           ],
           temperature: 0.2
@@ -111,7 +132,7 @@ async function generateAIResponse(prompt, systemPrompt, contextData = {}) {
         body: JSON.stringify({
           model: "local-model",
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: finalSystemPrompt },
             { role: "user", content: prompt }
           ],
           temperature: 0.2

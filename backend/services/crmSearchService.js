@@ -3,10 +3,10 @@ const path = require('path');
 
 function isActiveRecord(rec) {
   if (!rec) return false;
-  if (rec.deleted === true || rec.deleted === 'true') return false;
-  if (rec.isDeleted === true || rec.isDeleted === 'true') return false;
-  if (rec.archived === true || rec.archived === 'true') return false;
-  if (rec.active === false || rec.active === 'false') return false;
+  if (rec.deleted === true || rec.deleted === 'true' || rec.deleted === 1 || rec.deleted === '1') return false;
+  if (rec.isDeleted === true || rec.isDeleted === 'true' || rec.isDeleted === 1 || rec.isDeleted === '1') return false;
+  if (rec.archived === true || rec.archived === 'true' || rec.archived === 1 || rec.archived === '1') return false;
+  if (rec.active === false || rec.active === 'false' || rec.active === 0 || rec.active === '0') return false;
   
   if (rec.status) {
     const statusLower = String(rec.status).toLowerCase();
@@ -40,14 +40,86 @@ function getActiveList(list) {
 
 function filterDb(rawDb) {
   if (!rawDb) return {};
-  const db = {};
+  
+  // 1. Get filtered base parent lists first
+  const employees = getActiveList(rawDb.employees);
+  const leads = getActiveList(rawDb.leads);
+  const customers = getActiveList(rawDb.customers);
+  const properties = getActiveList(rawDb.properties);
+  const projects = getActiveList(rawDb.projects);
+  const queries = getActiveList(rawDb.queries);
+  const dealers = getActiveList(rawDb.dealers);
+
+  // Helper sets for fast lookup
+  const activeEmployeeIds = new Set(employees.map(e => String(e.id)));
+  const activeLeadIds = new Set(leads.map(l => String(l.id)));
+  const activeCustomerIds = new Set(customers.map(c => String(c.id)));
+  const activePropertyIds = new Set(properties.map(p => String(p.id)));
+  const activeProjectIds = new Set(projects.map(p => String(p.id)));
+  const activeQueryIds = new Set(queries.map(q => String(q.id)));
+  const activeDealerIds = new Set(dealers.map(d => String(d.id)));
+
+  const db = {
+    employees,
+    leads,
+    customers,
+    properties,
+    projects,
+    queries,
+    dealers
+  };
+
+  // 2. Filter other tables checking references
   for (const key in rawDb) {
+    if (db[key] !== undefined) continue; // already processed base parent tables
+
     if (Array.isArray(rawDb[key])) {
-      db[key] = getActiveList(rawDb[key]);
+      const activeRecords = getActiveList(rawDb[key]);
+      
+      // Filter out records whose referenced parent ID is deleted
+      db[key] = activeRecords.filter(rec => {
+        // Employee reference check
+        if (rec.employeeId && !activeEmployeeIds.has(String(rec.employeeId))) return false;
+        if (rec.employeeID && !activeEmployeeIds.has(String(rec.employeeID))) return false;
+        
+        // Lead reference check
+        if (rec.leadId && !activeLeadIds.has(String(rec.leadId))) return false;
+        if (rec.leadID && !activeLeadIds.has(String(rec.leadID))) return false;
+        
+        // Customer reference check (Note: customerId sometimes holds leadId in this CRM)
+        if (rec.customerId) {
+          const cId = String(rec.customerId);
+          if (!activeCustomerIds.has(cId) && !activeLeadIds.has(cId)) return false;
+        }
+        if (rec.customerID) {
+          const cId = String(rec.customerID);
+          if (!activeCustomerIds.has(cId) && !activeLeadIds.has(cId)) return false;
+        }
+
+        // Property reference check
+        if (rec.propertyId && !activePropertyIds.has(String(rec.propertyId))) return false;
+        if (rec.propertyID && !activePropertyIds.has(String(rec.propertyID))) return false;
+        if (rec.pitchedPropertyId && !activePropertyIds.has(String(rec.pitchedPropertyId))) return false;
+
+        // Project reference check
+        if (rec.projectId && !activeProjectIds.has(String(rec.projectId))) return false;
+        if (rec.projectID && !activeProjectIds.has(String(rec.projectID))) return false;
+
+        // Query reference check
+        if (rec.queryId && !activeQueryIds.has(String(rec.queryId))) return false;
+        if (rec.queryID && !activeQueryIds.has(String(rec.queryID))) return false;
+
+        // Dealer reference check
+        if (rec.dealerId && !activeDealerIds.has(String(rec.dealerId))) return false;
+        if (rec.dealerID && !activeDealerIds.has(String(rec.dealerID))) return false;
+
+        return true;
+      });
     } else {
       db[key] = rawDb[key];
     }
   }
+
   return db;
 }
 

@@ -23,6 +23,7 @@ import QuickAdd from './pages/QuickAdd';
 import LeadNotificationListener from './components/LeadNotificationListener';
 import Salary from './pages/Salary';
 import AppUpdater from './components/AppUpdater';
+import AIAssistantDrawer from './components/AIAssistantDrawer';
 import { Routes as DomRoutes, Route as DomRoute } from 'react-router-dom';
 
 import { useParams } from 'react-router-dom';
@@ -241,6 +242,9 @@ const MainLayout = () => {
 
       {/* Global 360 Search dialog overlay */}
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      
+      {/* Floating AI Copilot assistant */}
+      <AIAssistantDrawer />
     </Box>
   );
 };

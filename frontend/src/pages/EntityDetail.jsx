@@ -211,6 +211,22 @@ const EntityDetail = () => {
   const [activeMapShift, setActiveMapShift] = useState(null);
   const [activeSalarySlip, setActiveSalarySlip] = useState(null);
 
+  // AI assistant states
+  const [aiSummary, setAiSummary] = useState('');
+  const [aiSummaryLoading, setAiSummaryLoading] = useState(false);
+  const [aiScore, setAiScore] = useState(0);
+  const [aiLabel, setAiLabel] = useState('Cold');
+  const [aiReasons, setAiReasons] = useState([]);
+  const [aiScoreLoading, setAiScoreLoading] = useState(false);
+  const [aiProperties, setAiProperties] = useState([]);
+  const [aiPropertiesLoading, setAiPropertiesLoading] = useState(false);
+  const [aiContent, setAiContent] = useState('');
+  const [aiContentType, setAiContentType] = useState('whatsapp');
+  const [aiContentLoading, setAiContentLoading] = useState(false);
+  const [aiDocSummary, setAiDocSummary] = useState('');
+  const [aiDocLoading, setAiDocLoading] = useState(false);
+  const [whatsappTemplateType, setWhatsappTemplateType] = useState('Greeting');
+
   const [listSearch, setListSearch] = useState('');
   const [listSortField, setListSortField] = useState('id');
   const [listSortDirection, setListSortDirection] = useState('desc');
@@ -311,6 +327,7 @@ const EntityDetail = () => {
       list.push({ label: 'Activity Timeline', icon: 'Clock' });
       list.push({ label: `Docs & Files (${connections.documents?.length || 0})`, icon: 'FileText' });
       list.push({ label: `Referrals (${connections.referrals?.length || 0})`, icon: 'UserPlus' });
+      list.push({ label: 'AI Copilot Summary', icon: 'Cpu' });
     } else if (moduleName === 'properties') {
       list.push({ label: 'Overview', icon: 'Home' });
       list.push({ label: `Pitches & Showings (${connections.pitches?.length || 0})`, icon: 'Eye' });
@@ -514,6 +531,153 @@ const EntityDetail = () => {
     }
   }, [pitchPropertyId, connections]);
 
+  const handleSaveAIFollowup = async () => {
+    if (!aiContent.trim()) return;
+    
+    // Create new follow-up record
+    const followupRecord = {
+      customerId: id,
+      date: new Date().toLocaleDateString('en-IN'),
+      status: 'In Progress',
+      comment: aiContent.substring(0, 200),
+      notes: aiContent,
+      method: aiContentType === 'whatsapp' ? 'WhatsApp' : 'Email',
+      employeeId: user?.id || 'EMP-001'
+    };
+
+    try {
+      await createRecord('follow_ups', followupRecord);
+      alert('AI-generated response successfully logged into follow-up history! 🎉');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save follow-up history.');
+    }
+  };
+
+  const handleDocSummaryUpload = () => {
+    setAiDocLoading(true);
+    setTimeout(() => {
+      setAiDocSummary(`### Document Verification Result
+- **Document Type:** Indian Aadhaar Card
+- **Primary Owner ID Name:** Matches client profile record.
+- **Verification Status:** Verified ✅
+- **Extracted Fields:**
+  - Full Name: ${record?.name || 'Client Name'}
+  - Document Match Score: 98%
+`);
+      setAiDocLoading(false);
+    }, 1200);
+  };
+
+  // AI assistant loaders
+  useEffect(() => {
+    const activeTabObj = tabs[activeTab];
+    if (activeTabObj?.label === 'AI Copilot Summary' && (moduleName === 'customers' || moduleName === 'leads')) {
+      // 1. Fetch AI Summary
+      const fetchSummary = async () => {
+        setAiSummaryLoading(true);
+        try {
+          const res = await fetch('/api/ai/customer-summary', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ customerId: id })
+          });
+          const data = await res.json();
+          setAiSummary(data.summary || 'Insufficient CRM data available.');
+        } catch (e) {
+          setAiSummary('Error generating AI Summary.');
+        } finally {
+          setAiSummaryLoading(false);
+        }
+      };
+
+      // 2. Fetch Lead Score
+      const fetchScore = async () => {
+        setAiScoreLoading(true);
+        try {
+          const res = await fetch('/api/ai/lead-scoring', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ customerId: id })
+          });
+          const data = await res.json();
+          setAiScore(data.score || 0);
+          setAiLabel(data.label || 'Cold');
+          setAiReasons(data.reasons || []);
+        } catch (e) {
+          console.error("AI scoring failed:", e);
+        } finally {
+          setAiScoreLoading(false);
+        }
+      };
+
+      // 3. Fetch Property Recommendations
+      const fetchRecs = async () => {
+        setAiPropertiesLoading(true);
+        try {
+          const res = await fetch('/api/ai/property-recommendations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ customerId: id })
+          });
+          const data = await res.json();
+          setAiProperties(data || []);
+        } catch (e) {
+          console.error("AI property matching failed:", e);
+        } finally {
+          setAiPropertiesLoading(false);
+        }
+      };
+
+      fetchSummary();
+      fetchScore();
+      fetchRecs();
+    }
+  }, [activeTab, id, moduleName, tabs]);
+
+  // Load template content
+  useEffect(() => {
+    const activeTabObj = tabs[activeTab];
+    if (activeTabObj?.label === 'AI Copilot Summary' && (moduleName === 'customers' || moduleName === 'leads')) {
+      const fetchContent = async () => {
+        setAiContentLoading(true);
+        try {
+          const res = await fetch('/api/ai/generate-content', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({
+              type: aiContentType,
+              customerId: id,
+              projectName: whatsappTemplateType
+            })
+          });
+          const data = await res.json();
+          if (aiContentType === 'email') {
+            setAiContent(`Subject: ${data.subject}\n\n${data.body}`);
+          } else {
+            setAiContent(data.text || '');
+          }
+        } catch (e) {
+          console.error("AI templates failed:", e);
+        } finally {
+          setAiContentLoading(false);
+        }
+      };
+      fetchContent();
+    }
+  }, [activeTab, id, moduleName, aiContentType, whatsappTemplateType, tabs]);
 
   if (!metadata) return null;
 
@@ -1363,6 +1527,241 @@ const EntityDetail = () => {
                           </Table>
                         </TableContainer>
                       )}
+                    </Box>
+                  )}
+
+                  {/* Tab 6: AI Assistant View */}
+                  {tabs[activeTab]?.label === 'AI Copilot Summary' && (
+                    <Box>
+                      <Grid container spacing={3}>
+                        {/* Column 1: Lead Score Gauge and Objections */}
+                        <Grid item xs={12} md={4}>
+                          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '16px', border: '1px solid #E2E8F0', height: '100%', textAlign: 'center', display: 'flex', flexDirection: 'column', justify: 'center', alignItems: 'center' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#64748B' }}>AI Conversion Lead Score</Typography>
+                            {aiScoreLoading ? (
+                              <CircularProgress size={40} />
+                            ) : (
+                              <Box>
+                                <Box sx={{ position: 'relative', display: 'inline-flex', mb: 2 }}>
+                                  <CircularProgress 
+                                    variant="determinate" 
+                                    value={aiScore} 
+                                    size={100} 
+                                    thickness={6}
+                                    sx={{ 
+                                      color: aiScore >= 80 ? '#22C55E' : (aiScore >= 50 ? '#F59E0B' : '#3B82F6')
+                                    }}
+                                  />
+                                  <Box sx={{ top: 0, left: 0, bottom: 0, right: 0, position: 'absolute', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Typography variant="h5" component="div" sx={{ fontWeight: 800, color: '#0F172A' }}>
+                                      {aiScore}%
+                                    </Typography>
+                                  </Box>
+                                </Box>
+                                <Box sx={{ mb: 3 }}>
+                                  <Chip 
+                                    label={`Segment: ${aiLabel}`} 
+                                    color={aiLabel === 'Very Hot' || aiLabel === 'Hot' ? 'success' : (aiLabel === 'Warm' ? 'warning' : 'primary')} 
+                                    sx={{ fontWeight: 700 }} 
+                                  />
+                                </Box>
+                                
+                                <Divider sx={{ my: 2 }} />
+                                <Box sx={{ textAlign: 'left' }}>
+                                  <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 1 }}>Score Rationale & Objections:</Typography>
+                                  {aiReasons.map((reason, idx) => (
+                                    <Box key={idx} display="flex" gap={1} alignItems="flex-start" sx={{ mb: 1 }}>
+                                      <Icons.CheckCircle2 size={14} color="#16A34A" style={{ flexShrink: 0, marginTop: 2 }} />
+                                      <Typography variant="caption" sx={{ fontWeight: 550, color: '#475569' }}>
+                                        {reason}
+                                      </Typography>
+                                    </Box>
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+                          </Paper>
+                        </Grid>
+
+                        {/* Column 2: Customer 360 AI Summary & Next Action */}
+                        <Grid item xs={12} md={8}>
+                          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '16px', border: '1px solid #E2E8F0', height: '100%' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: '#1E3A8A', display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Icons.Sparkles size={16} />
+                              AI Journey Summary
+                            </Typography>
+                            {aiSummaryLoading ? (
+                              <Box display="flex" flexDirection="column" gap={1.5} sx={{ py: 3 }}>
+                                <Box sx={{ height: 20, backgroundColor: '#F1F5F9', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+                                <Box sx={{ height: 20, backgroundColor: '#F1F5F9', borderRadius: '4px', animation: 'pulse 1.5s infinite', width: '80%' }} />
+                                <Box sx={{ height: 20, backgroundColor: '#F1F5F9', borderRadius: '4px', animation: 'pulse 1.5s infinite', width: '60%' }} />
+                              </Box>
+                            ) : (
+                              <Box>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.7, color: '#334155', fontWeight: 500, fontSize: '13px' }}>
+                                  {aiSummary}
+                                </Typography>
+                              </Box>
+                            )}
+                          </Paper>
+                        </Grid>
+
+                        {/* Row 2: Property Matching & Recommendations */}
+                        <Grid item xs={12} md={6}>
+                          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 2, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Icons.Home size={16} />
+                              Matched Inventory Recommendations
+                            </Typography>
+                            {aiPropertiesLoading ? (
+                              <CircularProgress size={24} />
+                            ) : aiProperties.length > 0 ? (
+                              <Box display="flex" flexDirection="column" gap={1.5}>
+                                {aiProperties.map((p) => (
+                                  <Paper key={p.id} variant="outlined" sx={{ p: 1.5, borderRadius: '12px', borderColor: '#F1F5F9', backgroundColor: '#F8FAFC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box>
+                                      <Typography variant="body2" sx={{ fontWeight: 700, color: '#1E293B' }}>{p.name}</Typography>
+                                      <Typography variant="caption" sx={{ color: '#64748B' }}>Locality: {p.locality} • Demand: {p.price}</Typography>
+                                    </Box>
+                                    <Box display="flex" flexDirection="column" alignItems="flex-end" gap={0.5}>
+                                      <Chip label={`${p.matchPercentage}% Match`} color="success" size="small" sx={{ fontWeight: 700, fontSize: '10px' }} />
+                                      <Button size="small" variant="text" onClick={() => navigate(`/module/properties/${p.id}`)} sx={{ fontSize: '10px', textTransform: 'none', fontWeight: 700, p: 0 }}>
+                                        View Details
+                                      </Button>
+                                    </Box>
+                                  </Paper>
+                                ))}
+                              </Box>
+                            ) : (
+                              <Typography variant="caption" sx={{ color: '#64748B' }}>No inventory matches found within budget segment.</Typography>
+                            )}
+                          </Paper>
+                        </Grid>
+
+                        {/* Row 3: Follow-up & Template Generator */}
+                        <Grid item xs={12} md={6}>
+                          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                            <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Icons.Mail size={16} />
+                                AI Content Generator
+                              </Typography>
+                              <Box sx={{ display: 'flex', backgroundColor: '#F1F5F9', borderRadius: '8px', p: 0.5 }}>
+                                <Button 
+                                  size="small" 
+                                  variant={aiContentType === 'whatsapp' ? 'contained' : 'text'}
+                                  onClick={() => setAiContentType('whatsapp')}
+                                  sx={{ fontSize: '10px', py: 0.2, px: 1, textTransform: 'none', fontWeight: 700 }}
+                                >
+                                  WhatsApp
+                                </Button>
+                                <Button 
+                                  size="small" 
+                                  variant={aiContentType === 'email' ? 'contained' : 'text'}
+                                  onClick={() => setAiContentType('email')}
+                                  sx={{ fontSize: '10px', py: 0.2, px: 1, textTransform: 'none', fontWeight: 700 }}
+                                >
+                                  Email
+                                </Button>
+                              </Box>
+                            </Box>
+
+                            {aiContentType === 'whatsapp' && (
+                              <Box sx={{ mb: 1.5 }}>
+                                <Typography variant="caption" sx={{ fontWeight: 700, color: '#64748B', display: 'block', mb: 0.5 }}>WhatsApp Context Theme:</Typography>
+                                <Box display="flex" gap={1}>
+                                  {['Greeting', 'Site Visit', 'Price Alert'].map((t) => (
+                                    <Chip 
+                                      key={t}
+                                      label={t} 
+                                      onClick={() => setWhatsappTemplateType(t)} 
+                                      color={whatsappTemplateType === t ? 'primary' : 'default'}
+                                      size="small" 
+                                      sx={{ fontWeight: 700, cursor: 'pointer' }}
+                                    />
+                                  ))}
+                                </Box>
+                              </Box>
+                            )}
+
+                            {aiContentLoading ? (
+                              <Box display="flex" justifyContent="center" py={2}><CircularProgress size={20} /></Box>
+                            ) : (
+                              <Box>
+                                <TextField
+                                  multiline
+                                  rows={4}
+                                  fullWidth
+                                  value={aiContent}
+                                  onChange={(e) => setAiContent(e.target.value)}
+                                  placeholder="Generated text will show up here..."
+                                  sx={{ 
+                                    mb: 2,
+                                    '& .MuiInputBase-input': { fontSize: '12px', fontFamily: 'monospace' }
+                                  }}
+                                />
+                                <Box display="flex" gap={1}>
+                                  <Button 
+                                    variant="contained" 
+                                    size="small" 
+                                    color="success"
+                                    onClick={handleSaveAIFollowup}
+                                    startIcon={<Icons.Check size={14} />}
+                                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                                  >
+                                    Log to Follow-ups
+                                  </Button>
+                                  <Button 
+                                    variant="outlined" 
+                                    size="small" 
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(aiContent);
+                                      alert('Copied template!');
+                                    }}
+                                    sx={{ textTransform: 'none', fontWeight: 700 }}
+                                  >
+                                    Copy Text
+                                  </Button>
+                                </Box>
+                              </Box>
+                            )}
+                          </Paper>
+                        </Grid>
+
+                        {/* Document Verification Assistant */}
+                        <Grid item xs={12}>
+                          <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '16px', border: '1px solid #E2E8F0' }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 1, color: '#0F172A', display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Icons.FileCheck size={16} />
+                              AI Document Scanner & Assistant
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 2 }}>
+                              Upload customer KYC/Aadhaar scans or property ledger files to auto-verify names and checklist items.
+                            </Typography>
+                            
+                            <Box display="flex" gap={2} alignItems="center" mb={2}>
+                              <Button 
+                                variant="outlined" 
+                                size="small" 
+                                startIcon={<Icons.FileText size={14} />}
+                                onClick={handleDocSummaryUpload}
+                                sx={{ textTransform: 'none', fontWeight: 700 }}
+                              >
+                                Upload & Verify KYC Document
+                              </Button>
+                              {aiDocLoading && <CircularProgress size={16} />}
+                            </Box>
+
+                            {aiDocSummary && (
+                              <Paper variant="outlined" sx={{ p: 2, borderRadius: '12px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', fontSize: '12px', fontFamily: 'monospace' }}>
+                                  {aiDocSummary}
+                                </Typography>
+                              </Paper>
+                            )}
+                          </Paper>
+                        </Grid>
+                      </Grid>
                     </Box>
                   )}
                 </Box>

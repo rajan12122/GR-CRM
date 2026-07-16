@@ -33,6 +33,8 @@ const GlobalSearch = ({ open, onClose }) => {
   const [activeRecordType, setActiveRecordType] = useState(''); // 'customers', 'employees', 'properties'
   const [connections, setConnections] = useState(null); // Relationship mapping for activeRecord
   const [activeTab, setActiveTab] = useState(0);
+  const [searchMode, setSearchMode] = useState('standard'); // 'standard' or 'ai'
+  const [aiSearchResult, setAiSearchResult] = useState('');
   const navigate = useNavigate();
   const searchInputRef = useRef(null);
 
@@ -46,6 +48,7 @@ const GlobalSearch = ({ open, onClose }) => {
       }, 100);
       setQuery('');
       setResults({});
+      setAiSearchResult('');
       setActiveRecord(null);
       setConnections(null);
     }
@@ -55,6 +58,7 @@ const GlobalSearch = ({ open, onClose }) => {
   useEffect(() => {
     if (!query || query.trim() === '') {
       setResults({});
+      setAiSearchResult('');
       setActiveRecord(null);
       setConnections(null);
       return;
@@ -62,22 +66,40 @@ const GlobalSearch = ({ open, onClose }) => {
 
     const timer = setTimeout(async () => {
       setLoading(true);
-      const searchRes = await searchAll(query);
-      setResults(searchRes.results || {});
-      
-      // Auto-load 360 view if exactly one search matches
-      const keys = Object.keys(searchRes.results || {});
-      if (keys.length === 1 && searchRes.results[keys[0]].length === 1) {
-        handleRecordClick(keys[0], searchRes.results[keys[0]][0]);
+      if (searchMode === 'standard') {
+        const searchRes = await searchAll(query);
+        setResults(searchRes.results || {});
+        
+        // Auto-load 360 view if exactly one search matches
+        const keys = Object.keys(searchRes.results || {});
+        if (keys.length === 1 && searchRes.results[keys[0]].length === 1) {
+          handleRecordClick(keys[0], searchRes.results[keys[0]][0]);
+        } else {
+          setActiveRecord(null);
+          setConnections(null);
+        }
       } else {
-        setActiveRecord(null);
-        setConnections(null);
+        // AI search mode
+        try {
+          const res = await fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            },
+            body: JSON.stringify({ message: query })
+          });
+          const data = await res.json();
+          setAiSearchResult(data.reply || 'No insights matching the query.');
+        } catch (e) {
+          setAiSearchResult('AI search request failed.');
+        }
       }
       setLoading(false);
-    }, 400);
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, searchMode]);
 
   const handleRecordClick = async (type, record) => {
     setActiveRecord(record);
@@ -164,18 +186,37 @@ const GlobalSearch = ({ open, onClose }) => {
       }}
     >
       {/* Search Input field Header */}
-      <Box sx={{ p: 2.5, pb: 1.5 }}>
+      <Box sx={{ p: 2.5, pb: 1.5, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Chip 
+            label="Standard Database Search" 
+            onClick={() => { setSearchMode('standard'); setQuery(''); }} 
+            color={searchMode === 'standard' ? 'primary' : 'default'}
+            variant={searchMode === 'standard' ? 'filled' : 'outlined'}
+            size="small"
+            sx={{ fontWeight: 700, cursor: 'pointer' }}
+          />
+          <Chip 
+            label="AI Copilot Search" 
+            onClick={() => { setSearchMode('ai'); setQuery(''); }} 
+            color={searchMode === 'ai' ? 'primary' : 'default'}
+            variant={searchMode === 'ai' ? 'filled' : 'outlined'}
+            icon={<Icons.Sparkles size={12} />}
+            size="small"
+            sx={{ fontWeight: 700, cursor: 'pointer' }}
+          />
+        </Box>
         <TextField
           inputRef={searchInputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Type keywords... (e.g. Mohali, Rajesh, Villa, Pending, 98140, CUST-001)"
+          placeholder={searchMode === 'standard' ? "Type keywords... (e.g. Mohali, Rajesh, Villa, CUST-001)" : "Ask Gagan Realtech AI... (e.g. 'Show me leads above 1 Cr' or 'Summary of site visits this month')"}
           fullWidth
           variant="outlined"
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
-                <Icons.Search size={22} color="#2563EB" />
+                {searchMode === 'standard' ? <Icons.Search size={22} color="#2563EB" /> : <Icons.Sparkles size={22} color="#8B5CF6" />}
               </InputAdornment>
             ),
             endAdornment: loading && <CircularProgress size={20} />
@@ -185,7 +226,7 @@ const GlobalSearch = ({ open, onClose }) => {
               borderRadius: '12px',
               backgroundColor: '#F8FAFC',
               '& fieldset': { borderColor: '#E2E8F0' },
-              '&.Mui-focused fieldset': { borderColor: '#2563EB' }
+              '&.Mui-focused fieldset': { borderColor: searchMode === 'standard' ? '#2563EB' : '#8B5CF6' }
             }
           }}
         />
@@ -194,7 +235,27 @@ const GlobalSearch = ({ open, onClose }) => {
       <Divider />
 
       <DialogContent sx={{ p: 0, flex: 1, display: 'flex', overflow: 'hidden' }}>
-        {Object.keys(results).length === 0 ? (
+        {searchMode === 'ai' ? (
+          <Box sx={{ flex: 1, p: 3, display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1E3A8A', display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Icons.Sparkles size={16} />
+              AI Search Analysis
+            </Typography>
+            {loading ? (
+              <Box display="flex" justifyContent="center" py={4}><CircularProgress /></Box>
+            ) : aiSearchResult ? (
+              <Paper variant="outlined" sx={{ p: 2.5, borderRadius: '12px', backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0' }}>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#1E293B', fontWeight: 550, fontSize: '13px' }}>
+                  {aiSearchResult}
+                </Typography>
+              </Paper>
+            ) : (
+              <Typography variant="body2" sx={{ color: '#64748B', fontSize: '13px' }}>
+                Ask a search query in natural language to perform an AI scan across employees, customers, leads, follow-ups, and properties.
+              </Typography>
+            )}
+          </Box>
+        ) : Object.keys(results).length === 0 ? (
           <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', p: 4, color: '#94A3B8' }}>
             <Icons.Layers size={48} strokeWidth={1} style={{ marginBottom: 12 }} />
             <Typography variant="body2" sx={{ fontWeight: 500 }}>

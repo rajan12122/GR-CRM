@@ -54,6 +54,13 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [swiperIndex, setSwiperIndex] = useState(0);
 
+  // AI Briefing states
+  const [aiBriefing, setAiBriefing] = useState(null);
+  const [aiBriefingType, setAiBriefingType] = useState('morning');
+  const [aiBriefingLoading, setAiBriefingLoading] = useState(false);
+  const [aiInsights, setAiInsights] = useState([]);
+  const [aiInsightsLoading, setAiInsightsLoading] = useState(false);
+
   // Attendance shift timer states
   const [elapsedTimeStr, setElapsedTimeStr] = useState('00:00:00');
   const [timerStatus, setTimerStatus] = useState('Not Checked In');
@@ -64,6 +71,52 @@ const Dashboard = () => {
       a => String(a.employeeId) === String(user?.id) && a.date === todayDateStr
     );
   }, [moduleData.attendance, user, todayDateStr]);
+
+  useEffect(() => {
+    const fetchBriefing = async () => {
+      setAiBriefingLoading(true);
+      try {
+        const res = await fetch('/api/ai/daily-evening-summary', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({ type: aiBriefingType })
+        });
+        const data = await res.json();
+        setAiBriefing(data);
+      } catch (e) {
+        console.error("AI briefing failed:", e);
+      } finally {
+        setAiBriefingLoading(false);
+      }
+    };
+    fetchBriefing();
+  }, [aiBriefingType]);
+
+  useEffect(() => {
+    const fetchInsights = async () => {
+      setAiInsightsLoading(true);
+      try {
+        const res = await fetch('/api/ai/insights', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          },
+          body: JSON.stringify({})
+        });
+        const data = await res.json();
+        setAiInsights(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error("AI insights failed:", e);
+      } finally {
+        setAiInsightsLoading(false);
+      }
+    };
+    fetchInsights();
+  }, []);
 
   useEffect(() => {
     let intervalId = null;
@@ -1118,6 +1171,176 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
+      </Grid>
+
+      {/* PREMIUM AI COPILOT BRIEFING & REAL ESTATE INSIGHTS */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Card 1: AI Copilot Briefings */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ border: '1px solid #BFDBFE', borderRadius: '16px', backgroundColor: '#EFF6FF', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+                <Typography variant="h4" sx={{ fontWeight: 800, fontSize: '15px', color: '#1E3A8A', fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Icons.Sparkles size={18} color="#2563EB" />
+                  AI Shift Briefing
+                </Typography>
+                <Box sx={{ display: 'flex', backgroundColor: '#DBEAFE', borderRadius: '8px', p: 0.5 }}>
+                  <Button 
+                    size="small" 
+                    variant={aiBriefingType === 'morning' ? 'contained' : 'text'}
+                    onClick={() => setAiBriefingType('morning')}
+                    sx={{ 
+                      fontSize: '10px', 
+                      fontWeight: 700, 
+                      borderRadius: '6px', 
+                      px: 1.5, 
+                      py: 0.5,
+                      textTransform: 'none',
+                      backgroundColor: aiBriefingType === 'morning' ? '#2563EB' : 'transparent',
+                      color: aiBriefingType === 'morning' ? '#FFFFFF' : '#1E3A8A',
+                      boxShadow: 'none',
+                      '&:hover': { backgroundColor: aiBriefingType === 'morning' ? '#1D4ED8' : 'transparent', boxShadow: 'none' }
+                    }}
+                  >
+                    Morning Goals
+                  </Button>
+                  <Button 
+                    size="small" 
+                    variant={aiBriefingType === 'evening' ? 'contained' : 'text'}
+                    onClick={() => setAiBriefingType('evening')}
+                    sx={{ 
+                      fontSize: '10px', 
+                      fontWeight: 700, 
+                      borderRadius: '6px', 
+                      px: 1.5, 
+                      py: 0.5,
+                      textTransform: 'none',
+                      backgroundColor: aiBriefingType === 'evening' ? '#2563EB' : 'transparent',
+                      color: aiBriefingType === 'evening' ? '#FFFFFF' : '#1E3A8A',
+                      boxShadow: 'none',
+                      '&:hover': { backgroundColor: aiBriefingType === 'evening' ? '#1D4ED8' : 'transparent', boxShadow: 'none' }
+                    }}
+                  >
+                    Evening Summary
+                  </Button>
+                </Box>
+              </Box>
+
+              {aiBriefingLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" flex={1} py={4}>
+                  <CircularProgress size={24} sx={{ color: '#2563EB' }} />
+                </Box>
+              ) : aiBriefing ? (
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {aiBriefingType === 'morning' ? (
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Expected Follow-ups</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#1E3A8A' }}>{aiBriefing.todayFollowups || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Scheduled Site Visits</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#1E3A8A' }}>{aiBriefing.todayVisits || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Overdue Tasks</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#EF4444' }}>{aiBriefing.overdueTasks || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>RMs on Leave</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#F59E0B' }}>{aiBriefing.employeesOnLeave || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Priority Clients To Call Today:</Typography>
+                          <Box display="flex" gap={1} flexWrap="wrap">
+                            {(aiBriefing.priorityCustomers || []).map((name, idx) => (
+                              <Chip key={idx} label={name} size="small" sx={{ backgroundColor: '#DBEAFE', color: '#1E3A8A', fontWeight: 700 }} />
+                            ))}
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                  ) : (
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Calls Executed</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#1E3A8A' }}>{aiBriefing.callsCompleted || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Site Visits Handled</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#1E3A8A' }}>{aiBriefing.visitsCompleted || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Deals Closed Today</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#22C55E' }}>{aiBriefing.dealsClosed || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600 }}>Pending Reminders</Typography>
+                          <Typography variant="h5" sx={{ fontWeight: 800, mt: 0.5, color: '#64748B' }}>{aiBriefing.pendingTasks || 0}</Typography>
+                        </Paper>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Paper variant="outlined" sx={{ p: 1.5, borderRadius: '12px', border: '1px solid #BFDBFE', backgroundColor: '#FFFFFF' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 700, display: 'block', mb: 0.5 }}>Recommended Agenda For Tomorrow:</Typography>
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: '#1E293B', fontSize: '13px' }}>{aiBriefing.scheduleTomorrow || 'No additional schedule generated.'}</Typography>
+                        </Paper>
+                      </Grid>
+                    </Grid>
+                  )}
+                </Box>
+              ) : (
+                <Typography variant="body2" sx={{ color: '#64748B', py: 4, textAlign: 'center' }}>Insufficient CRM data available to generate briefing.</Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Card 2: AI Real Estate Insights & Alerts */}
+        <Grid item xs={12} md={6}>
+          <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <CardContent sx={{ p: 3, flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <Typography variant="h4" sx={{ fontWeight: 800, fontSize: '15px', color: '#0F172A', fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <Icons.TrendingUp size={18} color="#10B981" />
+                AI Realtech Insights
+              </Typography>
+
+              {aiInsightsLoading ? (
+                <Box display="flex" justifyContent="center" alignItems="center" flex={1} py={4}>
+                  <CircularProgress size={24} sx={{ color: '#10B981' }} />
+                </Box>
+              ) : aiInsights.length > 0 ? (
+                <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  {aiInsights.map((insight, idx) => (
+                    <Box key={idx} display="flex" gap={1.5} alignItems="flex-start">
+                      <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#10B981', mt: 1, flexShrink: 0 }} />
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#334155', lineHeight: 1.5, fontSize: '13px' }}>
+                        {insight}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" sx={{ color: '#64748B', py: 4, textAlign: 'center' }}>Insufficient CRM data available to compile insights.</Typography>
+              )}
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
 
       <Grid container spacing={3} sx={{ mb: 4 }}>

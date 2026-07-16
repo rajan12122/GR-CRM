@@ -1,0 +1,336 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Box, 
+  Drawer, 
+  IconButton, 
+  Typography, 
+  TextField, 
+  Button, 
+  Avatar, 
+  Paper, 
+  CircularProgress,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  Tooltip,
+  Chip
+} from '@mui/material';
+import * as Icons from 'lucide-react';
+import { useApp } from '../context/AppContext';
+
+export default function AIAssistantDrawer() {
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: 'Hello! I am your Gagan Realtech AI Copilot. How can I help you manage your sales, properties, or leads today?' }
+  ]);
+  const [inputValue, setInputValue] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const messagesEndRef = useRef(null);
+  
+  const recognitionRef = useRef(null);
+
+  // Auto scroll chat
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, loading]);
+
+  // Set up Speech-to-text Web Speech API
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const rec = new SpeechRecognition();
+      rec.continuous = false;
+      rec.interimResults = false;
+      rec.lang = 'en-IN';
+
+      rec.onstart = () => {
+        setIsListening(true);
+      };
+
+      rec.onresult = (event) => {
+        const text = event.results[0][0].transcript;
+        setInputValue(prev => prev + ' ' + text);
+      };
+
+      rec.onerror = (e) => {
+        console.error("Speech Recognition Error:", e);
+        setIsListening(false);
+      };
+
+      rec.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = rec;
+    }
+  }, []);
+
+  const handleVoiceToggle = () => {
+    if (!recognitionRef.current) {
+      alert("Web Speech API is not supported on this browser version.");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current.stop();
+    } else {
+      recognitionRef.current.start();
+    }
+  };
+
+  const handleSend = async (textToSend = inputValue) => {
+    const promptText = String(textToSend).trim();
+    if (!promptText) return;
+
+    setMessages(prev => [...prev, { role: 'user', content: promptText }]);
+    setInputValue('');
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({ message: promptText })
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'assistant', content: data.reply || "Insufficient CRM data available." }]);
+    } catch (e) {
+      setMessages(prev => [...prev, { role: 'assistant', content: "Error connecting to Gagan Realtech AI server." }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickCommand = (cmdText) => {
+    handleSend(cmdText);
+  };
+
+  return (
+    <>
+      {/* Premium Floating Sphere Trigger Button */}
+      <Tooltip title="Gagan Copilot AI" placement="left">
+        <IconButton
+          onClick={() => setOpen(true)}
+          sx={{
+            position: 'fixed',
+            bottom: 24,
+            right: 24,
+            width: 56,
+            height: 56,
+            zIndex: 1300,
+            backgroundColor: '#1E3A8A',
+            color: '#FFFFFF',
+            boxShadow: '0 8px 32px rgba(30, 58, 138, 0.4)',
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+            animation: 'pulse 2s infinite',
+            '@keyframes pulse': {
+              '0%': { boxShadow: '0 0 0 0 rgba(30, 58, 138, 0.7)' },
+              '70%': { boxShadow: '0 0 0 15px rgba(30, 58, 138, 0)' },
+              '100%': { boxShadow: '0 0 0 0 rgba(30, 58, 138, 0)' }
+            },
+            '&:hover': {
+              backgroundColor: '#1D4ED8',
+              transform: 'scale(1.1) rotate(15deg)',
+              boxShadow: '0 12px 40px rgba(29, 78, 216, 0.6)'
+            }
+          }}
+        >
+          <Icons.Cpu size={26} />
+        </IconButton>
+      </Tooltip>
+
+      {/* Slide-out AI Panel Drawer */}
+      <Drawer
+        anchor="right"
+        open={open}
+        onClose={() => setOpen(false)}
+        PaperProps={{
+          sx: {
+            width: { xs: '100%', sm: 400 },
+            display: 'flex',
+            flexDirection: 'column',
+            backgroundColor: '#F8FAFC',
+            borderLeft: '1px solid #E2E8F0',
+            boxShadow: '-10px 0 30px rgba(0,0,0,0.05)'
+          }
+        }}
+      >
+        {/* Drawer Header */}
+        <Box sx={{ p: 2.5, backgroundColor: '#FFFFFF', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box display="flex" alignItems="center" gap={1.5}>
+            <Avatar sx={{ backgroundColor: '#1E3A8A', width: 36, height: 36 }}>
+              <Icons.Sparkles size={18} color="#FFFFFF" />
+            </Avatar>
+            <Box>
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: '#0F172A', fontSize: '15px' }}>
+                Gagan Realtech AI
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#22C55E', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#22C55E' }} />
+                Copilot Online
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton onClick={() => setOpen(false)} size="small" sx={{ color: '#64748B' }}>
+            <Icons.X size={18} />
+          </IconButton>
+        </Box>
+
+        {/* Scrollable Conversation Thread */}
+        <Box sx={{ flex: 1, overflowY: 'auto', p: 2.5, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {messages.map((m, idx) => (
+            <Box 
+              key={idx} 
+              sx={{ 
+                alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+                maxWidth: '85%',
+                display: 'flex',
+                gap: 1,
+                flexDirection: m.role === 'user' ? 'row-reverse' : 'row'
+              }}
+            >
+              <Avatar 
+                sx={{ 
+                  width: 28, 
+                  height: 28, 
+                  fontSize: '11px',
+                  backgroundColor: m.role === 'user' ? '#10B981' : '#1E3A8A' 
+                }}
+              >
+                {m.role === 'user' ? 'ME' : 'AI'}
+              </Avatar>
+              <Paper
+                elevation={0}
+                sx={{
+                  p: 1.75,
+                  borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                  backgroundColor: m.role === 'user' ? '#10B981' : '#FFFFFF',
+                  color: m.role === 'user' ? '#FFFFFF' : '#0F172A',
+                  border: m.role === 'user' ? 'none' : '1px solid #E2E8F0',
+                  boxShadow: m.role === 'user' ? 'none' : '0 2px 8px rgba(0,0,0,0.02)'
+                }}
+              >
+                <Typography variant="body2" sx={{ lineHeight: 1.6, whiteSpace: 'pre-wrap', fontWeight: 500, fontSize: '13px' }}>
+                  {m.content}
+                </Typography>
+              </Paper>
+            </Box>
+          ))}
+          {loading && (
+            <Box sx={{ alignSelf: 'flex-start', display: 'flex', gap: 1, alignItems: 'center' }}>
+              <Avatar sx={{ width: 28, height: 28, backgroundColor: '#1E3A8A' }}>
+                <CircularProgress size={12} color="inherit" />
+              </Avatar>
+              <Paper sx={{ p: 1.75, border: '1px solid #E2E8F0', borderRadius: '4px 16px 16px 16px', backgroundColor: '#FFFFFF' }}>
+                <Box display="flex" gap={0.5}>
+                  <Box className="dot" sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#64748B', animation: 'bounce 1.4s infinite alternate' }} />
+                  <Box className="dot" sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#64748B', animation: 'bounce 1.4s infinite alternate 0.2s' }} />
+                  <Box className="dot" sx={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: '#64748B', animation: 'bounce 1.4s infinite alternate 0.4s' }} />
+                </Box>
+              </Paper>
+            </Box>
+          )}
+          <div ref={messagesEndRef} />
+        </Box>
+
+        {/* Quick Action Suggestion Chips */}
+        <Box sx={{ p: 2, display: 'flex', flexWrap: 'wrap', gap: 1, backgroundColor: '#FFFFFF', borderTop: '1px solid #E2E8F0' }}>
+          {[
+            'Show me leads above ₹1 Cr',
+            'Find projects with zero bookings',
+            'Which RM has the lowest conversion?',
+            'Generate Today\'s Briefing'
+          ].map((cmd, i) => (
+            <Chip
+              key={i}
+              label={cmd}
+              onClick={() => handleQuickCommand(cmd)}
+              icon={<Icons.Sparkles size={11} />}
+              sx={{
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#1E3A8A',
+                backgroundColor: '#EFF6FF',
+                borderColor: '#BFDBFE',
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: '#DBEAFE'
+                }
+              }}
+              variant="outlined"
+              size="small"
+            />
+          ))}
+        </Box>
+
+        {/* Chat Control Input Input Area */}
+        <Box sx={{ p: 2, backgroundColor: '#FFFFFF', borderTop: '1px solid #E2E8F0', display: 'flex', gap: 1, alignItems: 'center' }}>
+          <Tooltip title={isListening ? "Listening... Click to stop" : "Record voice command"}>
+            <IconButton 
+              onClick={handleVoiceToggle} 
+              sx={{ 
+                color: isListening ? '#EF4444' : '#64748B',
+                backgroundColor: isListening ? '#FEE2E2' : '#F1F5F9',
+                '&:hover': {
+                  backgroundColor: isListening ? '#FCA5A5' : '#E2E8F0'
+                }
+              }}
+            >
+              <Icons.Mic size={18} />
+            </IconButton>
+          </Tooltip>
+          
+          <TextField
+            fullWidth
+            size="small"
+            placeholder={isListening ? "Listening voice..." : "Ask Copilot a question..."}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+            disabled={loading}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                borderRadius: '12px',
+                backgroundColor: '#F8FAFC',
+                fontSize: '13px'
+              }
+            }}
+          />
+
+          <IconButton 
+            onClick={() => handleSend()}
+            disabled={loading || !inputValue.trim()}
+            sx={{ 
+              backgroundColor: '#1E3A8A', 
+              color: '#FFFFFF',
+              borderRadius: '12px',
+              '&:hover': {
+                backgroundColor: '#1D4ED8'
+              },
+              '&.Mui-disabled': {
+                backgroundColor: '#F1F5F9',
+                color: '#94A3B8'
+              }
+            }}
+          >
+            <Icons.Send size={18} />
+          </IconButton>
+        </Box>
+      </Drawer>
+      
+      {/* Styles for bouncing animation */}
+      <style>{`
+        @keyframes bounce {
+          to { transform: translateY(-4px); }
+        }
+      `}</style>
+    </>
+  );
+}

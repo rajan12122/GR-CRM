@@ -577,7 +577,7 @@ const EntityDetail = () => {
       const fetchSummary = async () => {
         setAiSummaryLoading(true);
         try {
-          const res = await fetch(`${API_BASE_URL}/api/ai/customer-summary`, {
+          const res = await fetch(`${API_BASE_URL}/ai/customer-summary`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -598,7 +598,7 @@ const EntityDetail = () => {
       const fetchScore = async () => {
         setAiScoreLoading(true);
         try {
-          const res = await fetch(`${API_BASE_URL}/api/ai/lead-scoring`, {
+          const res = await fetch(`${API_BASE_URL}/ai/lead-scoring`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -621,7 +621,7 @@ const EntityDetail = () => {
       const fetchRecs = async () => {
         setAiPropertiesLoading(true);
         try {
-          const res = await fetch(`${API_BASE_URL}/api/ai/property-recommendations`, {
+          const res = await fetch(`${API_BASE_URL}/ai/property-recommendations`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -651,7 +651,7 @@ const EntityDetail = () => {
       const fetchContent = async () => {
         setAiContentLoading(true);
         try {
-          const res = await fetch(`${API_BASE_URL}/api/ai/generate-content`, {
+          const res = await fetch(`${API_BASE_URL}/ai/generate-content`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

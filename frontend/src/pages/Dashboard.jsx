@@ -77,7 +77,7 @@ const Dashboard = () => {
     const fetchBriefing = async () => {
       setAiBriefingLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/ai/daily-evening-summary`, {
+        const res = await fetch(`${API_BASE_URL}/ai/daily-evening-summary`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -100,7 +100,7 @@ const Dashboard = () => {
     const fetchInsights = async () => {
       setAiInsightsLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/api/ai/insights`, {
+        const res = await fetch(`${API_BASE_URL}/ai/insights`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

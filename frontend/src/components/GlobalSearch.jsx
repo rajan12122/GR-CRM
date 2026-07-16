@@ -81,7 +81,7 @@ const GlobalSearch = ({ open, onClose }) => {
       } else {
         // AI search mode
         try {
-          const res = await fetch(`${API_BASE_URL}/api/ai/chat`, {
+          const res = await fetch(`${API_BASE_URL}/ai/chat`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

@@ -51,59 +51,204 @@ function filterDb(rawDb) {
   return db;
 }
 
-function classifyIntent(sentence) {
-  const words = sentence.toLowerCase().replace(/[?,.!]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+function classifyIntent(sentence, db) {
+  let cleanStr = sentence.toLowerCase()
+    .replace(/[?,.!]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+    
+  const stopPhrases = [
+    'please', 'kindly', 'can you', 'could you', 'i want', 'i need', 
+    'show me', 'tell me', 'help me', 'let me', 'give me', 'show', 'view', 'display', 'open'
+  ];
   
+  for (const phrase of stopPhrases) {
+    cleanStr = cleanStr.replace(new RegExp(`\\b${phrase}\\b`, 'g'), '');
+  }
+  cleanStr = cleanStr.replace(/\s+/g, ' ').trim();
+  
+  const words = cleanStr.split(/\s+/).filter(w => w.length > 0);
+  
+  const spellingCorrections = {
+    attendence: 'attendance',
+    attndance: 'attendance',
+    attendnce: 'attendance',
+    employe: 'employee',
+    emplyee: 'employee',
+    salry: 'salary',
+    payrol: 'payroll',
+    custmer: 'customer',
+    propery: 'property',
+    propety: 'property',
+    leed: 'lead',
+    intkal: 'inteqal',
+    intiqal: 'inteqal',
+    khwat: 'khewat',
+    jamabndi: 'jamabandi'
+  };
+  
+  const correctedWords = words.map(w => spellingCorrections[w] || w);
+  
+  const synonyms = {
+    salary: 'payroll',
+    payroll: 'salary',
+    employee: 'staff',
+    staff: 'employee',
+    attendance: 'punch',
+    punch: 'attendance',
+    customer: 'client',
+    client: 'customer',
+    lead: 'inquiry',
+    inquiry: 'lead',
+    prospect: 'lead',
+    property: 'plot',
+    plot: 'property',
+    land: 'property',
+    meeting: 'appointment',
+    appointment: 'meeting',
+    task: 'assignment',
+    assignment: 'task',
+    payment: 'collection',
+    collection: 'payment',
+    leave: 'holiday',
+    holiday: 'leave'
+  };
+
   const moduleKeywords = {
-    Employees: ['employee', 'employees', 'staff', 'staffs', 'worker', 'workers', 'agent', 'agents', 'profile', 'profiles', 'details'],
-    Attendance: ['attendance', 'present', 'absent', 'checkin', 'checkout', 'punch', 'working hours', 'working hour', 'today', 'yesterday', 'monthly attendance', 'check-in', 'check-out'],
-    Payroll: ['salary', 'salaries', 'payroll', 'payrolls', 'deduction', 'deductions', 'bonus', 'bonuses', 'allowance', 'allowances', 'settlement', 'gross', 'net salary', 'payslip', 'payslips'],
-    Leaves: ['leave', 'leaves', 'holiday', 'holidays', 'vacation', 'vacations', 'half day', 'full day', 'leave application', 'leave request', 'leave applications', 'leave requests'],
-    Leads: ['lead', 'leads', 'inquiry', 'inquiries', 'enquiry', 'enquiries', 'prospect', 'prospects'],
-    Customers: ['customer', 'customers', 'client', 'clients', 'buyer', 'buyers', 'seller', 'sellers', 'investor', 'investors'],
-    Properties: ['property', 'properties', 'plot', 'plots', 'house', 'houses', 'villa', 'villas', 'flat', 'flats', 'shop', 'shops', 'office', 'offices', 'commercial', 'residential'],
-    Projects: ['project', 'projects', 'site', 'sites', 'scheme', 'schemes', 'development', 'developments'],
-    Inventory: ['inventory', 'inventories', 'stock', 'stocks', 'availability', 'unit', 'units'],
-    Payments: ['payment', 'payments', 'receipt', 'receipts', 'invoice', 'invoices', 'due', 'received']
+    Employees: ['employee', 'employees', 'staff', 'worker', 'workers', 'team', 'agent', 'agents', 'sales executive', 'telecaller', 'manager', 'admin', 'hr', 'accountant', 'director', 'owner', 'executive', 'marketing executive', 'profile', 'details', 'information', 'record', 'list'],
+    Attendance: ['attendance', 'present', 'absent', 'late', 'half day', 'full day', 'check in', 'check out', 'checkin', 'checkout', 'punch', 'punch in', 'punch out', 'office time', 'working hours', 'login time', 'logout time', 'today attendance', 'monthly attendance', 'weekly attendance', 'attendance report'],
+    Payroll: ['salary', 'salaries', 'payroll', 'payrolls', 'deduction', 'deductions', 'bonus', 'bonuses', 'allowance', 'allowances', 'settlement', 'gross', 'net salary', 'payslip', 'payslips', 'salary slip', 'monthly salary', 'salary report'],
+    Leaves: ['leave', 'leaves', 'holiday', 'holidays', 'vacation', 'vacations', 'half day', 'full day', 'leave request', 'leave application', 'leave approval', 'leave balance', 'leave status', 'medical leave', 'casual leave', 'earned leave', 'paid leave', 'unpaid leave', 'half leave', 'full leave'],
+    Leads: ['lead', 'leads', 'inquiry', 'enquiry', 'prospect', 'new lead', 'hot lead', 'warm lead', 'cold lead', 'pending lead', 'converted lead', 'lost lead', 'lead source', 'lead status', 'lead followup', 'lead history'],
+    Followup: ['followup', 'follow up', 'reminder', 'call back', 'callback', 'meeting', 'appointment', 'site visit', 'next call', 'next meeting', 'schedule followup', 'pending followup', 'completed followup'],
+    Customers: ['customer', 'customers', 'client', 'clients', 'buyer', 'buyers', 'seller', 'sellers', 'owner', 'tenant', 'investor', 'landlord', 'vendor', 'dealer', 'builder', 'customer history', 'customer profile', 'customer payment'],
+    Properties: ['property', 'properties', 'plot', 'land', 'house', 'villa', 'flat', 'apartment', 'office', 'shop', 'showroom', 'warehouse', 'factory', 'farm house', 'commercial', 'residential', 'property details', 'available property', 'sold property', 'property status'],
+    Projects: ['project', 'projects', 'township', 'scheme', 'site', 'society', 'development', 'building', 'tower', 'phase', 'block', 'project details'],
+    Inventory: ['inventory', 'stock', 'availability', 'available', 'booked', 'reserved', 'sold', 'unsold', 'unit', 'units', 'inventory status'],
+    Payments: ['payment', 'payments', 'receipt', 'invoice', 'bill', 'due', 'outstanding', 'received', 'collection', 'refund', 'advance payment', 'emi', 'transaction'],
+    Expenses: ['expense', 'expenses', 'office expense', 'travel expense', 'salary expense', 'fuel expense', 'maintenance', 'electricity', 'rent', 'miscellaneous'],
+    Tasks: ['task', 'tasks', 'assignment', 'work', 'pending task', 'completed task', 'today task', 'employee task'],
+    Reports: ['report', 'reports', 'analytics', 'dashboard', 'summary', 'statistics', 'performance', 'graph', 'chart', 'analysis', 'growth', 'trend', 'comparison'],
+    Documents: ['document', 'documents', 'registry', 'sale deed', 'agreement', 'mutation', 'inteqal', 'jamabandi', 'khewat', 'khatauni', 'khasra', 'fard', 'nakal', 'noc', 'clu', 'loi', 'gmada', 'puda', 'rera', 'registry status']
   };
 
-  const scores = {
-    Employees: 0,
-    Attendance: 0,
-    Payroll: 0,
-    Leaves: 0,
-    Leads: 0,
-    Customers: 0,
-    Properties: 0,
-    Projects: 0,
-    Inventory: 0,
-    Payments: 0
-  };
-
-  for (const word of words) {
-    for (const mKey in moduleKeywords) {
-      const kList = moduleKeywords[mKey];
-      const matches = kList.some(k => {
-        if (k === word) return true;
-        if (word + 's' === k || k + 's' === word) return true;
-        if (word + 'es' === k || k + 'es' === word) return true;
-        if (word.length >= 4 && k.length >= 4) {
-          if (k.includes(word) || word.includes(k)) return true;
+  const finalScores = {};
+  
+  for (const mKey in moduleKeywords) {
+    const keywords = moduleKeywords[mKey];
+    let matchTypeScore = 0;
+    let matchCount = 0;
+    
+    const cleanSentence = sentence.toLowerCase().replace(/[?,.!]/g, ' ');
+    const exactPhrase = keywords.some(k => cleanSentence.includes(k));
+    if (exactPhrase) {
+      matchTypeScore = Math.max(matchTypeScore, 97);
+    }
+    
+    const matchedWords = new Set();
+    for (const w of correctedWords) {
+      if (keywords.includes(w)) {
+        matchedWords.add(w);
+      } else {
+        const syn = synonyms[w];
+        if (syn && keywords.includes(syn)) {
+          matchedWords.add(syn);
+          matchTypeScore = Math.max(matchTypeScore, 90);
         }
-        return false;
-      });
-      if (matches) {
-        scores[mKey]++;
+        const partial = keywords.some(k => k.includes(w) || w.includes(k));
+        if (partial && w.length >= 4) {
+          matchedWords.add(w);
+          matchTypeScore = Math.max(matchTypeScore, 85);
+        }
       }
+    }
+    
+    matchCount = matchedWords.size;
+    if (matchCount === 1) {
+      matchTypeScore = Math.max(matchTypeScore, 100);
+    } else if (matchCount >= 2) {
+      matchTypeScore = Math.max(matchTypeScore, 98);
+    }
+    
+    let countBonus = 0;
+    if (matchCount === 1) countBonus = 10;
+    else if (matchCount === 2) countBonus = 20;
+    else if (matchCount === 3) countBonus = 35;
+    else if (matchCount === 4) countBonus = 50;
+    else if (matchCount === 5) countBonus = 70;
+    else if (matchCount >= 6) countBonus = 100;
+    
+    let entityBonus = 0;
+    
+    const hasEmployeeName = (db?.employees || []).some(e => {
+      const nameLower = String(e.name || '').toLowerCase();
+      return nameLower && cleanSentence.includes(nameLower);
+    });
+    if (hasEmployeeName) entityBonus += 20;
+    
+    const hasEmployeeId = /\b(emp-\d+|emp\d+)\b/i.test(sentence) || (db?.employees || []).some(e => cleanSentence.includes(String(e.id).toLowerCase()));
+    if (hasEmployeeId) entityBonus += 25;
+
+    const hasCustomerName = (db?.customers || []).some(c => {
+      const nameLower = String(c.name || c.person_name || '').toLowerCase();
+      return nameLower && cleanSentence.includes(nameLower);
+    });
+    if (hasCustomerName) entityBonus += 20;
+
+    const hasCustomerId = /\b(cust-\d+|c\d+)\b/i.test(sentence) || (db?.customers || []).some(c => cleanSentence.includes(String(c.id).toLowerCase()));
+    if (hasCustomerId) entityBonus += 25;
+
+    const hasPropertyName = (db?.properties || []).some(p => {
+      const nameLower = String(p.propertyName || p.name || '').toLowerCase();
+      return nameLower && cleanSentence.includes(nameLower);
+    });
+    if (hasPropertyName) entityBonus += 20;
+
+    const hasPropertyId = /\b(prop-\d+|p-\d+|p\d+)\b/i.test(sentence) || (db?.properties || []).some(p => cleanSentence.includes(String(p.id).toLowerCase()));
+    if (hasPropertyId) entityBonus += 25;
+
+    const hasProjectName = (db?.projects || []).some(p => {
+      const nameLower = String(p.name || '').toLowerCase();
+      return nameLower && cleanSentence.includes(nameLower);
+    });
+    if (hasProjectName) entityBonus += 20;
+
+    const hasDate = /\b(today|yesterday|tomorrow|\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|may|june|july|august|september|october|november|december))\b/i.test(sentence);
+    if (hasDate) entityBonus += 15;
+
+    const hasMonth = /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b/i.test(sentence);
+    if (hasMonth) entityBonus += 10;
+
+    const hasYear = /\b(202\d{1})\b/.test(sentence);
+    if (hasYear) entityBonus += 10;
+
+    const hasLocation = /\b(mohali|chandigarh|panchkula|sector|phase|block)\b/i.test(sentence);
+    if (hasLocation) entityBonus += 15;
+
+    const hasStatus = /\b(active|inactive|pending|approved|rejected|completed|cancelled|booked|available|sold|vacant|occupied|closed|open)\b/i.test(sentence);
+    if (hasStatus) entityBonus += 10;
+
+    const hasMutation = /\b(mutation|inteqal|intkal)\b/i.test(sentence);
+    if (hasMutation) entityBonus += 25;
+
+    const hasKhewat = /\b(khewat|khwat)\b/i.test(sentence);
+    if (hasKhewat) entityBonus += 25;
+
+    const hasRegistry = /\b(registry|sale deed)\b/i.test(sentence);
+    if (hasRegistry) entityBonus += 25;
+
+    if (matchCount > 0) {
+      finalScores[mKey] = matchTypeScore + countBonus + entityBonus;
+    } else {
+      finalScores[mKey] = 0;
     }
   }
 
-  // Create ranking array
-  const ranking = Object.keys(scores)
-    .map(key => ({ module: key, score: scores[key] }))
+  const ranking = Object.keys(moduleKeywords)
+    .map(key => ({ module: key, score: finalScores[key] || 0 }))
     .sort((a, b) => b.score - a.score || b.module.localeCompare(a.module));
 
-  let winner = ranking[0].score > 0 ? ranking[0].module : null;
+  let winner = ranking[0].score >= 70 ? ranking[0].module : null;
 
   const topScore = ranking[0].score;
   const topModules = ranking.filter(r => r.score === topScore).map(r => r.module);
@@ -127,7 +272,6 @@ function getRelatedRecords(moduleKey, entityId, db, metadata) {
     const mConfig = modules[mKey];
     const fields = mConfig.fields || [];
     
-    // Check metadata ref module types
     const refFields = fields.filter(f => f.type === 'ref' && f.refModule === moduleKey);
     if (refFields.length > 0) {
       const records = getActiveList(db[mKey]);
@@ -139,7 +283,6 @@ function getRelatedRecords(moduleKey, entityId, db, metadata) {
       }
     }
     
-    // Fallback matching fields dynamically using common naming patterns
     const singularIdKey = moduleKey.endsWith('s') ? `${moduleKey.slice(0, -1)}Id` : `${moduleKey}Id`;
     const camelIdKey = moduleKey.endsWith('s') ? `${moduleKey.slice(0, -1)}ID` : `${moduleKey}ID`;
     
@@ -191,7 +334,6 @@ class CRMSearchService {
     const db = filterDb(rawDb);
     const qLower = query.toLowerCase().trim();
     
-    // Read metadata dynamically
     const metadataPath = path.join(__dirname, '..', 'config', 'metadata.json');
     let metadata = {};
     try {
@@ -204,8 +346,8 @@ class CRMSearchService {
     
     const modules = metadata.modules || {};
     
-    // Intent classification
-    const { winner, ranking } = classifyIntent(query);
+    // Step 1 & 2 & 3 & 4: Intent detection & ranking
+    const { winner, ranking } = classifyIntent(query, db);
     
     const mapping = {
       Employees: 'employees',
@@ -224,7 +366,6 @@ class CRMSearchService {
     const matchedResults = [];
     
     if (targetModuleKey && db[targetModuleKey]) {
-      const mConfig = modules[targetModuleKey];
       const records = getActiveList(db[targetModuleKey]);
       
       const intentKeywords = new Set([
@@ -288,7 +429,21 @@ class CRMSearchService {
       }
     }
     
-    const rankingSummary = ranking.map(r => `${r.module} (${r.score})`).join(', ');
+    // Sort ranking to show non-zero scores first
+    const nonZeroRankings = ranking.filter(r => r.score > 0);
+    const rankingSummary = nonZeroRankings.length > 0 
+      ? nonZeroRankings.map(r => `${r.module} (${r.score}%)`).join(', ')
+      : 'General AI (70%)';
+
+    // If highest confidence is low, return clarification request in rankingSummary
+    const topScore = ranking[0].score;
+    if (topScore > 0 && topScore < 70) {
+      return {
+        type: 'clarification',
+        rankingSummary,
+        data: ranking.slice(0, 3).map(r => r.module)
+      };
+    }
 
     if (matchedResults.length === 1) {
       const match = matchedResults[0];

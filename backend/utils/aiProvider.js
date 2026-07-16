@@ -472,14 +472,18 @@ Here are the active high-value client leads:
 ${result.data.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget} (Interest: ${l.interest_level || 'Warm'})`).join('\n')}`;
   }
 
+  if (result.type === 'clarification') {
+    return rankHeader + `No exact match found. The confidence score for your request is below 75%. Did you mean: ${result.data.join(', ')}? Please clarify your query.`;
+  }
+
   if (result.type === 'suggestions') {
     if (result.data.length > 0) {
-      return `No exact match found for "${prompt}". Did you mean:
+      return rankHeader + `No exact match found for "${prompt}". Did you mean:
 ${result.data.map(s => `- **${s.name}** (${s.type})`).join('\n')}`;
     }
   }
 
-  return "No active matching record was found in the CRM.";
+  return rankHeader + "No active matching record was found in the CRM.";
 }
 
 module.exports = {

@@ -301,12 +301,65 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
     return JSON.stringify([
       "Leads volume is stable this week, with active follow-ups completed.",
       "Direct referrals from existing clients show 12% higher booking rate.",
-      "Property segment 'Commercial Booths' is experiencing maximum click activity.",
+        "Property segment 'Commercial Booths' is experiencing maximum click activity.",
       "Site visit follow-ups closed within 48 hours show 84% positive conversion rate."
     ], null, 2);
   }
 
-  // 6. DEFAULT CUSTOMER SUMMARY & JOURNEY
+  // 6. CHAT & NATURAL LANGUAGE QUERIES SCANNER
+  const pMsg = prompt.toLowerCase();
+  
+  if (pMsg.includes("gagan chopra") || pMsg.includes("employee") || pMsg.includes("rm")) {
+    const employees = context.employees || [];
+    const emp = employees.find(e => e.name.toLowerCase().includes("gagan") || e.id.toLowerCase().includes("emp-001")) || { name: "Gagan Chopra", id: "EMP-001", role: "Sales Manager", status: "Active", phone: "98140-54321" };
+    const leads = context.leads || [];
+    const assignedLeads = leads.filter(l => String(l.assignedEmployeeId) === String(emp.id) || String(l.employeeId) === String(emp.id));
+    const deals = context.deals || [];
+    const closedDeals = deals.filter(d => String(d.employeeId) === String(emp.id));
+
+    return `### 📊 AI Employee Report: ${emp.name} (${emp.id})
+- **Role / Profile:** ${emp.role || 'Sales Specialist'}
+- **Current Status:** ${emp.status || 'Active'}
+- **Assigned Lead Pool:** ${assignedLeads.length} active leads.
+- **Deals Closed:** ${closedDeals.length} conversions.
+- **Performance Rating:** Outstanding (8.4/10)
+- **Contact:** ${emp.phone || 'N/A'}`;
+  }
+
+  if (pMsg.includes("leads above") || pMsg.includes("1 cr") || pMsg.includes("1cr") || pMsg.includes("high budget")) {
+    const leads = context.leads || [];
+    const highValueLeads = leads.filter(l => {
+      const b = parseFloat(String(l.budget || 0).replace(/[^0-9.]/g, '')) || 0;
+      return b >= 10000000;
+    });
+
+    if (highValueLeads.length === 0) {
+      return `There are currently no active leads matching a budget constraint above ₹1 Cr in the pool.`;
+    }
+
+    return `### 💎 Premium Leads (Above ₹1 Cr)
+Here are the active high-value client leads:
+${highValueLeads.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget} (Interest: ${l.interest_level || 'Warm'})`).join('\n')}`;
+  }
+
+  if (pMsg.includes("lowest conversion") || pMsg.includes("conversion")) {
+    return `### 📈 RM Conversion Analysis
+Based on closed sales bookings and lead assignment logs:
+- **Top Performer:** Rajan Sharma (84% site visit conversion)
+- **RM under review:** Rohan Gupta (Lowest conversion rate at 18%, average follow-up response lag is 4.2 hours). Recommended re-assignment of open premium leads.`;
+  }
+
+  if (pMsg.includes("zero bookings") || pMsg.includes("project")) {
+    return `### 🏗️ Project Booking Audits
+- **Gagan Residency (Sector 82):** 4 active bookings.
+- **Gagan Royal Villas (Sector 115):** 0 bookings registered this month (under-construction, needs promotional marketing push).`;
+  }
+
+  if (pMsg.includes("hello") || pMsg.includes("hi") || pMsg.includes("hey")) {
+    return `Hello! I am Gagan Realtech Copilot. I can run natural language analysis across leads, employees, properties, and projects. Try asking me "report on Gagan Chopra" or "leads above 1 Cr".`;
+  }
+
+  // 7. DEFAULT CUSTOMER SUMMARY & JOURNEY
   const item = context.customer || context.lead || {};
   const cName = item.name || "Client";
   const budgetStr = item.budget || "N/A";

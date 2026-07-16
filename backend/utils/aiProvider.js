@@ -369,10 +369,40 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
     const btnLabel = moduleButtonLabels[mKey] || 'View Details';
     const linkPath = getModulePath(mKey, rec.id);
     
-    // Build field summary list
+    // Resolve clean display name for header
+    let displayName = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id;
+    if (mKey === 'property_pitch_history') {
+      const parentCust = context.customers?.find(c => String(c.id) === String(rec.customerId)) || context.leads?.find(l => String(l.id) === String(rec.customerId));
+      const custName = parentCust ? (parentCust.name || parentCust.person_name) : (rec.customerName || 'Customer');
+      const parentProp = context.properties?.find(p => String(p.id) === String(rec.propertyId));
+      const propName = parentProp ? (parentProp.propertyName || parentProp.name) : (rec.propertyName || 'Property');
+      displayName = `Pitch: ${propName} to ${custName}`;
+    }
+
+    // Build field summary list with referenced name lookups to override stale text values
     const fieldDetails = info.fields
-      .filter(f => f.name !== 'id' && rec[f.name])
-      .map(f => `- **${f.label}:** ${rec[f.name]}`)
+      .filter(f => f.name !== 'id' && rec[f.name] !== undefined && rec[f.name] !== null && rec[f.name] !== '')
+      .map(f => {
+        if (f.name === 'customerName' && rec.customerId) {
+          const parent = context.customers?.find(c => String(c.id) === String(rec.customerId)) || context.leads?.find(l => String(l.id) === String(rec.customerId));
+          if (parent) {
+            return `- **${f.label}:** ${parent.name || parent.person_name || parent.firm_name}`;
+          }
+        }
+        if (f.name === 'employeeName' && rec.employeeId) {
+          const parent = context.employees?.find(e => String(e.id) === String(rec.employeeId));
+          if (parent) {
+            return `- **${f.label}:** ${parent.name}`;
+          }
+        }
+        if (f.name === 'propertyName' && rec.propertyId) {
+          const parent = context.properties?.find(p => String(p.id) === String(rec.propertyId));
+          if (parent) {
+            return `- **${f.label}:** ${parent.propertyName || parent.name}`;
+          }
+        }
+        return `- **${f.label}:** ${rec[f.name]}`;
+      })
       .join('\n');
       
     // Build parent connections
@@ -407,7 +437,7 @@ ${list.slice(0, 5).map(item => {
       quickActionsBlock = `\n\n#### ⚡ Quick Actions\n[Open Property](file:///module/properties/${rec.id}) [Project](file:///module/projects/${rec.projectId || 'PROJ-001'}) [Builder](file:///module/properties/${rec.id}) [Property Pitch History](file:///module/property_pitch_history?propertyId=${rec.id}) [Interested Customers](file:///module/customers?propertyId=${rec.id}) [Assigned Employees](file:///module/employees?propertyId=${rec.id}) [Follow-ups](file:///module/follow_ups?propertyId=${rec.id}) [Site Visits](file:///module/site_visits?propertyId=${rec.id}) [Documents](file:///module/documents?propertyId=${rec.id}) [Booking](file:///module/sales_bookings?propertyId=${rec.id})`;
     }
 
-    return rankHeader + `${icon} **${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n\n- **Module:** **${info.moduleLabel}**\n${fieldDetails}\n\n${parentList ? `#### 📌 Associations\n${parentList}\n` : ''}${relatedList || ''}${quickActionsBlock}\n\n#### 🧠 CRM Manager Insights & Recommendations\nThis record is connected across your database. RM should follow up within 24 hours to ensure high operational success.`;
+    return rankHeader + `${icon} **${displayName}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n\n- **Module:** **${info.moduleLabel}**\n${fieldDetails}\n\n${parentList ? `#### 📌 Associations\n${parentList}\n` : ''}${relatedList || ''}${quickActionsBlock}\n\n#### 🧠 CRM Manager Insights & Recommendations\nThis record is connected across your database. RM should follow up within 24 hours to ensure high operational success.`;
   }
 
   if (result.type === 'multipleMatches') {
@@ -415,7 +445,20 @@ ${list.slice(0, 5).map(item => {
       const icon = moduleIcons[m.moduleKey] || '📄';
       const btnLabel = moduleButtonLabels[m.moduleKey] || 'Open';
       const linkPath = getModulePath(m.moduleKey, m.id);
-      return `${icon} **${m.name}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n*Module:* **${m.moduleLabel}** ${m.details ? `\n*Status:* **${m.details}**` : ''}`;
+      
+      let displayName = m.name;
+      if (m.moduleKey === 'property_pitch_history') {
+        const rec = context.property_pitch_history?.find(p => String(p.id) === String(m.id));
+        if (rec) {
+          const parentCust = context.customers?.find(c => String(c.id) === String(rec.customerId)) || context.leads?.find(l => String(l.id) === String(rec.customerId));
+          const custName = parentCust ? (parentCust.name || parentCust.person_name) : (rec.customerName || 'Customer');
+          const parentProp = context.properties?.find(p => String(p.id) === String(rec.propertyId));
+          const propName = parentProp ? (parentProp.propertyName || parentProp.name) : (rec.propertyName || 'Property');
+          displayName = `Pitch: ${propName} to ${custName}`;
+        }
+      }
+      
+      return `${icon} **${displayName}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n*Module:* **${m.moduleLabel}** ${m.details ? `\n*Status:* **${m.details}**` : ''}`;
     }).join('\n\n');
 
     return rankHeader + `### 🔍 Multiple Matches Found\n\nWe found multiple records matching your query in the CRM:\n\n${matchesText}\n\nPlease search using a specific ID or Full Name to view their 360° profile.`;
@@ -428,10 +471,18 @@ ${list.slice(0, 5).map(item => {
     const btnLabel = moduleButtonLabels[mKey] || 'Open';
     
     const recordsText = info.records.map(rec => {
-      const name = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id;
+      let displayName = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id;
+      if (mKey === 'property_pitch_history') {
+        const parentCust = context.customers?.find(c => String(c.id) === String(rec.customerId)) || context.leads?.find(l => String(l.id) === String(rec.customerId));
+        const custName = parentCust ? (parentCust.name || parentCust.person_name) : (rec.customerName || 'Customer');
+        const parentProp = context.properties?.find(p => String(p.id) === String(rec.propertyId));
+        const propName = parentProp ? (parentProp.propertyName || parentProp.name) : (rec.propertyName || 'Property');
+        displayName = `Pitch: ${propName} to ${custName}`;
+      }
+      
       const status = rec.status || rec.stage || rec.role || '';
       const linkPath = getModulePath(mKey, rec.id);
-      return `${icon} **${name}**\n🔗 [${btnLabel}](file:///module/${linkPath})${status ? `\n*Status:* **${status}**` : ''}`;
+      return `${icon} **${displayName}**\n🔗 [${btnLabel}](file:///module/${linkPath})${status ? `\n*Status:* **${status}**` : ''}`;
     }).join('\n\n');
 
     return rankHeader + `### 📁 ${info.moduleLabel} Module Overview\n\nHere are the active records in this module:\n\n${recordsText}\n\nClick the links above to inspect any record in detail.`;

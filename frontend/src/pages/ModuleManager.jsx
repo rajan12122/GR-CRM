@@ -824,6 +824,7 @@ const ModuleManager = () => {
 
       // Stacked Filters
       const matchesFilters = Object.keys(stackedFilters).every(key => {
+        if (key === '_special') return true;
         const filterVal = stackedFilters[key];
         if (!filterVal || filterVal === 'ALL') return true;
         

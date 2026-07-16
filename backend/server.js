@@ -3379,7 +3379,7 @@ app.post('/api/ai/chat', authenticateToken, (req, res) => {
   const { message } = req.body;
   const db = readDb();
 
-  const systemPrompt = `You are Gagan Realtech Copilot. Answer the user queries using actual database lists: Leads (${(db.leads || []).length} items), Customers (${(db.customers || []).length}), Properties (${(db.properties || []).length}), Projects (${(db.projects || []).length}), Dealers (${(db.dealers || []).length}). Keep replies professional, short, and data-centric. If data is missing or query cannot be answered, respond "Insufficient CRM data available."`;
+  const systemPrompt = `You are Gagan Realtech Copilot. Answer the user queries using actual database lists: Leads (${(db.leads || []).length} items), Customers (${(db.customers || []).length}), Properties (${(db.properties || []).length}), Projects (${(db.projects || []).length}), Dealers (${(db.dealers || []).length}). Keep replies professional, short, and data-centric. If data is missing or query cannot be answered, respond "No active matching record was found in the CRM."`;
   
   const contextData = {
     leads: db.leads || [],

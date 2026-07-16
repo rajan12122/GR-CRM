@@ -285,6 +285,7 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
 
   // 6. CRM SEARCH SERVICE ROUTER
   const result = CRMSearchService.search(prompt, context);
+  const rankHeader = result.rankingSummary ? `*Ranked Modules by Score: ${result.rankingSummary}*\n\n` : '';
 
   if (result.type === 'entity360') {
     const info = result.data;
@@ -314,7 +315,7 @@ ${list.slice(0, 5).map(item => {
 }).join('\n')}`;
     }).join('\n');
 
-    return `### 🗂️ CRM 360° Profile: ${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id} (${rec.id})
+    return rankHeader + `### 🗂️ CRM 360° Profile: ${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id} (${rec.id})
 - **Module:** **${info.moduleLabel}**
 ${fieldDetails}
 
@@ -326,7 +327,7 @@ This record is connected across your database. RM should follow up within 24 hou
   }
 
   if (result.type === 'multipleMatches') {
-    return `### 🔍 Multiple Matches Found
+    return rankHeader + `### 🔍 Multiple Matches Found
 We found multiple records matching your query in the CRM:
 ${result.data.map(m => `- **[${m.name} (${m.id})](file:///module/${m.moduleKey})** [${m.moduleLabel}] ${m.details ? `• Status: ${m.details}` : ''}`).join('\n')}
 Please search using a specific ID or Full Name to view their 360° profile.`;
@@ -334,7 +335,7 @@ Please search using a specific ID or Full Name to view their 360° profile.`;
 
   if (result.type === 'moduleList') {
     const info = result.data;
-    return `### 📁 ${info.moduleLabel} Module Overview
+    return rankHeader + `### 📁 ${info.moduleLabel} Module Overview
 Here are the active records in this module:
 ${info.records.map(rec => {
   const name = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id;

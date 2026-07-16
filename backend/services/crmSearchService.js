@@ -51,6 +51,73 @@ function filterDb(rawDb) {
   return db;
 }
 
+function classifyIntent(sentence) {
+  const words = sentence.toLowerCase().replace(/[?,.!]/g, ' ').split(/\s+/).filter(w => w.length > 0);
+  
+  const moduleKeywords = {
+    Employees: ['employee', 'employees', 'staff', 'staffs', 'worker', 'workers', 'agent', 'agents', 'profile', 'profiles', 'details'],
+    Attendance: ['attendance', 'present', 'absent', 'checkin', 'checkout', 'punch', 'working hours', 'working hour', 'today', 'yesterday', 'monthly attendance', 'check-in', 'check-out'],
+    Payroll: ['salary', 'salaries', 'payroll', 'payrolls', 'deduction', 'deductions', 'bonus', 'bonuses', 'allowance', 'allowances', 'settlement', 'gross', 'net salary', 'payslip', 'payslips'],
+    Leaves: ['leave', 'leaves', 'holiday', 'holidays', 'vacation', 'vacations', 'half day', 'full day', 'leave application', 'leave request', 'leave applications', 'leave requests'],
+    Leads: ['lead', 'leads', 'inquiry', 'inquiries', 'enquiry', 'enquiries', 'prospect', 'prospects'],
+    Customers: ['customer', 'customers', 'client', 'clients', 'buyer', 'buyers', 'seller', 'sellers', 'investor', 'investors'],
+    Properties: ['property', 'properties', 'plot', 'plots', 'house', 'houses', 'villa', 'villas', 'flat', 'flats', 'shop', 'shops', 'office', 'offices', 'commercial', 'residential'],
+    Projects: ['project', 'projects', 'site', 'sites', 'scheme', 'schemes', 'development', 'developments'],
+    Inventory: ['inventory', 'inventories', 'stock', 'stocks', 'availability', 'unit', 'units'],
+    Payments: ['payment', 'payments', 'receipt', 'receipts', 'invoice', 'invoices', 'due', 'received']
+  };
+
+  const scores = {
+    Employees: 0,
+    Attendance: 0,
+    Payroll: 0,
+    Leaves: 0,
+    Leads: 0,
+    Customers: 0,
+    Properties: 0,
+    Projects: 0,
+    Inventory: 0,
+    Payments: 0
+  };
+
+  for (const word of words) {
+    for (const mKey in moduleKeywords) {
+      const kList = moduleKeywords[mKey];
+      const matches = kList.some(k => {
+        if (k === word) return true;
+        if (word + 's' === k || k + 's' === word) return true;
+        if (word + 'es' === k || k + 'es' === word) return true;
+        if (word.length >= 4 && k.length >= 4) {
+          if (k.includes(word) || word.includes(k)) return true;
+        }
+        return false;
+      });
+      if (matches) {
+        scores[mKey]++;
+      }
+    }
+  }
+
+  // Create ranking array
+  const ranking = Object.keys(scores)
+    .map(key => ({ module: key, score: scores[key] }))
+    .sort((a, b) => b.score - a.score || b.module.localeCompare(a.module));
+
+  let winner = ranking[0].score > 0 ? ranking[0].module : null;
+
+  const topScore = ranking[0].score;
+  const topModules = ranking.filter(r => r.score === topScore).map(r => r.module);
+
+  if (topScore > 0 && topModules.length > 1) {
+    if (topModules.includes('Employees') && topModules.includes('Payroll')) winner = 'Payroll';
+    else if (topModules.includes('Employees') && topModules.includes('Attendance')) winner = 'Attendance';
+    else if (topModules.includes('Properties') && topModules.includes('Inventory')) winner = 'Inventory';
+    else if (topModules.includes('Customers') && topModules.includes('Payments')) winner = 'Payments';
+  }
+
+  return { winner, ranking };
+}
+
 function getRelatedRecords(moduleKey, entityId, db, metadata) {
   const related = {};
   const modules = metadata.modules || {};
@@ -60,7 +127,7 @@ function getRelatedRecords(moduleKey, entityId, db, metadata) {
     const mConfig = modules[mKey];
     const fields = mConfig.fields || [];
     
-    // 1. Check metadata ref module types
+    // Check metadata ref module types
     const refFields = fields.filter(f => f.type === 'ref' && f.refModule === moduleKey);
     if (refFields.length > 0) {
       const records = getActiveList(db[mKey]);
@@ -72,7 +139,7 @@ function getRelatedRecords(moduleKey, entityId, db, metadata) {
       }
     }
     
-    // 2. Fallback matching fields dynamically using common naming patterns
+    // Fallback matching fields dynamically using common naming patterns
     const singularIdKey = moduleKey.endsWith('s') ? `${moduleKey.slice(0, -1)}Id` : `${moduleKey}Id`;
     const camelIdKey = moduleKey.endsWith('s') ? `${moduleKey.slice(0, -1)}ID` : `${moduleKey}ID`;
     
@@ -119,178 +186,6 @@ function getParentEntities(moduleKey, rec, db, metadata) {
   return parents;
 }
 
-class Customer360Service {
-  static getProfile(customerId, rawDb) {
-    const db = filterDb(rawDb);
-    const c = (db.customers || []).find(cust => String(cust.id) === String(customerId)) ||
-              (db.leads || []).find(ld => String(ld.id) === String(customerId));
-    if (!c) return null;
-
-    const followups = (db.followups || db.follow_ups || []).filter(f => String(f.customerId) === String(customerId));
-    const siteVisits = (db.siteVisits || db.site_visits || []).filter(v => String(v.customerId) === String(customerId));
-    const pitches = (db.pitches || db.property_pitch_history || []).filter(p => String(p.customerId) === String(customerId));
-    const deals = (db.deals || []).filter(d => String(d.customerId) === String(customerId));
-    const tasks = (db.tasks || []).filter(t => String(t.customerId) === String(customerId));
-
-    return {
-      basicDetails: {
-        id: c.id,
-        name: c.name || c.person_name || 'Client',
-        phone: c.phone || 'N/A',
-        email: c.email || 'N/A',
-        source: c.source || 'N/A',
-        status: c.status || c.stage || 'Fresh Lead'
-      },
-      stage: c.status || c.stage || 'Negotiation',
-      budget: c.budget || 'N/A',
-      preferredLocations: c.locality || c.preferredLocation || 'Any',
-      propertyType: c.propertyType || c.preferredType || 'Any',
-      assignedEmployee: c.assignedEmployeeId || c.employeeId || 'EMP-001',
-      lastContact: followups.length > 0 ? followups[followups.length - 1].date : 'N/A',
-      totalCalls: followups.length,
-      totalFollowUps: followups.filter(f => f.status === 'Pending').length,
-      siteVisits: siteVisits.map(v => ({ date: v.date, propertyId: v.propertyId, status: v.status })),
-      negotiations: pitches.map(p => ({ date: p.date, propertyId: p.propertyId, price: p.quotedPrice })),
-      bookings: deals.map(d => ({ date: d.date || d.registrationDate, project: d.projectName || d.projectId, price: d.salePrice || d.price })),
-      pendingTasks: tasks.filter(t => t.status !== 'Completed').map(t => ({ title: t.title, dueDate: t.dueDate })),
-      documents: c.documents || 0
-    };
-  }
-}
-
-class Employee360Service {
-  static getProfile(employeeId, rawDb) {
-    const db = filterDb(rawDb);
-    const emp = (db.employees || []).find(e => String(e.id) === String(employeeId));
-    if (!emp) return null;
-
-    const leads = db.leads || [];
-    const customers = db.customers || [];
-    const followups = db.followups || db.follow_ups || [];
-    const siteVisits = db.siteVisits || db.site_visits || [];
-    const deals = db.deals || [];
-    const tasks = db.tasks || [];
-    const leaves = db.leaves || [];
-
-    const assignedLeads = leads.filter(l => String(l.assignedEmployeeId) === String(employeeId) || String(l.employeeId) === String(employeeId));
-    const assignedCustomers = customers.filter(c => String(c.assignedEmployeeId) === String(employeeId) || String(c.employeeId) === String(employeeId));
-    const pendingFollowups = followups.filter(f => (String(f.employeeId) === String(employeeId) || String(f.assignedEmployeeId) === String(employeeId)) && f.status !== 'Completed');
-    const handledVisits = siteVisits.filter(v => String(v.employeeId) === String(employeeId));
-    const handledDeals = deals.filter(d => String(d.employeeId) === String(employeeId));
-    const totalRevenue = handledDeals.reduce((sum, d) => sum + (parseFloat(String(d.salePrice || 0).replace(/[^0-9.]/g, '')) || 0), 0);
-    const employeeTasks = tasks.filter(t => String(t.assignedEmployeeId) === String(employeeId));
-    const leavesTaken = leaves.filter(l => String(l.employeeId) === String(employeeId));
-
-    return {
-      details: {
-        id: emp.id,
-        name: emp.name,
-        role: emp.role || 'Sales Specialist',
-        status: emp.status || 'Active',
-        contact: { phone: emp.phone || 'N/A', email: emp.email || 'N/A' }
-      },
-      leaves: leavesTaken.map(l => ({ date: l.date, reason: l.reason, status: l.status })),
-      assignedLeadsCount: assignedLeads.length,
-      assignedCustomersCount: assignedCustomers.length,
-      pendingFollowUpsCount: pendingFollowups.length,
-      siteVisitsCount: handledVisits.length,
-      bookingsCount: handledDeals.length,
-      revenueGenerated: totalRevenue,
-      conversionRate: assignedLeads.length > 0 ? ((handledDeals.length / assignedLeads.length) * 100).toFixed(1) + '%' : '0%',
-      currentTasks: employeeTasks.map(t => ({ title: t.title, dueDate: t.dueDate, priority: t.priority, status: t.status })),
-      monthlyTarget: emp.target || "₹10 Cr"
-    };
-  }
-}
-
-class Property360Service {
-  static getProfile(propertyId, rawDb) {
-    const db = filterDb(rawDb);
-    const p = (db.properties || []).find(prop => String(prop.id) === String(propertyId));
-    if (!p) return null;
-
-    const pitches = db.pitches || db.property_pitch_history || [];
-    const siteVisits = db.siteVisits || db.site_visits || [];
-    const deals = db.deals || [];
-
-    const propertyPitches = pitches.filter(h => String(h.propertyId) === String(propertyId));
-    const propertyVisits = siteVisits.filter(v => String(v.propertyId) === String(propertyId));
-    const propertyDeals = deals.filter(d => String(d.propertyId) === String(propertyId));
-
-    return {
-      id: p.id,
-      name: p.propertyName || p.name || `Property ${p.id}`,
-      project: p.projectName || 'Gagan Realtech Projects',
-      builder: 'Gagan Builders & Developers',
-      status: p.status || p.propertyStatus || 'Available',
-      owner: p.contact_person_name || 'Seller',
-      ownerContact: p.phone || 'N/A',
-      ownerHistory: p.owner_history || [],
-      pitchesCount: propertyPitches.length,
-      visitsCount: propertyVisits.length,
-      bookingsCount: propertyDeals.length,
-      price: p.demand || p.price || 'Contact Owner',
-      availability: p.status === 'Property Registered/Sold Out' ? 'Sold' : 'Available'
-    };
-  }
-}
-
-class AnalyticsService {
-  static getMetrics(query, rawDb) {
-    const db = filterDb(rawDb);
-    const qLower = query.toLowerCase();
-    
-    if (qLower.includes("lowest conversion")) {
-      return {
-        type: 'RM Conversion',
-        metrics: [
-          { name: "Rajan Sharma", rate: "84%", role: "RM" },
-          { name: "Rohan Gupta", rate: "18%", role: "RM (Review Required)" }
-        ],
-        details: "Rohan Gupta has the lowest conversion rate at 18% with average follow-up lag of 4.2 hours."
-      };
-    }
-
-    if (qLower.includes("highest sales") || qLower.includes("highest selling") || qLower.includes("who has the highest sales")) {
-      return {
-        type: 'Highest Sales',
-        topPerformer: "Rajan Sharma",
-        volume: "₹12.4 Cr",
-        runnerUp: "Gagan Chopra",
-        runnerUpVolume: "₹9.8 Cr"
-      };
-    }
-
-    if (qLower.includes("zero bookings") || qLower.includes("project")) {
-      return {
-        type: 'Project Bookings Audits',
-        projects: [
-          { name: "Gagan Residency", bookings: 4, sector: "Sector 82" },
-          { name: "Gagan Royal Villas", bookings: 0, sector: "Sector 115", status: "Zero Bookings this month" }
-        ]
-      };
-    }
-
-    if (qLower.includes("monthly revenue") || qLower.includes("revenue") || qLower.includes("monthly sales")) {
-      const deals = db.deals || [];
-      const totalRev = deals.reduce((sum, d) => sum + (parseFloat(String(d.salePrice || 0).replace(/[^0-9.]/g, '')) || 0), 0);
-      return {
-        type: 'Monthly Revenue',
-        volume: totalRev > 0 ? `₹${(totalRev / 10000000).toFixed(2)} Cr` : "₹85.6 Cr"
-      };
-    }
-
-    if (qLower.includes("inactive customer") || qLower.includes("inactive")) {
-      return {
-        type: 'Inactive Customers',
-        customers: (db.customers || []).slice(0, 2).map(c => ({ name: c.name, id: c.id, lastActive: "30+ days ago" }))
-      };
-    }
-
-    return null;
-  }
-}
-
 class CRMSearchService {
   static search(query, rawDb) {
     const db = filterDb(rawDb);
@@ -309,46 +204,92 @@ class CRMSearchService {
     
     const modules = metadata.modules || {};
     
-    // Check if query is looking for analytics / conversions / revenue
-    if (qLower.includes("conversion") || qLower.includes("highest sales") || qLower.includes("highest selling") || qLower.includes("zero bookings") || qLower.includes("revenue") || qLower.includes("monthly sales") || qLower.includes("inactive")) {
-      const analyticsData = AnalyticsService.getMetrics(query, db);
-      if (analyticsData) {
-        return {
-          type: 'analytics',
-          data: analyticsData
-        };
-      }
-    }
-
-    // Step 2: Search ALL modules dynamically
-    const matchedResults = []; // array of { moduleKey, rec }
+    // Intent classification
+    const { winner, ranking } = classifyIntent(query);
     
-    for (const mKey in modules) {
-      const mConfig = modules[mKey];
-      const fields = mConfig.fields || [];
-      const records = getActiveList(db[mKey] || db[mConfig.id]);
+    const mapping = {
+      Employees: 'employees',
+      Attendance: 'attendance',
+      Payroll: 'salaries',
+      Leaves: 'leaves',
+      Leads: 'leads',
+      Customers: 'customers',
+      Properties: 'properties',
+      Projects: 'projects',
+      Inventory: 'properties',
+      Payments: 'deals'
+    };
+
+    let targetModuleKey = winner ? mapping[winner] : null;
+    const matchedResults = [];
+    
+    if (targetModuleKey && db[targetModuleKey]) {
+      const mConfig = modules[targetModuleKey];
+      const records = getActiveList(db[targetModuleKey]);
+      
+      const intentKeywords = new Set([
+        'employee', 'employees', 'staff', 'worker', 'agent', 'profile', 'details',
+        'attendance', 'present', 'absent', 'checkin', 'checkout', 'punch', 'working', 'hours', 'today', 'yesterday',
+        'salary', 'payroll', 'deduction', 'bonus', 'allowance', 'settlement', 'gross', 'net', 'payslip',
+        'leave', 'holiday', 'vacation', 'half', 'day', 'application', 'request',
+        'lead', 'leads', 'inquiry', 'enquiry', 'prospect',
+        'customer', 'client', 'buyer', 'seller', 'investor',
+        'property', 'plot', 'house', 'villa', 'flat', 'shop', 'office', 'commercial', 'residential',
+        'project', 'site', 'scheme', 'development',
+        'inventory', 'stock', 'availability', 'unit', 'units',
+        'payment', 'receipt', 'invoice', 'due', 'received',
+        'show', 'check', 'want', 'to', 'for', 'is', 'on', 'my', 'the', 'how', 'many', 'who', 'has'
+      ]);
+
+      const queryWords = qLower.split(/\s+/).filter(w => !intentKeywords.has(w) && w.length > 2);
       
       for (const rec of records) {
         let match = false;
-        
-        for (const f of fields) {
-          const val = rec[f.name];
-          if (val === undefined || val === null) continue;
-          const valStr = String(val).toLowerCase();
-          
-          if (valStr === qLower || valStr.includes(qLower)) {
-            match = true;
-            break;
-          }
+        if (queryWords.length > 0) {
+          match = queryWords.some(word => {
+            return Object.keys(rec).some(k => {
+              const val = rec[k];
+              if (val === undefined || val === null) return false;
+              return String(val).toLowerCase().includes(word);
+            });
+          });
+        } else {
+          match = true;
         }
-        
+
         if (match) {
-          matchedResults.push({ moduleKey: mKey, rec });
+          matchedResults.push({ moduleKey: targetModuleKey, rec });
+        }
+      }
+    }
+
+    // Fallback to searching all modules if no target module matches or no target module winner was detected
+    if (matchedResults.length === 0) {
+      for (const mKey in modules) {
+        const mConfig = modules[mKey];
+        const fields = mConfig.fields || [];
+        const records = getActiveList(db[mKey] || db[mConfig.id]);
+        
+        for (const rec of records) {
+          let match = false;
+          for (const f of fields) {
+            const val = rec[f.name];
+            if (val === undefined || val === null) continue;
+            const valStr = String(val).toLowerCase();
+            if (valStr === qLower || valStr.includes(qLower)) {
+              match = true;
+              break;
+            }
+          }
+          if (match) {
+            matchedResults.push({ moduleKey: mKey, rec });
+          }
         }
       }
     }
     
-    // Step 3: Handle single match (return 360 degree overview)
+    const rankingSummary = ranking.map(r => `${r.module} (${r.score})`).join(', ');
+
     if (matchedResults.length === 1) {
       const match = matchedResults[0];
       const rec = match.rec;
@@ -359,6 +300,7 @@ class CRMSearchService {
       
       return {
         type: 'entity360',
+        rankingSummary,
         data: {
           moduleKey: mKey,
           moduleLabel: modules[mKey]?.label || mKey,
@@ -370,10 +312,10 @@ class CRMSearchService {
       };
     }
     
-    // Handle multiple matches
     if (matchedResults.length > 1) {
       return {
         type: 'multipleMatches',
+        rankingSummary,
         data: matchedResults.map(m => ({
           moduleKey: m.moduleKey,
           moduleLabel: modules[m.moduleKey]?.label || m.moduleKey,
@@ -383,86 +325,35 @@ class CRMSearchService {
         }))
       };
     }
-    
-    // Keyword lists
-    if (qLower.includes("hot lead") || qLower.includes("hot leads")) {
-      const hotLeads = getActiveList(db.leads || []).filter(l => {
-        const interest = String(l.interest_level || l.interestLevel || "").toLowerCase();
-        return interest.includes("hot") || interest.includes("high");
-      });
-      return {
-        type: 'hotLeadsList',
-        data: hotLeads
-      };
-    }
 
-    if (qLower.includes("follow-up") || qLower.includes("follow up") || qLower.includes("followups")) {
-      const activeFollowups = getActiveList(db.follow_ups || []).filter(f => f.status !== 'Completed');
-      return {
-        type: 'followupsList',
-        data: activeFollowups
-      };
-    }
-
-    if (qLower.includes("budget") || qLower.includes("above")) {
-      const highValueLeads = getActiveList(db.leads || []).filter(l => {
-        const b = parseFloat(String(l.budget || 0).replace(/[^0-9.]/g, '')) || 0;
-        return b >= 10000000;
-      });
-      return {
-        type: 'highValueLeadsList',
-        data: highValueLeads
-      };
-    }
-    
-    // Direct module searches (e.g. "Property Dealers", "Employees")
-    for (const mKey in modules) {
-      const labelLower = (modules[mKey].label || '').toLowerCase();
-      if (qLower === mKey || qLower === labelLower || qLower.includes(mKey) || qLower.includes(labelLower)) {
-        const list = getActiveList(db[mKey] || db[modules[mKey].id]);
-        if (list.length > 0) {
-          return {
-            type: 'moduleList',
-            data: {
-              moduleKey: mKey,
-              moduleLabel: modules[mKey].label || mKey,
-              records: list.slice(0, 10),
-              fields: modules[mKey].fields || []
-            }
-          };
-        }
+    if (targetModuleKey && db[targetModuleKey]) {
+      const list = getActiveList(db[targetModuleKey]);
+      if (list.length > 0) {
+        return {
+          type: 'moduleList',
+          rankingSummary,
+          data: {
+            moduleKey: targetModuleKey,
+            moduleLabel: modules[targetModuleKey]?.label || targetModuleKey,
+            records: list.slice(0, 10),
+            fields: modules[targetModuleKey]?.fields || []
+          }
+        };
       }
     }
-
-    // Default suggestions lookup
-    const suggestions = [];
-    for (const mKey in modules) {
-      const list = getActiveList(db[mKey] || db[modules[mKey].id]);
-      for (const rec of list) {
-        const name = rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title;
-        if (name && (name.toLowerCase().includes(qLower) || qLower.includes(name.toLowerCase()))) {
-          suggestions.push({
-            name,
-            type: modules[mKey].label || mKey
-          });
-        }
-      }
-    }
-
+    
     return {
       type: 'suggestions',
-      data: suggestions.slice(0, 3)
+      rankingSummary,
+      data: []
     };
   }
 }
 
 module.exports = {
   CRMSearchService,
-  Customer360Service,
-  Employee360Service,
-  Property360Service,
-  AnalyticsService,
   isActiveRecord,
   getActiveList,
-  filterDb
+  filterDb,
+  classifyIntent
 };

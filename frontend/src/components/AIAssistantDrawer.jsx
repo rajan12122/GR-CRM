@@ -51,10 +51,34 @@ export default function AIAssistantDrawer() {
       const url = match[2];
       const targetPath = url.replace('file://', '');
 
+      // Select dynamic icon based on action label
+      let IconComponent = Icons.ExternalLink;
+      const lblLower = label.toLowerCase();
+      if (lblLower.includes('profile') || lblLower.includes('open')) IconComponent = Icons.Eye;
+      else if (lblLower.includes('attendance')) IconComponent = Icons.Clock;
+      else if (lblLower.includes('payroll') || lblLower.includes('salary')) IconComponent = Icons.CreditCard;
+      else if (lblLower.includes('leave')) IconComponent = Icons.Calendar;
+      else if (lblLower.includes('leads') || lblLower.includes('lead')) IconComponent = Icons.Users;
+      else if (lblLower.includes('customers') || lblLower.includes('customer') || lblLower.includes('employees') || lblLower.includes('employee')) IconComponent = Icons.UserCheck;
+      else if (lblLower.includes('pitch') || lblLower.includes('pitches')) IconComponent = Icons.Send;
+      else if (lblLower.includes('meeting')) IconComponent = Icons.CalendarDays;
+      else if (lblLower.includes('performance')) IconComponent = Icons.TrendingUp;
+      else if (lblLower.includes('properties') || lblLower.includes('property')) IconComponent = Icons.Home;
+      else if (lblLower.includes('payment') || lblLower.includes('payments')) IconComponent = Icons.DollarSign;
+      else if (lblLower.includes('document') || lblLower.includes('documents')) IconComponent = Icons.FileText;
+      else if (lblLower.includes('timeline')) IconComponent = Icons.Activity;
+      else if (lblLower.includes('follow-up') || lblLower.includes('follow up')) IconComponent = Icons.PhoneCall;
+      else if (lblLower.includes('booking')) IconComponent = Icons.CheckCircle;
+      else if (lblLower.includes('whatsapp')) IconComponent = Icons.MessageCircle;
+      else if (lblLower.includes('call history') || lblLower.includes('call')) IconComponent = Icons.Phone;
+      else if (lblLower.includes('project')) IconComponent = Icons.Building2;
+      else if (lblLower.includes('builder')) IconComponent = Icons.Briefcase;
+      else if (lblLower.includes('site visit') || lblLower.includes('site visits')) IconComponent = Icons.MapPin;
+
       parts.push(
         <Button
           key={startIndex}
-          variant="contained"
+          variant="outlined"
           size="small"
           onClick={() => {
             navigate(targetPath);
@@ -64,22 +88,23 @@ export default function AIAssistantDrawer() {
             textTransform: 'none',
             fontSize: '11px',
             fontWeight: 700,
-            borderRadius: '8px',
-            padding: '2px 8px',
-            margin: '2px 4px',
-            backgroundColor: '#1E3A8A',
-            color: '#FFFFFF',
-            boxShadow: 'none',
+            borderRadius: '20px',
+            padding: '3px 10px',
+            margin: '3px 3px',
+            backgroundColor: '#EFF6FF',
+            color: '#1E40AF',
+            borderColor: '#DBEAFE',
             '&:hover': {
-              backgroundColor: '#1D4ED8',
-              boxShadow: '0 2px 8px rgba(30, 58, 138, 0.3)'
+              backgroundColor: '#DBEAFE',
+              borderColor: '#BFDBFE',
             },
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 0.5
+            gap: 0.5,
+            transition: 'all 0.15s ease-in-out'
           }}
         >
-          <Icons.ExternalLink size={12} />
+          <IconComponent size={12} />
           {label}
         </Button>
       );

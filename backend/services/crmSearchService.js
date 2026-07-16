@@ -111,7 +111,11 @@ function classifyIntent(sentence, db) {
     payment: 'collection',
     collection: 'payment',
     leave: 'holiday',
-    holiday: 'leave'
+    holiday: 'leave',
+    pitch: 'pitched',
+    pitched: 'pitch',
+    recommend: 'pitched',
+    recommended: 'pitched'
   };
 
   const moduleKeywords = {
@@ -129,119 +133,203 @@ function classifyIntent(sentence, db) {
     Expenses: ['expense', 'expenses', 'office expense', 'travel expense', 'salary expense', 'fuel expense', 'maintenance', 'electricity', 'rent', 'miscellaneous'],
     Tasks: ['task', 'tasks', 'assignment', 'work', 'pending task', 'completed task', 'today task', 'employee task'],
     Reports: ['report', 'reports', 'analytics', 'dashboard', 'summary', 'statistics', 'performance', 'graph', 'chart', 'analysis', 'growth', 'trend', 'comparison'],
-    Documents: ['document', 'documents', 'registry', 'sale deed', 'agreement', 'mutation', 'inteqal', 'jamabandi', 'khewat', 'khatauni', 'khasra', 'fard', 'nakal', 'noc', 'clu', 'loi', 'gmada', 'puda', 'rera', 'registry status']
+    Documents: ['document', 'documents', 'registry', 'sale deed', 'agreement', 'mutation', 'inteqal', 'jamabandi', 'khewat', 'khatauni', 'khasra', 'fard', 'nakal', 'noc', 'clu', 'loi', 'gmada', 'puda', 'rera', 'registry status'],
+    Pitches: ['pitched', 'recommended', 'recommended property', 'shared property', 'shown property', 'offered property', 'explained property', 'property suggestion', 'recommended plot', 'pitched status', 'pitched villa', 'pitched flat', 'pitched office', 'pitched commercial', 'pitched residential', 'pitched project', 'site visit', 'brochure shared', 'quotation shared', 'pitch', 'pitches', 'property pitch', 'pitch history']
   };
 
   const finalScores = {};
+
+  // Global Entity & Context Detections
+  let hasEmployeeName = false;
+  let hasEmployeeId = false;
+  let hasCustomerName = false;
+  let hasCustomerId = false;
+  let hasPropertyName = false;
+  let hasPropertyId = false;
+  let hasProjectName = false;
+  let hasProjectId = false;
+  let hasLeadName = false;
+  let hasLeadId = false;
+  
+  if (db) {
+    if (db.employees) {
+      hasEmployeeName = db.employees.some(e => e.name && cleanStr.includes(e.name.toLowerCase()));
+      hasEmployeeId = db.employees.some(e => String(e.id).toLowerCase() === cleanStr || cleanStr.includes(String(e.id).toLowerCase()));
+    }
+    if (db.customers) {
+      hasCustomerName = db.customers.some(c => (c.name || c.person_name) && cleanStr.includes((c.name || c.person_name).toLowerCase()));
+      hasCustomerId = db.customers.some(c => String(c.id).toLowerCase() === cleanStr || cleanStr.includes(String(c.id).toLowerCase()));
+    }
+    if (db.leads) {
+      hasLeadName = db.leads.some(l => (l.name || l.person_name) && cleanStr.includes((l.name || l.person_name).toLowerCase()));
+      hasLeadId = db.leads.some(l => String(l.id).toLowerCase() === cleanStr || cleanStr.includes(String(l.id).toLowerCase()));
+    }
+    if (db.properties) {
+      hasPropertyName = db.properties.some(p => (p.propertyName || p.name) && cleanStr.includes((p.propertyName || p.name).toLowerCase()));
+      hasPropertyId = db.properties.some(p => String(p.id).toLowerCase() === cleanStr || cleanStr.includes(String(p.id).toLowerCase()));
+    }
+    if (db.projects) {
+      hasProjectName = db.projects.some(p => p.name && cleanStr.includes(p.name.toLowerCase()));
+      hasProjectId = db.projects.some(p => String(p.id).toLowerCase() === cleanStr || cleanStr.includes(String(p.id).toLowerCase()));
+    }
+  }
+
+  // Regex and Keyword checks
+  if (/\b(emp-\d+|emp\d+)\b/i.test(sentence)) hasEmployeeId = true;
+  if (/\b(cust-\d+|c\d+)\b/i.test(sentence)) hasCustomerId = true;
+  if (/\b(lead-\d+|l\d+)\b/i.test(sentence)) hasLeadId = true;
+  if (/\b(prop-\d+|p-\d+|p\d+)\b/i.test(sentence)) hasPropertyId = true;
+  if (/\b(proj-\d+|pr\d+)\b/i.test(sentence)) hasProjectId = true;
+
+  const hasDateRange = /\b(between|from|to|last month|this month|this year|last week|next week|range|period|duration)\b/i.test(sentence);
+  const hasDate = /\b(today|yesterday|tomorrow|\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|may|june|july|august|september|october|november|december))\b/i.test(sentence) || hasDateRange;
+  const hasLocation = /\b(mohali|chandigarh|panchkula|sector|phase|block)\b/i.test(sentence);
+  const hasStatus = /\b(active|inactive|pending|approved|rejected|completed|cancelled|booked|available|sold|vacant|occupied|closed|open)\b/i.test(sentence);
+  const hasBudget = /\b(lakh|cr|crore|lakhs|crores|million|thousand|budget|price|demand|cost|rupee|rupees|rs)\b/i.test(sentence) || /\d+[\s]*(cr|lakh|k)/i.test(sentence);
+  const hasPropertyType = /\b(plot|villa|flat|apartment|office|shop|showroom|warehouse|factory|farm house|commercial|residential)\b/i.test(sentence);
+  const hasPhoneNumber = /\b(\d{10}|\d{3}-\d{3}-\d{4})\b/.test(sentence);
+  const hasEmail = /\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b/i.test(sentence);
+  
+  const hasMutation = /\b(mutation|inteqal|intkal)\b/i.test(sentence);
+  const hasKhewat = /\b(khewat|khwat)\b/i.test(sentence);
+  const hasRegistry = /\b(registry|sale deed)\b/i.test(sentence);
   
   for (const mKey in moduleKeywords) {
     const keywords = moduleKeywords[mKey];
-    let matchTypeScore = 0;
-    let matchCount = 0;
+    let baseScore = 0;
     
-    const cleanSentence = sentence.toLowerCase().replace(/[?,.!]/g, ' ');
-    const exactPhrase = keywords.some(k => cleanSentence.includes(k));
-    if (exactPhrase) {
-      matchTypeScore = Math.max(matchTypeScore, 97);
+    // 1. Exact Phrase Match (100%)
+    const hasExactPhrase = keywords.some(k => k.includes(' ') && cleanStr.includes(k));
+    if (hasExactPhrase) {
+      baseScore = Math.max(baseScore, 100);
     }
     
-    const matchedWords = new Set();
-    for (const w of correctedWords) {
-      if (keywords.includes(w)) {
-        matchedWords.add(w);
+    // Check individual keyword matches (direct, synonym, partial, spelling, etc.)
+    let matchCount = 0;
+    let hasSynonymMatch = false;
+    let hasPartialMatch = false;
+    let hasSpellingMatch = false;
+    
+    for (const word of correctedWords) {
+      if (keywords.includes(word)) {
+        matchCount++;
       } else {
-        const syn = synonyms[w];
-        if (syn && keywords.includes(syn)) {
-          matchedWords.add(syn);
-          matchTypeScore = Math.max(matchTypeScore, 90);
-        }
-        const partial = keywords.some(k => k.includes(w) || w.includes(k));
-        if (partial && w.length >= 4) {
-          matchedWords.add(w);
-          matchTypeScore = Math.max(matchTypeScore, 85);
+        // Spelling correction
+        const corrected = spellingCorrections[word];
+        if (corrected && keywords.includes(corrected)) {
+          hasSpellingMatch = true;
+          matchCount++;
+        } else {
+          // Synonym matching
+          const syn = synonyms[word];
+          if (syn && keywords.includes(syn)) {
+            hasSynonymMatch = true;
+            matchCount++;
+          } else {
+            // Partial matching
+            const partial = keywords.some(k => k.includes(word) || word.includes(k));
+            if (partial && word.length >= 4) {
+              hasPartialMatch = true;
+              matchCount++;
+            }
+          }
         }
       }
     }
     
-    matchCount = matchedWords.size;
-    if (matchCount === 1) {
-      matchTypeScore = Math.max(matchTypeScore, 100);
-    } else if (matchCount >= 2) {
-      matchTypeScore = Math.max(matchTypeScore, 98);
+    // Multiple Exact Keywords (99%)
+    if (matchCount > 1) {
+      baseScore = Math.max(baseScore, 99);
+    } else if (matchCount === 1) {
+      if (hasSpellingMatch) {
+        baseScore = Math.max(baseScore, 82);
+      } else if (hasSynonymMatch) {
+        baseScore = Math.max(baseScore, 92);
+      } else if (hasPartialMatch) {
+        baseScore = Math.max(baseScore, 84);
+      } else {
+        baseScore = Math.max(baseScore, 94);
+      }
     }
     
-    let countBonus = 0;
-    if (matchCount === 1) countBonus = 10;
-    else if (matchCount === 2) countBonus = 20;
-    else if (matchCount === 3) countBonus = 35;
-    else if (matchCount === 4) countBonus = 50;
-    else if (matchCount === 5) countBonus = 70;
-    else if (matchCount >= 6) countBonus = 100;
+    // Intent Match (97%) (e.g. contains action keywords like show/get/find/check + has some matches)
+    const hasIntentIndicator = /\b(show|get|find|check|list|view|display|search|query|details|info|record)\b/i.test(sentence);
+    if (hasIntentIndicator && matchCount > 0) {
+      baseScore = Math.max(baseScore, 97);
+    }
+
+    // Entity + Module Match (98%)
+    const hasEntityMatchForModule = 
+      (mKey === 'Employees' && (hasEmployeeName || hasEmployeeId)) ||
+      (mKey === 'Customers' && (hasCustomerName || hasCustomerId)) ||
+      (mKey === 'Leads' && (hasLeadName || hasLeadId)) ||
+      (mKey === 'Properties' && (hasPropertyName || hasPropertyId)) ||
+      (mKey === 'Projects' && (hasProjectName || hasProjectId)) ||
+      (mKey === 'Pitches' && (hasEmployeeName || hasCustomerName || hasPropertyName));
+      
+    if (hasEntityMatchForModule && matchCount > 0) {
+      baseScore = Math.max(baseScore, 98);
+    }
+
+    // Date Match: 91%
+    if (hasDate && ['Attendance', 'Leaves', 'Followup', 'Pitches', 'Payments'].includes(mKey)) {
+      baseScore = Math.max(baseScore, 91);
+    }
     
-    let entityBonus = 0;
-    
-    const hasEmployeeName = (db?.employees || []).some(e => {
-      const nameLower = String(e.name || '').toLowerCase();
-      return nameLower && cleanSentence.includes(nameLower);
-    });
-    if (hasEmployeeName) entityBonus += 20;
-    
-    const hasEmployeeId = /\b(emp-\d+|emp\d+)\b/i.test(sentence) || (db?.employees || []).some(e => cleanSentence.includes(String(e.id).toLowerCase()));
-    if (hasEmployeeId) entityBonus += 25;
+    // Location Match: 90%
+    if (hasLocation && ['Properties', 'Projects', 'Leads', 'Customers'].includes(mKey)) {
+      baseScore = Math.max(baseScore, 90);
+    }
 
-    const hasCustomerName = (db?.customers || []).some(c => {
-      const nameLower = String(c.name || c.person_name || '').toLowerCase();
-      return nameLower && cleanSentence.includes(nameLower);
-    });
-    if (hasCustomerName) entityBonus += 20;
+    // Status Match: 89%
+    if (hasStatus && matchCount > 0) {
+      baseScore = Math.max(baseScore, 89);
+    }
 
-    const hasCustomerId = /\b(cust-\d+|c\d+)\b/i.test(sentence) || (db?.customers || []).some(c => cleanSentence.includes(String(c.id).toLowerCase()));
-    if (hasCustomerId) entityBonus += 25;
+    // Relationship Match: 88%
+    const hasRelationship = 
+      (cleanStr.includes('attendance') && (hasEmployeeName || hasEmployeeId)) ||
+      (cleanStr.includes('salary') && (hasEmployeeName || hasEmployeeId)) ||
+      (cleanStr.includes('leave') && (hasEmployeeName || hasEmployeeId)) ||
+      (cleanStr.includes('payment') && (hasCustomerName || hasCustomerId)) ||
+      (cleanStr.includes('pitch') && (hasEmployeeName || hasCustomerName || hasPropertyName));
 
-    const hasPropertyName = (db?.properties || []).some(p => {
-      const nameLower = String(p.propertyName || p.name || '').toLowerCase();
-      return nameLower && cleanSentence.includes(nameLower);
-    });
-    if (hasPropertyName) entityBonus += 20;
+    if (hasRelationship && ['Attendance', 'Payroll', 'Leaves', 'Payments', 'Pitches'].includes(mKey)) {
+      baseScore = Math.max(baseScore, 88);
+    }
 
-    const hasPropertyId = /\b(prop-\d+|p-\d+|p\d+)\b/i.test(sentence) || (db?.properties || []).some(p => cleanSentence.includes(String(p.id).toLowerCase()));
-    if (hasPropertyId) entityBonus += 25;
-
-    const hasProjectName = (db?.projects || []).some(p => {
-      const nameLower = String(p.name || '').toLowerCase();
-      return nameLower && cleanSentence.includes(nameLower);
-    });
-    if (hasProjectName) entityBonus += 20;
-
-    const hasDate = /\b(today|yesterday|tomorrow|\d{1,2}\s+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|january|february|march|april|may|june|july|august|september|october|november|december))\b/i.test(sentence);
-    if (hasDate) entityBonus += 15;
-
-    const hasMonth = /\b(january|february|march|april|may|june|july|august|september|october|november|december|jan|feb|mar|apr|jun|jul|aug|sep|oct|nov|dec)\b/i.test(sentence);
-    if (hasMonth) entityBonus += 10;
-
-    const hasYear = /\b(202\d{1})\b/.test(sentence);
-    if (hasYear) entityBonus += 10;
-
-    const hasLocation = /\b(mohali|chandigarh|panchkula|sector|phase|block)\b/i.test(sentence);
-    if (hasLocation) entityBonus += 15;
-
-    const hasStatus = /\b(active|inactive|pending|approved|rejected|completed|cancelled|booked|available|sold|vacant|occupied|closed|open)\b/i.test(sentence);
-    if (hasStatus) entityBonus += 10;
-
-    const hasMutation = /\b(mutation|inteqal|intkal)\b/i.test(sentence);
-    if (hasMutation) entityBonus += 25;
-
-    const hasKhewat = /\b(khewat|khwat)\b/i.test(sentence);
-    if (hasKhewat) entityBonus += 25;
-
-    const hasRegistry = /\b(registry|sale deed)\b/i.test(sentence);
-    if (hasRegistry) entityBonus += 25;
-
+    // Natural Language Match (75%)
     if (matchCount > 0) {
-      finalScores[mKey] = matchTypeScore + countBonus + entityBonus;
-    } else {
-      finalScores[mKey] = 0;
+      baseScore = Math.max(baseScore, 75);
     }
+    
+    // Add Bonus Scoring
+    let totalScore = baseScore;
+    if (totalScore > 0) {
+      if (hasEmployeeName) totalScore += 20;
+      if (hasCustomerName) totalScore += 20;
+      if (hasLeadName) totalScore += 20;
+      if (hasPropertyName) totalScore += 20;
+      if (hasProjectName) totalScore += 20;
+      if (hasEmployeeId) totalScore += 25;
+      if (hasLeadId) totalScore += 25;
+      if (hasCustomerId) totalScore += 25;
+      if (hasPropertyId) totalScore += 25;
+      if (hasProjectId) totalScore += 25;
+      if (hasDate) totalScore += 15;
+      if (hasDateRange) totalScore += 20;
+      if (hasLocation) totalScore += 15;
+      if (hasBudget) totalScore += 15;
+      if (hasStatus) totalScore += 15;
+      if (hasPropertyType) totalScore += 15;
+      if (hasPhoneNumber) totalScore += 20;
+      if (hasEmail) totalScore += 20;
+      if (hasRegistry) totalScore += 25;
+      if (hasMutation) totalScore += 25;
+      if (hasKhewat) totalScore += 25;
+    }
+    
+    finalScores[mKey] = totalScore;
   }
 
   const ranking = Object.keys(moduleKeywords)
@@ -359,7 +447,13 @@ class CRMSearchService {
       Properties: 'properties',
       Projects: 'projects',
       Inventory: 'properties',
-      Payments: 'deals'
+      Payments: 'deals',
+      Pitches: 'property_pitch_history',
+      Queries: 'queries',
+      Deals: 'deals',
+      EmployeeNotices: 'employee_notices',
+      DailyPriceLists: 'daily_price_lists',
+      Documents: 'documents'
     };
 
     let targetModuleKey = winner ? mapping[winner] : null;
@@ -379,6 +473,7 @@ class CRMSearchService {
         'project', 'site', 'scheme', 'development',
         'inventory', 'stock', 'availability', 'unit', 'units',
         'payment', 'receipt', 'invoice', 'due', 'received',
+        'pitch', 'pitches', 'pitched', 'recommend', 'recommended', 'by', 'to',
         'show', 'check', 'want', 'to', 'for', 'is', 'on', 'my', 'the', 'how', 'many', 'who', 'has'
       ]);
 

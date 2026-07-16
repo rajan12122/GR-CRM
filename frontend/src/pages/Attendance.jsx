@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box, 
   Card, 
@@ -62,6 +62,7 @@ const getShiftHours = (inTime, outTime) => {
 
 const Attendance = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     moduleData, 
     fetchModuleData, 
@@ -94,14 +95,18 @@ const Attendance = () => {
 
   // Default selectedEmpId once employees load
   useEffect(() => {
-    if (moduleData.employees && moduleData.employees.length > 0) {
+    const searchParams = new URLSearchParams(location.search);
+    const empIdParam = searchParams.get('employeeId');
+    if (empIdParam && selectedEmpId !== empIdParam) {
+      setSelectedEmpId(empIdParam);
+    } else if (moduleData.employees && moduleData.employees.length > 0 && !selectedEmpId) {
       if (user?.role === 'Admin') {
         setSelectedEmpId(moduleData.employees[0].id);
       } else {
         setSelectedEmpId(user?.id || '');
       }
     }
-  }, [moduleData.employees, user]);
+  }, [moduleData.employees, user, location.search, selectedEmpId]);
 
   // Self-service Punch Card states
   const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);

@@ -32,6 +32,7 @@ import {
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import axios from 'axios';
+import { useLocation } from 'react-router-dom';
 import { useApp, API_BASE_URL } from '../context/AppContext';
 
 // Time helpers copied from Attendance page
@@ -64,6 +65,7 @@ const formatCurrency = (val) => {
 
 const Salary = () => {
   const { user, token, moduleData, fetchModuleData, createRecord, updateRecord } = useApp();
+  const location = useLocation();
   
   // Selection States
   const [selectedEmpId, setSelectedEmpId] = useState('');
@@ -132,14 +134,18 @@ const Salary = () => {
 
   // Determine current active employee selection
   useEffect(() => {
-    if (employees.length > 0 && !selectedEmpId) {
+    const searchParams = new URLSearchParams(location.search);
+    const empIdParam = searchParams.get('employeeId');
+    if (empIdParam && selectedEmpId !== empIdParam) {
+      setSelectedEmpId(empIdParam);
+    } else if (employees.length > 0 && !selectedEmpId) {
       if (user.role === 'Admin' || user.role === 'Manager') {
         setSelectedEmpId(employees[0].id);
       } else {
         setSelectedEmpId(user.id);
       }
     }
-  }, [employees, selectedEmpId, user]);
+  }, [employees, selectedEmpId, user, location.search]);
 
   const selectedEmployeeObj = useMemo(() => {
     return employees.find(e => String(e.id) === String(selectedEmpId));

@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Box,
   Card,
@@ -162,18 +162,16 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
               </Box>
             )}
             <IconButton size="small" onClick={() => handleInspectClick(moduleName, rec.id)} sx={{ color: '#2563EB', '&:hover': { backgroundColor: 'rgba(37,99,235,0.05)' } }}>
-              <Icons.SearchCode size={16} />
+              <Icons.Eye size={16} />
             </IconButton>
             <IconButton size="small" onClick={() => handleEditClick(rec)} sx={{ color: '#F59E0B', '&:hover': { backgroundColor: 'rgba(245,158,11,0.05)' } }}>
-              <Icons.Edit2 size={16} />
+              <Icons.Edit3 size={16} />
             </IconButton>
             <IconButton size="small" onClick={() => handleDeleteClick(rec.id)} sx={{ color: '#EF4444', '&:hover': { backgroundColor: 'rgba(239,68,68,0.05)' } }}>
               <Icons.Trash2 size={16} />
             </IconButton>
           </Box>
-
         </Box>
-
         {hasMoreFields && (
           <Button 
             size="small" 
@@ -191,6 +189,7 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
 const ModuleManager = () => {
   const { moduleName } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     metadata, 
     moduleData, 
@@ -236,6 +235,33 @@ const ModuleManager = () => {
       setViewMode('table');
     }
   }, [isMobile]);
+
+  // Parse URL search parameters for automatic filtering
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const filtersFromUrl = {};
+    let hasUrlFilters = false;
+    for (const [key, value] of searchParams.entries()) {
+      if (key !== '_special' && key !== 'searchTerm' && key !== 'new') {
+        filtersFromUrl[key] = value;
+        hasUrlFilters = true;
+      }
+    }
+    const urlSearch = searchParams.get('searchTerm');
+    if (urlSearch !== null) {
+      setSearchTerm(urlSearch);
+    }
+    const urlSpecial = searchParams.get('_special');
+    if (urlSpecial) {
+      filtersFromUrl._special = urlSpecial;
+      hasUrlFilters = true;
+    }
+    if (hasUrlFilters) {
+      setStackedFilters(filtersFromUrl);
+    } else {
+      setStackedFilters({});
+    }
+  }, [location.search, moduleName]);
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');

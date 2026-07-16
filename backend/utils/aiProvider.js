@@ -375,7 +375,18 @@ ${list.slice(0, 5).map(item => {
   }).join('\n')}`;
     }).join('\n');
 
-    return rankHeader + `${icon} **${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n\n- **Module:** **${info.moduleLabel}**\n${fieldDetails}\n\n${parentList ? `#### 📌 Associations\n${parentList}\n` : ''}${relatedList || ''}\n\n#### 🧠 CRM Manager Insights & Recommendations\nThis record is connected across your database. RM should follow up within 24 hours to ensure high operational success.`;
+    let quickActionsBlock = '';
+    if (mKey === 'employees') {
+      quickActionsBlock = `\n\n#### ⚡ Quick Actions\n[Open Profile](file:///module/employees/${rec.id}) [Attendance](file:///module/attendance?employeeId=${rec.id}) [Payroll](file:///module/salary?employeeId=${rec.id}) [Leave](file:///module/leaves?employeeId=${rec.id}) [Assigned Leads](file:///module/leads?assignedEmployeeId=${rec.id}) [Assigned Customers](file:///module/customers?relationshipManagerId=${rec.id}) [Property Pitches](file:///module/property_pitch_history?employeeName=${encodeURIComponent(rec.name || '')}) [Meetings](file:///module/follow_ups?employeeId=${rec.id}) [Performance](file:///module/employees/${rec.id})`;
+    } else if (mKey === 'customers') {
+      quickActionsBlock = `\n\n#### ⚡ Quick Actions\n[Open Customer](file:///module/customers/${rec.id}) [Interested Properties](file:///module/properties?customerId=${rec.id}) [Property Pitches](file:///module/property_pitch_history?customerId=${rec.id}) [Payments](file:///module/deals?customerId=${rec.id}) [Meetings](file:///module/follow_ups?customerId=${rec.id}) [Documents](file:///module/documents?customerId=${rec.id}) [Timeline](file:///module/customers/${rec.id})`;
+    } else if (mKey === 'leads') {
+      quickActionsBlock = `\n\n#### ⚡ Quick Actions\n[Open Lead](file:///module/leads/${rec.id}) [Customer](file:///module/customers?leadId=${rec.id}) [Property Pitches](file:///module/property_pitch_history?customerId=${rec.id}) [Follow-ups](file:///module/follow_ups?customerId=${rec.id}) [Meetings](file:///module/follow_ups?customerId=${rec.id}) [Call History](file:///module/follow_ups?customerId=${rec.id}) [WhatsApp](https://wa.me/91${rec.phone || ''}?text=Hi) [Documents](file:///module/documents?leadId=${rec.id}) [Booking](file:///module/sales_bookings?leadId=${rec.id})`;
+    } else if (mKey === 'properties') {
+      quickActionsBlock = `\n\n#### ⚡ Quick Actions\n[Open Property](file:///module/properties/${rec.id}) [Project](file:///module/projects/${rec.projectId || 'PROJ-001'}) [Builder](file:///module/properties/${rec.id}) [Property Pitch History](file:///module/property_pitch_history?propertyId=${rec.id}) [Interested Customers](file:///module/customers?propertyId=${rec.id}) [Assigned Employees](file:///module/employees?propertyId=${rec.id}) [Follow-ups](file:///module/follow_ups?propertyId=${rec.id}) [Site Visits](file:///module/site_visits?propertyId=${rec.id}) [Documents](file:///module/documents?propertyId=${rec.id}) [Booking](file:///module/sales_bookings?propertyId=${rec.id})`;
+    }
+
+    return rankHeader + `${icon} **${rec.name || rec.person_name || rec.firm_name || rec.propertyName || rec.title || rec.id}**\n🔗 [${btnLabel}](file:///module/${linkPath})\n\n- **Module:** **${info.moduleLabel}**\n${fieldDetails}\n\n${parentList ? `#### 📌 Associations\n${parentList}\n` : ''}${relatedList || ''}${quickActionsBlock}\n\n#### 🧠 CRM Manager Insights & Recommendations\nThis record is connected across your database. RM should follow up within 24 hours to ensure high operational success.`;
   }
 
   if (result.type === 'multipleMatches') {
@@ -429,6 +440,9 @@ ${list.slice(0, 5).map(item => {
 #### 📋 Task List
 - **Tasks Assigned:** ${result.data.currentTasks.length} pending tasks.
 
+#### ⚡ Quick Actions
+[Open Profile](file:///module/employees/${emp.id}) [Attendance](file:///module/attendance?employeeId=${emp.id}) [Payroll](file:///module/salary?employeeId=${emp.id}) [Leave](file:///module/leaves?employeeId=${emp.id}) [Assigned Leads](file:///module/leads?assignedEmployeeId=${emp.id}) [Assigned Customers](file:///module/customers?relationshipManagerId=${emp.id}) [Property Pitches](file:///module/property_pitch_history?employeeName=${encodeURIComponent(emp.name)}) [Meetings](file:///module/follow_ups?employeeId=${emp.id}) [Performance](file:///module/employees/${emp.id})
+
 #### 🧠 AI Performance Summary & Recommendations
 ${emp.name} is demonstrating strong client engagement metrics. With ₹${result.data.revenueGenerated.toLocaleString('en-IN')} closed revenue, they are a high-performing asset.`;
   }
@@ -453,6 +467,9 @@ ${emp.name} is demonstrating strong client engagement metrics. With ₹${result.
 #### 📋 Tasks Checklist
 - **Outstanding Tasks:** ${result.data.pendingTasks.length} pending reminders.
 
+#### ⚡ Quick Actions
+[Open Customer](file:///module/customers/${c.id}) [Interested Properties](file:///module/properties?customerId=${c.id}) [Property Pitches](file:///module/property_pitch_history?customerId=${c.id}) [Payments](file:///module/deals?customerId=${c.id}) [Meetings](file:///module/follow_ups?customerId=${c.id}) [Documents](file:///module/documents?customerId=${c.id}) [Timeline](file:///module/customers/${c.id})
+
 #### 🧠 Journey Summary & Recommended Actions
 Customer is in the **${result.data.stage}** stage with a budget of ${result.data.budget}. They have completed ${result.data.siteVisits.length} site visits.
 **Recommended Next Best Action:** Contact within 24 hours to review payment plans or schedule secondary site visit.`;
@@ -476,6 +493,9 @@ Customer is in the **${result.data.stage}** stage with a budget of ${result.data
 - **Pitched Count:** Shown to **${p.pitchesCount}** prospective buyers.
 - **Site Visits Completed:** **${p.visitsCount}** visits.
 - **Sales Bookings:** **${p.bookingsCount}** transactions.
+
+#### ⚡ Quick Actions
+[Open Property](file:///module/properties/${p.id}) [Project](file:///module/projects/${p.projectId || 'PROJ-001'}) [Builder](file:///module/properties/${p.id}) [Property Pitch History](file:///module/property_pitch_history?propertyId=${p.id}) [Interested Customers](file:///module/customers?propertyId=${p.id}) [Assigned Employees](file:///module/employees?propertyId=${p.id}) [Follow-ups](file:///module/follow_ups?propertyId=${p.id}) [Site Visits](file:///module/site_visits?propertyId=${p.id}) [Documents](file:///module/documents?propertyId=${p.id}) [Booking](file:///module/sales_bookings?propertyId=${p.id})
 
 #### 🧠 AI Recommendation
 This unit is located in a high-demand sector. Pitched to match active buyers seeking ${p.project}.`;

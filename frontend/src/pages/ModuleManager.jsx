@@ -795,8 +795,10 @@ const ModuleManager = () => {
           if (!rec.visitStatus && !rec.callOutcome) return false;
         }
         if (stackedFilters._special === 'newDealers' && moduleName === 'dealers') {
+          const totalCount = records.length;
+          if (totalCount <= 5) return true;
           const idNum = parseInt(String(rec.id).replace(/[^0-9]/g, '')) || 0;
-          if (idNum <= 10) return false;
+          if (idNum <= Math.floor(totalCount * 0.7)) return false;
         }
         if (stackedFilters._special === 'overdue' && moduleName === 'tasks') {
           if (rec.status === 'Completed' || !rec.dueDate || rec.dueDate >= todayStr) return false;

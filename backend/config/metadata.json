@@ -701,15 +701,6 @@
           "chipGroup": "projectStatus"
         },
         {
-          "name": "constructionStatus",
-          "label": "Construction Status",
-          "type": "select",
-          "required": false,
-          "showInTable": true,
-          "editable": true,
-          "chipGroup": "projectStatus"
-        },
-        {
           "name": "rera_approved",
           "label": "RERA Approved",
           "type": "select",
@@ -2596,9 +2587,9 @@
     ],
     "projectStatus": [
       {
-        "value": "Pre-launch",
-        "label": "Pre-launch Stage",
-        "color": "#3B82F6"
+        "value": "Ready to Move",
+        "label": "Ready to Occupy / O.C Recd",
+        "color": "#22C55E"
       },
       {
         "value": "Under Construction",
@@ -2606,13 +2597,18 @@
         "color": "#F59E0B"
       },
       {
-        "value": "Ready to Move",
-        "label": "Ready to Occupy / O.C Recd",
-        "color": "#22C55E"
+        "value": "Possession Soon",
+        "label": "Possession Soon",
+        "color": "#3B82F6"
+      },
+      {
+        "value": "Delivered",
+        "label": "Delivered",
+        "color": "#8B5CF6"
       },
       {
         "value": "Completed",
-        "label": "Project Delivered",
+        "label": "Project Completed",
         "color": "#111827"
       }
     ],

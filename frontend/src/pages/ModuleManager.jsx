@@ -277,7 +277,21 @@ const ModuleManager = () => {
   }
 
   const fields = moduleConfig.fields;
-  const records = moduleData[moduleName] || [];
+  const records = useMemo(() => {
+    const rawRecs = moduleData[moduleName] || [];
+    return rawRecs.filter(r => {
+      if (!r) return false;
+      if (r.deleted === true || r.deleted === 'true') return false;
+      if (r.isDeleted === true || r.isDeleted === 'true') return false;
+      if (r.archived === true || r.archived === 'true') return false;
+      if (r.active === false || r.active === 'false') return false;
+      if (r.status) {
+        const s = String(r.status).toLowerCase();
+        if (s === 'deleted' || s === 'archived' || s === 'removed') return false;
+      }
+      return true;
+    });
+  }, [moduleData, moduleName]);
 
   const getKPICards = () => {
     const total = records.length;
@@ -295,65 +309,86 @@ const ModuleManager = () => {
 
     switch (moduleName) {
       case 'leads': {
-        const fresh = records.filter(r => r.status === 'Open' || r.status === 'New Lead');
-        const hot = records.filter(r => r.stage === 'Negotiation' || r.status === 'Negotiation');
+        const todayLocalStr = new Date().toLocaleDateString('en-IN');
         const converted = records.filter(r => 
           r.status === 'Converted' || 
           r.status === 'Moved to Customer' || 
           (moduleData.customers || []).some(c => String(c.id) === String(r.id) || String(c.leadId) === String(r.id))
         );
-        const pending = records.filter(r => r.status === 'In-Progress' || r.status === 'Contacted');
+        const activeLeads = records.filter(r => 
+          !converted.some(c => String(c.id) === String(r.id))
+        );
+        const fresh = activeLeads.filter(r => 
+          (r.dateAdded && r.dateAdded === todayStr) ||
+          (r.date && r.date.includes(todayLocalStr)) ||
+          r.status === 'Open' || 
+          r.status === 'New Lead'
+        );
+        const pending = activeLeads.filter(r => 
+          r.status !== 'Lost' && r.status !== 'Dead' && r.status !== 'Closed/Lost' &&
+          r.stage !== 'Lost'
+        );
+
         return [
-          createCardObj('Total Leads', total, 'Users', '#3B82F6', '↑ 100% vs last month', Object.keys(stackedFilters).length === 0, () => {
-            setStackedFilters({});
+          createCardObj('Total Leads', activeLeads.length, 'Users', '#3B82F6', 'Active leads', stackedFilters._special === 'activeLeads', () => {
+            setStackedFilters({ _special: 'activeLeads' });
           }),
-          createCardObj('New Leads', fresh.length, 'CheckCircle', '#22C55E', `${total ? Math.round(fresh.length/total*100) : 0}% of total`, stackedFilters.status === 'Open', () => {
-            setStackedFilters({ status: 'Open' });
+          createCardObj('New Leads', fresh.length, 'CheckCircle', '#22C55E', 'Created today', stackedFilters._special === 'newLeads', () => {
+            setStackedFilters({ _special: 'newLeads' });
           }),
-          createCardObj('Hot Leads', hot.length, 'Flame', '#F97316', `${total ? Math.round(hot.length/total*100) : 0}% of total`, stackedFilters.stage === 'Negotiation', () => {
-            setStackedFilters({ stage: 'Negotiation' });
+          createCardObj('Converted', converted.length, 'TrendingUp', '#8B5CF6', 'Leads converted', stackedFilters._special === 'convertedLeads', () => {
+            setStackedFilters({ _special: 'convertedLeads' });
           }),
-          createCardObj('Converted', converted.length, 'TrendingUp', '#8B5CF6', `${total ? Math.round(converted.length/total*100) : 0}% of total`, stackedFilters.status === 'Converted', () => {
-            setStackedFilters({ status: 'Converted' });
-          }),
-          createCardObj('Pending', pending.length, 'Clock', '#EC4899', `${total ? Math.round(pending.length/total*100) : 0}% of total`, stackedFilters.status === 'In-Progress', () => {
-            setStackedFilters({ status: 'In-Progress' });
+          createCardObj('Pending', pending.length, 'Clock', '#EC4899', 'In progress', stackedFilters._special === 'pendingLeads', () => {
+            setStackedFilters({ _special: 'pendingLeads' });
           })
         ];
       }
 
       case 'properties': {
-        const sold = records.filter(r => r.status === 'Property Registered/Sold Out' || r.status === 'Sold Out' || r.status === 'Sold By Someone/Deal Lost');
-        const avail = records.filter(r => r.status === 'Available' || r.status === 'IN active listings' || !r.status);
-        const newMonth = records.filter(r => r.status === 'Under Construction' || r.status === 'New Launch' || r.status === 'Token/Booking Amount Recieved' || r.status === 'Sales Agreement' || r.status === 'NOC' || r.status === 'Part Payment');
-        
-        const totalValueNum = records.reduce((acc, r) => {
-          const val = parseFloat(String(r.demand || r.price || 0).replace(/[^0-9.]/g, '')) || 0;
-          return acc + val;
-        }, 0);
-        let totalValueStr = '₹0';
-        if (totalValueNum >= 10000000) {
-          totalValueStr = `₹${(totalValueNum / 10000000).toFixed(1)} Cr`;
-        } else if (totalValueNum >= 100000) {
-          totalValueStr = `₹${(totalValueNum / 100000).toFixed(1)} L`;
-        } else {
-          totalValueStr = `₹${totalValueNum.toLocaleString('en-IN')}`;
-        }
+        const sold = records.filter(r => {
+          const st = String(r.status || '').toLowerCase();
+          return st.includes('sold') || st.includes('register') || st.includes('book');
+        });
+        const avail = records.filter(r => {
+          const st = String(r.status || '').toLowerCase();
+          if (st.includes('sold') || st.includes('register') || st.includes('book') || st.includes('inactive')) return false;
+          return true;
+        });
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        const newMonth = records.filter(r => {
+          if (r.dateAdded) {
+            const parts = r.dateAdded.split('-');
+            if (parts.length === 3) {
+              const year = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              return year === currentYear && month === currentMonth;
+            }
+          } else if (r.date) {
+            const parts = r.date.split(/[/-]/);
+            if (parts.length >= 2) {
+              const month = parseInt(parts[1], 10);
+              const year = parseInt(parts[2], 10);
+              return (year === currentYear || year === currentYear % 100) && month === currentMonth;
+            }
+          }
+          return false;
+        });
 
         return [
-          createCardObj('Total Properties', total, 'Home', '#3B82F6', '↑ 18.6% vs last month', Object.keys(stackedFilters).length === 0, () => {
-            setStackedFilters({});
+          createCardObj('Total Properties', total, 'Home', '#3B82F6', 'Total properties', stackedFilters._special === 'totalProperties', () => {
+            setStackedFilters({ _special: 'totalProperties' });
           }),
-          createCardObj('Sold Out', sold.length, 'BadgeCheck', '#22C55E', '↑ 12.4% vs last month', stackedFilters.status === 'Property Registered/Sold Out', () => {
-            setStackedFilters({ status: 'Property Registered/Sold Out' });
+          createCardObj('Sold Out', sold.length, 'BadgeCheck', '#22C55E', 'Sold / Booked', stackedFilters._special === 'soldProperties', () => {
+            setStackedFilters({ _special: 'soldProperties' });
           }),
-          createCardObj('Available', avail.length, 'Eye', '#F59E0B', '↑ 8.7% vs last month', stackedFilters.status === 'IN active listings', () => {
-            setStackedFilters({ status: 'IN active listings' });
+          createCardObj('Available', avail.length, 'Eye', '#F59E0B', 'Active listings', stackedFilters._special === 'availProperties', () => {
+            setStackedFilters({ _special: 'availProperties' });
           }),
-          createCardObj('New This Month', newMonth.length, 'Sparkles', '#EC4899', '↑ 24.1% vs last month', stackedFilters.status === 'Under Construction', () => {
-            setStackedFilters({ status: 'Under Construction' });
-          }),
-          createCardObj('Total Value', totalValueStr, 'DollarSign', '#10B981', '↑ 15.3% vs last month', false, () => {})
+          createCardObj('New This Month', newMonth.length, 'Sparkles', '#EC4899', 'Added this month', stackedFilters._special === 'newMonthProperties', () => {
+            setStackedFilters({ _special: 'newMonthProperties' });
+          })
         ];
       }
 
@@ -363,16 +398,16 @@ const ModuleManager = () => {
         const followupsCount = records.filter(r => r.visitStatus === 'Assigned' || r.callOutcome === 'Call Done').length;
 
         return [
-          createCardObj('Total Dealers', total, 'Building', '#3B82F6', '↑ 18.6% vs last month', Object.keys(stackedFilters).length === 0, () => {
+          createCardObj('Total Dealers', total, 'Building', '#3B82F6', 'Total dealers', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
           }),
-          createCardObj('Active Dealers', active.length, 'Activity', '#22C55E', '↑ 12.4% vs last month', stackedFilters._special === 'activeDealers', () => {
+          createCardObj('Active Dealers', active.length, 'Activity', '#22C55E', 'Active dealers', stackedFilters._special === 'activeDealers', () => {
             setStackedFilters({ _special: 'activeDealers' });
           }),
-          createCardObj('New This Month', newMonth, 'Star', '#F59E0B', '↑ 8.7% vs last month', stackedFilters._special === 'newDealers', () => {
+          createCardObj('New This Month', newMonth, 'Star', '#F59E0B', 'New this month', stackedFilters._special === 'newDealers', () => {
             setStackedFilters({ _special: 'newDealers' });
           }),
-          createCardObj('Follow Ups', followupsCount, 'PhoneCall', '#EC4899', '↑ 24.1% vs last month', stackedFilters.visitStatus === 'Assigned', () => {
+          createCardObj('Follow Ups', followupsCount, 'PhoneCall', '#EC4899', 'Assigned followups', stackedFilters.visitStatus === 'Assigned', () => {
             setStackedFilters({ visitStatus: 'Assigned' });
           })
         ];
@@ -404,24 +439,21 @@ const ModuleManager = () => {
       }
 
       case 'follow_ups': {
-        const pending = records.filter(r => 
-          (r.status === 'Pending' || r.status === 'Pending Call') && 
-          (!r.pipelineAction || r.pipelineAction === 'None' || r.pipelineAction === '')
-        );
-        const completed = records.filter(r => 
-          r.status === 'Completed' || 
-          r.status === 'Call Completed' || 
-          (r.pipelineAction && r.pipelineAction !== 'None' && r.pipelineAction !== '')
-        );
+        const completed = records.filter(r => {
+          const isInitialStatus = (r.status === 'Pending Call' || r.status === 'Pending');
+          const isInitialStage = (r.pipelineAction === 'Fresh Lead' || r.pipelineAction === 'None' || !r.pipelineAction || r.pipelineAction === '');
+          return !isInitialStatus || !isInitialStage || r.status === 'Completed' || r.status === 'Call Completed';
+        });
+        const pending = records.filter(r => !completed.includes(r));
 
         return [
-          createCardObj('Total Follow Ups', total, 'PhoneCall', '#3B82F6', '↑ 18.6% vs last month', Object.keys(stackedFilters).length === 0, () => {
+          createCardObj('Total Follow-ups', total, 'PhoneCall', '#3B82F6', 'Total follow-ups', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
           }),
-          createCardObj('Pending', pending.length, 'Clock', '#F59E0B', '↑ 12.4% vs last month', stackedFilters._special === 'pendingFollowUps', () => {
+          createCardObj('Pending', pending.length, 'Clock', '#F59E0B', 'Awaiting action', stackedFilters._special === 'pendingFollowUps', () => {
             setStackedFilters({ _special: 'pendingFollowUps' });
           }),
-          createCardObj('Completed', completed.length, 'CheckCircle', '#22C55E', '↑ 24.1% vs last month', stackedFilters._special === 'completedFollowUps', () => {
+          createCardObj('Completed', completed.length, 'CheckCircle', '#22C55E', 'Action completed', stackedFilters._special === 'completedFollowUps', () => {
             setStackedFilters({ _special: 'completedFollowUps' });
           })
         ];
@@ -431,67 +463,41 @@ const ModuleManager = () => {
         const thisMonth = records.length;
         const uniqueEmployees = new Set(records.map(r => r.employeeId)).size;
         const positive = Math.round(records.filter(r => r.result === 'Interested' || r.result === 'Confirmed' || r.result === 'Site Liked').length / (total || 1) * 100);
-        const upcoming = records.filter(r => r.result === 'Scheduled' || r.date >= todayStr).length;
 
         return [
-          createCardObj('Total Site Visits', total, 'MapPin', '#3B82F6', '↑ 18.6% vs last month', Object.keys(stackedFilters).length === 0, () => {
+          createCardObj('Total Site Visits', total, 'MapPin', '#3B82F6', 'Total visits', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
           }),
-          createCardObj('This Month', thisMonth, 'Calendar', '#22C55E', '↑ 12.4% vs last month', stackedFilters._special === 'thisMonthVisits', () => {
+          createCardObj('This Month', thisMonth, 'Calendar', '#22C55E', 'This month visits', stackedFilters._special === 'thisMonthVisits', () => {
             setStackedFilters({ _special: 'thisMonthVisits' });
           }),
-          createCardObj('Employees Involved', uniqueEmployees, 'Users', '#F59E0B', '↑ 8.7% vs last month', false, () => {
+          createCardObj('Employees Involved', uniqueEmployees, 'Users', '#F59E0B', 'Involved employees', false, () => {
             setStackedFilters({});
           }),
-          createCardObj('Positive Feedback', `${positive}%`, 'ThumbsUp', '#8B5CF6', '↑ 24.1% vs last month', stackedFilters._special === 'positiveFeedback', () => {
+          createCardObj('Positive Feedback', `${positive}%`, 'ThumbsUp', '#8B5CF6', 'Positive feedback', stackedFilters._special === 'positiveFeedback', () => {
             setStackedFilters({ _special: 'positiveFeedback' });
-          }),
-          createCardObj('Upcoming Visits', upcoming, 'Clock', '#EC4899', '↑ 15.3% vs last month', stackedFilters.result === 'Scheduled', () => {
-            setStackedFilters({ result: 'Scheduled' });
           })
         ];
       }
 
       case 'projects': {
-        const isReadyToMove = (item) => {
-          const cStatus = String(item.constructionStatus || '').toLowerCase().trim();
-          const status = String(item.status || '').toLowerCase().trim();
-          return cStatus.includes('ready') || status.includes('ready') || status.includes('oc recd') || status.includes('occupy') || status.includes('possession');
-        };
-        const isUnderConstruction = (item) => {
-          const cStatus = String(item.constructionStatus || '').toLowerCase().trim();
-          const status = String(item.status || '').toLowerCase().trim();
-          return cStatus.includes('construction') || status.includes('construction') || cStatus.includes('build') || status.includes('build') || cStatus.includes('active') || status.includes('active');
-        };
-        const isCompleted = (item) => {
-          const cStatus = String(item.constructionStatus || '').toLowerCase().trim();
-          const status = String(item.status || '').toLowerCase().trim();
-          return cStatus.includes('completed') || status.includes('completed') || cStatus.includes('delivered') || status.includes('delivered');
-        };
-
-        const underConstruction = records.filter(isUnderConstruction);
-        const readyToMove = records.filter(isReadyToMove);
-        const completed = records.filter(isCompleted);
-        
-        const totalValue = '₹ 85.6 Cr';
-
-        return [
-          createCardObj('Total Projects', total, 'Folder', '#3B82F6', '↑ 18.6% vs last month', Object.keys(stackedFilters).length === 0, () => {
-            setStackedFilters({});
-          }),
-          createCardObj('Active Projects', underConstruction.length + readyToMove.length, 'Activity', '#22C55E', '↑ 12.4% vs last month', false, () => {
-            setStackedFilters({});
-          }),
-          createCardObj('Under Construction', underConstruction.length, 'Hammer', '#F59E0B', '↑ 8.7% vs last month', stackedFilters.constructionStatus === 'Under Construction', () => {
-            setStackedFilters({ constructionStatus: 'Under Construction' });
-          }),
-          createCardObj('Ready to Move', readyToMove.length, 'Sparkles', '#8B5CF6', '↑ 24.1% vs last month', stackedFilters.constructionStatus === 'Ready to Move', () => {
-            setStackedFilters({ constructionStatus: 'Ready to Move' });
-          }),
-          createCardObj('Total Value', totalValue, 'Coins', '#EC4899', '↑ 15.3% vs last month', false, () => {
-            setStackedFilters({});
-          })
-        ];
+        const statuses = metadata?.chipGroups?.projectStatus || [];
+        return statuses.map((opt, index) => {
+          const count = records.filter(r => String(r.status) === opt.value).length;
+          const colors = ['#3B82F6', '#22C55E', '#F59E0B', '#8B5CF6', '#EC4899', '#EF4444'];
+          const cardColor = opt.color || colors[index % colors.length];
+          return createCardObj(
+            opt.value,
+            count,
+            'Activity',
+            cardColor,
+            opt.label || opt.value,
+            stackedFilters.status === opt.value,
+            () => {
+              setStackedFilters({ status: opt.value });
+            }
+          );
+        });
       }
 
       case 'leaves': {
@@ -503,31 +509,45 @@ const ModuleManager = () => {
           createCardObj('Total Leaves', total, 'CalendarDays', '#3B82F6', 'This Month', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
           }),
-          createCardObj('Approved Leaves', approved.length, 'CheckCircle', '#22C55E', '0% of total', stackedFilters.status === 'Approved', () => {
+          createCardObj('Approved Leaves', approved.length, 'CheckCircle', '#22C55E', 'Approved', stackedFilters.status === 'Approved', () => {
             setStackedFilters({ status: 'Approved' });
           }),
-          createCardObj('Pending Requests', pending.length, 'Clock', '#F59E0B', '0% of total', stackedFilters.status === 'Pending', () => {
+          createCardObj('Pending Requests', pending.length, 'Clock', '#F59E0B', 'Pending', stackedFilters.status === 'Pending', () => {
             setStackedFilters({ status: 'Pending' });
           }),
-          createCardObj('Rejected Leaves', rejected.length, 'AlertOctagon', '#EF4444', '0% of total', stackedFilters.status === 'Rejected', () => {
+          createCardObj('Rejected Leaves', rejected.length, 'AlertOctagon', '#EF4444', 'Rejected', stackedFilters.status === 'Rejected', () => {
             setStackedFilters({ status: 'Rejected' });
           })
         ];
       }
 
       case 'employees': {
-        const active = records.filter(r => r.status === 'Active' || r.status === 'Active Duty');
-        const onLeave = 0;
+        const activeEmployees = records.filter(r => 
+          r.status !== 'Inactive' && 
+          r.status !== 'Deleted' && 
+          r.status !== 'Archived' &&
+          r.status !== 'Removed'
+        );
+        const att = moduleData.attendance || [];
+        const todayDateStr = new Date().toISOString().split('T')[0];
+        
+        const presentTodayIds = new Set(
+          att
+            .filter(a => String(a.date) === todayDateStr && a.inTime && a.inTime !== '--')
+            .map(a => String(a.employeeId))
+        );
+        const presentCount = activeEmployees.filter(emp => presentTodayIds.has(String(emp.id))).length;
+        const absentOrLeaveCount = activeEmployees.filter(emp => !presentTodayIds.has(String(emp.id))).length;
 
         return [
-          createCardObj('Total Employees', total, 'Users', '#3B82F6', '↑ 20% vs last month', Object.keys(stackedFilters).length === 0, () => {
-            setStackedFilters({});
+          createCardObj('Total Employees', activeEmployees.length, 'Users', '#3B82F6', 'Active employees', stackedFilters._special === 'activeEmployees', () => {
+            setStackedFilters({ _special: 'activeEmployees' });
           }),
-          createCardObj('Active Employees', active.length, 'CheckCircle', '#22C55E', '100% of total', stackedFilters.status === 'Active Duty', () => {
-            setStackedFilters({ status: 'Active Duty' });
+          createCardObj('Present Today', presentCount, 'CheckCircle', '#22C55E', 'Punched in today', stackedFilters._special === 'presentToday', () => {
+            setStackedFilters({ _special: 'presentToday' });
           }),
-          createCardObj('On Leave', onLeave, 'Calendar', '#EF4444', 'Currently away', stackedFilters._special === 'employeesOnLeave', () => {
-            setStackedFilters({ _special: 'employeesOnLeave' });
+          createCardObj('On Leave / Absent', absentOrLeaveCount, 'Calendar', '#EF4444', 'Away today', stackedFilters._special === 'absentOrLeaveToday', () => {
+            setStackedFilters({ _special: 'absentOrLeaveToday' });
           })
         ];
       }
@@ -539,19 +559,19 @@ const ModuleManager = () => {
         const thisMonth = records.length;
 
         return [
-          createCardObj('Total Pitches', total, 'Send', '#3B82F6', '↑ 100% vs last month', Object.keys(stackedFilters).length === 0, () => {
+          createCardObj('Total Pitches', total, 'Send', '#3B82F6', 'Total pitches', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
           }),
-          createCardObj('Converted Pitches', closed.length, 'CheckCircle', '#22C55E', '0% vs last month', stackedFilters.status === 'Deal Closed', () => {
+          createCardObj('Converted Pitches', closed.length, 'CheckCircle', '#22C55E', 'Deal closed', stackedFilters.status === 'Deal Closed', () => {
             setStackedFilters({ status: 'Deal Closed' });
           }),
-          createCardObj('Properties Involved', uniqueProps, 'Home', '#F59E0B', '↑ 100% vs last month', false, () => {
+          createCardObj('Properties Involved', uniqueProps, 'Home', '#F59E0B', 'Involved properties', false, () => {
             setStackedFilters({});
           }),
-          createCardObj('Employees Involved', uniqueEmps, 'Users', '#EC4899', '0% vs last month', false, () => {
+          createCardObj('Employees Involved', uniqueEmps, 'Users', '#EC4899', 'Involved employees', false, () => {
             setStackedFilters({});
           }),
-          createCardObj('This Month', thisMonth, 'Calendar', '#10B981', '↑ 100% vs last month', stackedFilters._special === 'thisMonthPitches', () => {
+          createCardObj('This Month', thisMonth, 'Calendar', '#10B981', 'Pitches this month', stackedFilters._special === 'thisMonthPitches', () => {
             setStackedFilters({ _special: 'thisMonthPitches' });
           })
         ];
@@ -563,19 +583,19 @@ const ModuleManager = () => {
         const closed = records.filter(r => r.stage === 'Closed');
 
         return [
-          createCardObj('Total Queries', total, 'HelpCircle', '#3B82F6', 'This Month', Object.keys(stackedFilters).length === 0, () => {
+          createCardObj('Total Queries', total, 'HelpCircle', '#3B82F6', 'Total queries', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
           }),
-          createCardObj('Open Queries', open.length, 'CheckCircle', '#22C55E', '0% of total', stackedFilters.status === 'Pending Approval', () => {
+          createCardObj('Open Queries', open.length, 'CheckCircle', '#22C55E', 'Open queries', stackedFilters.status === 'Pending Approval', () => {
             setStackedFilters({ status: 'Pending Approval' });
           }),
-          createCardObj('In Progress', inProgress.length, 'Clock', '#F59E0B', '0% of total', stackedFilters._special === 'inProgressQueries', () => {
+          createCardObj('In Progress', inProgress.length, 'Clock', '#F59E0B', 'In progress', stackedFilters._special === 'inProgressQueries', () => {
             setStackedFilters({ _special: 'inProgressQueries' });
           }),
-          createCardObj('Resolved', closed.length, 'Activity', '#8B5CF6', '0% of total', stackedFilters.stage === 'Closed' && stackedFilters._special !== 'closedQueries', () => {
+          createCardObj('Resolved', closed.length, 'Activity', '#8B5CF6', 'Resolved', stackedFilters.stage === 'Closed' && stackedFilters._special !== 'closedQueries', () => {
             setStackedFilters({ stage: 'Closed' });
           }),
-          createCardObj('Closed', closed.length, 'AlertOctagon', '#EF4444', '0% of total', stackedFilters._special === 'closedQueries', () => {
+          createCardObj('Closed', closed.length, 'AlertOctagon', '#EF4444', 'Closed queries', stackedFilters._special === 'closedQueries', () => {
             setStackedFilters({ _special: 'closedQueries' });
           })
         ];
@@ -646,38 +666,105 @@ const ModuleManager = () => {
   // Filter logic
   const filteredRecords = useMemo(() => {
     const todayStr = new Date().toISOString().split('T')[0];
+    const todayLocalStr = new Date().toLocaleDateString('en-IN');
 
     return records.filter(rec => {
-      // Special Converted Leads logic
-      if (stackedFilters.status === 'Converted' && moduleName === 'leads') {
+      // Leads Stacked Filters
+      if (moduleName === 'leads' && stackedFilters._special) {
         const isConv = rec.status === 'Converted' || 
                        rec.status === 'Moved to Customer' || 
                        (moduleData.customers || []).some(c => String(c.id) === String(rec.id) || String(c.leadId) === String(rec.id));
-        if (!isConv) return false;
+        
+        if (stackedFilters._special === 'activeLeads') {
+          if (isConv) return false;
+        }
+        if (stackedFilters._special === 'newLeads') {
+          const isNew = (rec.dateAdded && rec.dateAdded === todayStr) ||
+                        (rec.date && rec.date.includes(todayLocalStr)) ||
+                        rec.status === 'Open' || 
+                        rec.status === 'New Lead';
+          if (!isNew || isConv) return false;
+        }
+        if (stackedFilters._special === 'convertedLeads') {
+          if (!isConv) return false;
+        }
+        if (stackedFilters._special === 'pendingLeads') {
+          const isLost = rec.status === 'Lost' || rec.status === 'Dead' || rec.status === 'Closed/Lost' || rec.stage === 'Lost';
+          if (isConv || isLost) return false;
+        }
       }
 
-      // Special Project Construction Status columns logic
-      if (stackedFilters.constructionStatus && moduleName === 'projects') {
-        const cs = stackedFilters.constructionStatus;
-        const isReadyToMove = (item) => {
-          const cStatus = String(item.constructionStatus || '').toLowerCase().trim();
-          const status = String(item.status || '').toLowerCase().trim();
-          return cStatus.includes('ready') || status.includes('ready') || status.includes('oc recd') || status.includes('occupy') || status.includes('possession');
-        };
-        const isUnderConstruction = (item) => {
-          const cStatus = String(item.constructionStatus || '').toLowerCase().trim();
-          const status = String(item.status || '').toLowerCase().trim();
-          return cStatus.includes('construction') || status.includes('construction') || cStatus.includes('build') || status.includes('build') || cStatus.includes('active') || status.includes('active');
-        };
-        const isCompleted = (item) => {
-          const cStatus = String(item.constructionStatus || '').toLowerCase().trim();
-          const status = String(item.status || '').toLowerCase().trim();
-          return cStatus.includes('completed') || status.includes('completed') || cStatus.includes('delivered') || status.includes('delivered');
+      // Properties Stacked Filters
+      if (moduleName === 'properties' && stackedFilters._special) {
+        if (stackedFilters._special === 'totalProperties') {
+          // show all
+        }
+        if (stackedFilters._special === 'soldProperties') {
+          const st = String(rec.status || '').toLowerCase();
+          if (!st.includes('sold') && !st.includes('register') && !st.includes('book')) return false;
+        }
+        if (stackedFilters._special === 'availProperties') {
+          const st = String(rec.status || '').toLowerCase();
+          if (st.includes('sold') || st.includes('register') || st.includes('book') || st.includes('inactive')) return false;
+        }
+        if (stackedFilters._special === 'newMonthProperties') {
+          const currentMonth = new Date().getMonth() + 1;
+          const currentYear = new Date().getFullYear();
+          let isNew = false;
+          if (rec.dateAdded) {
+            const parts = rec.dateAdded.split('-');
+            if (parts.length === 3) {
+              const year = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              isNew = (year === currentYear && month === currentMonth);
+            }
+          } else if (rec.date) {
+            const parts = rec.date.split(/[/-]/);
+            if (parts.length >= 2) {
+              const month = parseInt(parts[1], 10);
+              const year = parseInt(parts[2], 10);
+              isNew = ((year === currentYear || year === currentYear % 100) && month === currentMonth);
+            }
+          }
+          if (!isNew) return false;
+        }
+      }
+
+      // Follow-up Stacked Filters
+      if (moduleName === 'follow_ups' && stackedFilters._special) {
+        const isCompletedRec = (r) => {
+          const isInitialStatus = (r.status === 'Pending Call' || r.status === 'Pending');
+          const isInitialStage = (r.pipelineAction === 'Fresh Lead' || r.pipelineAction === 'None' || !r.pipelineAction || r.pipelineAction === '');
+          return !isInitialStatus || !isInitialStage || r.status === 'Completed' || r.status === 'Call Completed';
         };
 
-        if (cs === 'Under Construction' && !isUnderConstruction(rec)) return false;
-        if (cs === 'Ready to Move' && !isReadyToMove(rec)) return false;
-        if (cs === 'Completed' && !isCompleted(rec)) return false;
+        if (stackedFilters._special === 'pendingFollowUps') {
+          if (isCompletedRec(rec)) return false;
+        }
+        if (stackedFilters._special === 'completedFollowUps') {
+          if (!isCompletedRec(rec)) return false;
+        }
+      }
+
+      // Employees Stacked Filters
+      if (moduleName === 'employees' && stackedFilters._special) {
+        if (stackedFilters._special === 'activeEmployees') {
+          if (rec.status === 'Inactive' || rec.status === 'Deleted' || rec.status === 'Archived' || rec.status === 'Removed') return false;
+        }
+        if (stackedFilters._special === 'presentToday' || stackedFilters._special === 'absentOrLeaveToday') {
+          const att = moduleData.attendance || [];
+          const presentIds = new Set(
+            att
+              .filter(a => String(a.date) === todayStr && a.inTime && a.inTime !== '--')
+              .map(a => String(a.employeeId))
+          );
+          const isPresent = presentIds.has(String(rec.id));
+          const isActive = rec.status !== 'Inactive' && rec.status !== 'Deleted' && rec.status !== 'Archived' && rec.status !== 'Removed';
+
+          if (!isActive) return false;
+          if (stackedFilters._special === 'presentToday' && !isPresent) return false;
+          if (stackedFilters._special === 'absentOrLeaveToday' && isPresent) return false;
+        }
       }
 
       // Special KPI filters
@@ -716,17 +803,6 @@ const ModuleManager = () => {
         }
         if (stackedFilters._special === 'dueToday' && moduleName === 'tasks') {
           if (rec.dueDate !== todayStr) return false;
-        }
-        if (stackedFilters._special === 'pendingFollowUps' && moduleName === 'follow_ups') {
-          const isPending = (rec.status === 'Pending' || rec.status === 'Pending Call') && 
-                            (!rec.pipelineAction || rec.pipelineAction === 'None' || rec.pipelineAction === '');
-          if (!isPending) return false;
-        }
-        if (stackedFilters._special === 'completedFollowUps' && moduleName === 'follow_ups') {
-          const isCompleted = rec.status === 'Completed' || 
-                              rec.status === 'Call Completed' || 
-                              (rec.pipelineAction && rec.pipelineAction !== 'None' && rec.pipelineAction !== '');
-          if (!isCompleted) return false;
         }
         if (stackedFilters._special === 'inProgressQueries' && moduleName === 'queries') {
           if (rec.status !== 'Approved' || rec.stage === 'Closed') return false;

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { CRMSearchService } = require('../services/crmSearchService');
 
 // Read AI configurations
 function getAIConfig() {
@@ -145,7 +146,6 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
     const item = context.lead || context.customer || {};
     const visits = context.siteVisits || [];
     const followups = context.followups || [];
-    const segment = String(item.r_c_i || item.segment || "").toUpperCase();
     const budget = parseFloat(String(item.budget || 0).replace(/[^0-9.]/g, '')) || 0;
 
     let score = 35; // base score
@@ -169,19 +169,6 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
     if (followups.length > 2) {
       score += 15;
       reasons.push(`Frequent follow-up touchpoints (${followups.length} logs) maintain high engagement.`);
-    }
-
-    if (item.source === "Client Referral" || item.source === "Dealer Referral") {
-      score += 10;
-      reasons.push("Referred source increases conversion confidence.");
-    }
-
-    const interest = String(item.interest_level || item.interestLevel || "").toLowerCase();
-    if (interest.includes("hot") || interest.includes("high")) {
-      score += 15;
-      reasons.push("Marked as Hot lead by assigned RM.");
-    } else if (interest.includes("warm")) {
-      score += 5;
     }
 
     score = Math.min(100, Math.max(0, score));
@@ -216,11 +203,8 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
         const diff = Math.abs(budget - pPrice) / budget;
         if (diff <= 0.1) matchScore += 25;
         else if (diff <= 0.25) matchScore += 15;
-        else if (pPrice > budget) matchScore -= 15;
       }
-      // Locality check
       if (locality && pLoc && pLoc.includes(locality)) matchScore += 15;
-      // Property type check
       if (propType && pType && pType.includes(propType)) matchScore += 10;
 
       matchScore = Math.min(99, Math.max(20, matchScore));
@@ -249,15 +233,11 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
       if (pLower.includes("visit") || pLower.includes("site")) {
         return `Hello ${name},\n\nHope you are doing well. This is ${employee} from Gagan Realtech. We have scheduled a site visit for you to inspect ${project}. Looking forward to showcasing the layout. Please let us know if the time suits you. Thank you!`;
       }
-      if (pLower.includes("price") || pLower.includes("update")) {
-        return `Hello ${name},\n\nWe have an update regarding the pricing details for inventory listings in ${project}. Premium slots are booking quickly. Let's connect today for details. Best, ${employee}`;
-      }
       return `Hello ${name},\n\nThank you for reaching out to Gagan Realtech. We are looking forward to helping you locate your ideal property. Let's arrange a brief call. Regards, ${employee}`;
     } else {
-      // Email template
       return JSON.stringify({
         subject: `Property Options Selection: ${project} Updates`,
-        body: `Dear ${name},\n\nI hope this email finds you well.\n\nFollowing up on our discussions, I am sharing the updated inventory layouts and payment plan terms for our under-construction listings in ${project}.\n\nPlease let me know if we can schedule a site visit or a brief call tomorrow to discuss these slots.\n\nWarm regards,\n\n${employee}\nSales Specialist\nGagan Realtech`,
+        body: `Dear ${name},\n\nI hope this email finds you well.\n\nFollowing up on our discussions, I am sharing the updated inventory layouts and payment plan terms for our under-construction listings in ${project}.\n\nWarm regards,\n\n${employee}\nSales Specialist\nGagan Realtech`,
         cta: "Schedule Property Visit"
       }, null, 2);
     }
@@ -270,7 +250,6 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
     const tasks = context.tasks || [];
     const employees = context.employees || [];
 
-    const todayStr = new Date().toLocaleDateString('en-IN');
     const overdueCount = tasks.filter(t => t.status !== 'Completed').length;
     const leavesCount = employees.filter(e => e.status === 'On Leave').length;
 
@@ -295,241 +274,153 @@ function generateMockAIResponse(prompt, systemPrompt, context) {
     }, null, 2);
   }
 
-  // 5. INSIGHTS / ANALYTICS
+  // 5. INSIGHTS / ANALYTICS WIDGETS
   if (pLower.includes("insight") || pLower.includes("facebook") || pLower.includes("facebook ads")) {
     return JSON.stringify([
       "Leads volume is stable this week, with active follow-ups completed.",
       "Direct referrals from existing clients show 12% higher booking rate.",
-      "Property segment 'Commercial Booths' is experiencing maximum click activity.",
-      "Site visit follow-ups closed within 48 hours show 84% positive conversion rate."
+      "Property segment 'Commercial Booths' is experiencing maximum click activity."
     ], null, 2);
   }
 
-  // 6. CHAT & NATURAL LANGUAGE DYNAMIC CRM SCANNER
-  
-  // (A) Employee Search Match (Employee 360)
-  const employeesList = context.employees || [];
-  const matchedEmp = employeesList.find(e => 
-    e.name.toLowerCase().includes(pLower) || 
-    e.id.toLowerCase() === pLower
-  );
-  if (matchedEmp) {
-    return buildEmployee360(matchedEmp, context);
+  // 6. CRM SEARCH SERVICE ROUTER
+  const result = CRMSearchService.search(prompt, context);
+
+  if (result.type === 'employee360') {
+    const emp = result.data.details;
+    return `### 👤 AI Employee 360° Profile: ${emp.name} (${emp.id})
+- **Role / Profile:** ${emp.role}
+- **Current Status:** ${emp.status}
+- **Contact Details:** Phone: ${emp.contact.phone} • Email: ${emp.contact.email}
+
+#### 📈 Sales Performance Metrics
+- **Assigned Leads Pool:** **${result.data.assignedLeadsCount}** active leads.
+- **Assigned Customers:** **${result.data.assignedCustomersCount}** clients.
+- **Pending Follow-ups:** **${result.data.pendingFollowUpsCount}** outstanding calls.
+- **Conducted Site Visits:** **${result.data.siteVisitsCount}** showings.
+- **Deals Closed (Bookings):** **${result.data.bookingsCount}** conversions.
+- **Revenue Generated:** **₹${result.data.revenueGenerated.toLocaleString('en-IN')}**
+- **Conversion Rate:** ${result.data.conversionRate}
+
+#### 🗓️ Leaves Taken
+- **Leaves Registered:** ${result.data.leaves.length} registered entries.
+
+#### 📋 Task List
+- **Tasks Assigned:** ${result.data.currentTasks.length} pending tasks.
+
+#### 🧠 AI Performance Summary & Recommendations
+${emp.name} is demonstrating strong client engagement metrics. With ₹${result.data.revenueGenerated.toLocaleString('en-IN')} closed revenue, they are a high-performing asset.`;
   }
 
-  // (B) Customer / Lead Search Match (Customer 360)
-  const customersList = context.customers || [];
-  const leadsList = context.leads || [];
-  const matchedCust = customersList.find(c => 
-    c.name.toLowerCase().includes(pLower) || 
-    c.id.toLowerCase() === pLower ||
-    (c.phone && String(c.phone).includes(pLower))
-  ) || leadsList.find(l => 
-    l.name.toLowerCase().includes(pLower) || 
-    l.id.toLowerCase() === pLower ||
-    (l.phone && String(l.phone).includes(pLower))
-  );
+  if (result.type === 'customer360') {
+    const c = result.data.basicDetails;
+    return `### 🤝 AI Customer 360° Profile: ${c.name} (${c.id})
+- **Contact Details:** Phone: ${c.phone} • Email: ${c.email}
+- **Current CRM Stage:** **${c.status}**
+- **Budget Constraint:** **${result.data.budget}**
+- **Preferred Locations:** ${result.data.preferredLocations}
+- **Property Type Preference:** ${result.data.propertyType}
+- **Assigned RM (Manager):** ${result.data.assignedEmployee}
 
-  if (matchedCust) {
-    return buildCustomer360(matchedCust, context);
+#### 📞 Interaction & Journey History
+- **Total Calls/Follow-ups logged:** **${result.data.totalCalls}** contacts.
+- **Logged Site Visits:** **${result.data.siteVisits.length}** visits completed.
+- **Sales Bookings Closed:** **${result.data.bookings.length}** bookings.
+
+#### 📋 Tasks Checklist
+- **Outstanding Tasks:** ${result.data.pendingTasks.length} pending reminders.
+
+#### 🧠 Journey Summary & Recommended Actions
+Customer is in the **${result.data.stage}** stage with a budget of ${result.data.budget}. They have completed ${result.data.siteVisits.length} site visits.
+**Recommended Next Best Action:** Contact within 24 hours to review payment plans or schedule secondary site visit.`;
   }
 
-  // (C) Property / Project Search Match (Property 360)
-  const propertiesList = context.properties || [];
-  const projectsList = context.projects || [];
-  const matchedProp = propertiesList.find(p => 
-    (p.name && p.name.toLowerCase().includes(pLower)) ||
-    (p.propertyName && p.propertyName.toLowerCase().includes(pLower)) ||
-    p.id.toLowerCase() === pLower ||
-    (p.locality && p.locality.toLowerCase().includes(pLower))
-  );
-  if (matchedProp) {
-    return buildProperty360(matchedProp, context);
+  if (result.type === 'property360') {
+    const p = result.data;
+    return `### 🏠 AI Property 360° Profile: ${p.name}
+- **Project Name:** ${p.project}
+- **Builder Details:** ${p.builder}
+- **Current Status:** **${p.status}**
+- **Current Registered Owner:** ${p.owner} (Phone: ${p.ownerContact})
+
+#### 🏷️ Financials & Parameters
+- **Quoted Price/Demand:** **${p.price}**
+- **Availability:** ${p.availability}
+
+#### 📞 Transaction & Pitch History
+- **Pitched Count:** Shown to **${p.pitchesCount}** prospective buyers.
+- **Site Visits Completed:** **${p.visitsCount}** visits.
+- **Sales Bookings:** **${p.bookingsCount}** transactions.
+
+#### 🧠 AI Recommendation
+This unit is located in a high-demand sector. Pitched to match active buyers seeking ${p.project}.`;
   }
 
-  // (D) Special List / Analytics triggers
-  if (pLower.includes("leads above") || pLower.includes("1 cr") || pLower.includes("1cr") || pLower.includes("high budget")) {
-    const highValueLeads = leadsList.filter(l => {
-      const b = parseFloat(String(l.budget || 0).replace(/[^0-9.]/g, '')) || 0;
-      return b >= 10000000;
-    });
-
-    if (highValueLeads.length === 0) {
-      return `There are currently no active leads matching a budget constraint above ₹1 Cr in the pool.`;
-    }
-
-    return `### 💎 Premium Leads (Above ₹1 Cr)
-Here are the active high-value client leads:
-${highValueLeads.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget} (Interest: ${l.interest_level || 'Warm'})`).join('\n')}`;
-  }
-
-  if (pLower.includes("lowest conversion") || pLower.includes("conversion")) {
-    return `### 📈 RM Conversion Analysis
+  if (result.type === 'analytics') {
+    const data = result.data;
+    if (data.type === 'RM Conversion') {
+      return `### 📈 RM Conversion Analysis
 Based on closed sales bookings and lead assignment logs:
-- **Top Performer:** Rajan Sharma (84% site visit conversion)
-- **RM under review:** Rohan Gupta (Lowest conversion rate at 18%, average follow-up response lag is 4.2 hours). Recommended re-assignment of open premium leads.`;
+${data.metrics.map(m => `- **${m.name}:** ${m.rate} (${m.role})`).join('\n')}
+${data.details}`;
+    }
+    if (data.type === 'Highest Sales') {
+      return `### 🏆 Top Selling Employee Analysis
+Based on booking logs and closed sales volume:
+- **Top RM:** ${data.topPerformer} with **${data.volume}** in closed bookings this quarter.
+- **Runner Up:** ${data.runnerUp} with **${data.runnerUpVolume}** in closed bookings this quarter.`;
+    }
+    if (data.type === 'Project Bookings Audits') {
+      return `### 🏗️ Project Booking Audits
+${data.projects.map(p => `- **${p.name}:** ${p.bookings} bookings (${p.status || 'Active'})`).join('\n')}`;
+    }
+    if (data.type === 'Monthly Revenue') {
+      return `### 📊 CRM Revenue Analysis
+- **Accumulated Monthly Revenue:** **${data.volume}** in closed booking deals.`;
+    }
+    if (data.type === 'Inactive Customers') {
+      return `### ⚠️ Inactive Customers
+The following clients have not been contacted recently:
+${data.customers.map(c => `- **${c.name}** (${c.id}) - Last Active: ${c.lastActive}`).join('\n')}`;
+    }
   }
 
-  if (pLower.includes("hot lead") || pLower.includes("hot leads")) {
-    const hotLeads = leadsList.filter(l => {
-      const interest = String(l.interest_level || l.interestLevel || "").toLowerCase();
-      return interest.includes("hot") || interest.includes("high");
-    });
-
-    if (hotLeads.length === 0) {
+  if (result.type === 'hotLeadsList') {
+    if (result.data.length === 0) {
       return `There are currently no active leads tagged as "Hot" inside the database.`;
     }
-
     return `### 🔥 Live Hot Leads
 Here are the active leads tagged as high-priority:
-${hotLeads.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget || 'N/A'} • Assigned to: ${l.assignedEmployeeId || 'RM'}`).join('\n')}
+${result.data.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget || 'N/A'} • Assigned to: ${l.assignedEmployeeId || 'RM'}`).join('\n')}
 **Next Action:** RMs should call today to present the newly updated project sheets.`;
   }
 
-  if (pLower.includes("follow-up") || pLower.includes("follow up") || pLower.includes("followups")) {
-    const followups = context.followups || [];
-    const activeFollowups = followups.filter(f => f.status !== 'Completed');
-    if (activeFollowups.length === 0) {
+  if (result.type === 'followupsList') {
+    if (result.data.length === 0) {
       return `There are no pending follow-ups registered in the CRM today. All scheduled calls are completed!`;
     }
     return `### 📞 Today's Active Follow-ups
 Here are the scheduled follow-up actions:
-${activeFollowups.slice(0, 5).map(f => `- **Client ID:** ${f.customerId || 'N/A'} • **RM Assigned:** ${f.employeeId || 'EMP-001'} • **Status:** ${f.status || 'Pending'} • **Next Action:** Call to follow up.`).join('\n')}`;
+${result.data.slice(0, 5).map(f => `- **Client ID:** ${f.customerId || 'N/A'} • **RM Assigned:** ${f.employeeId || 'EMP-001'} • **Status:** ${f.status || 'Pending'} • **Next Action:** Call to follow up.`).join('\n')}`;
   }
 
-  if (pLower.includes("highest sales") || pLower.includes("highest selling") || pLower.includes("top seller")) {
-    return `### 🏆 Top Selling Employee Analysis
-Based on booking logs and closed sales volume:
-- **Top RM:** Rajan Sharma with **₹12.4 Cr** in closed bookings this quarter.
-- **Runner Up:** Gagan Chopra with **₹9.8 Cr** in closed bookings this quarter.
-- **Conversion Performance:** Rajan Sharma maintains the highest conversion rate at 84% site-visit-to-booking efficiency.`;
+  if (result.type === 'highValueLeadsList') {
+    if (result.data.length === 0) {
+      return `There are currently no active leads matching a budget constraint above ₹1 Cr in the pool.`;
+    }
+    return `### 💎 Premium Leads (Above ₹1 Cr)
+Here are the active high-value client leads:
+${result.data.map(l => `- **${l.name || l.person_name}** (${l.id}) - Budget: ${l.budget} (Interest: ${l.interest_level || 'Warm'})`).join('\n')}`;
   }
 
-  if (pLower.includes("zero bookings") || pLower.includes("project")) {
-    return `### 🏗️ Project Booking Audits
-- **Gagan Residency (Sector 82):** 4 active bookings.
-- **Gagan Royal Villas (Sector 115):** 0 bookings registered this month (under-construction, needs promotional marketing push).`;
+  if (result.type === 'suggestions') {
+    if (result.data.length > 0) {
+      return `No exact match found for "${prompt}". Did you mean:
+${result.data.map(s => `- **${s.name}** (${s.type})`).join('\n')}`;
+    }
   }
 
-  if (pLower.includes("hello") || pLower.includes("hi") || pLower.includes("hey")) {
-    return `Hello! I am Gagan Realtech Copilot. I can run natural language analysis across leads, employees, properties, and projects. Try asking me "report on Gagan Chopra" or "leads above 1 Cr".`;
-  }
-
-  // (E) Dynamic Spelling suggestions / No records match fallback
-  const allSearchableNames = [
-    ...customersList.map(c => ({ name: c.name, type: 'Customer' })),
-    ...leadsList.map(l => ({ name: l.name, type: 'Lead' })),
-    ...employeesList.map(e => ({ name: e.name, type: 'Employee' }))
-  ];
-
-  const suggestions = allSearchableNames.filter(item => 
-    item.name && 
-    (item.name.toLowerCase().includes(pLower) || pLower.includes(item.name.toLowerCase()))
-  );
-
-  if (suggestions.length > 0) {
-    return `No exact match found for "${prompt}". Did you mean:
-${suggestions.slice(0, 3).map(s => `- **${s.name}** (${s.type})`).join('\n')}`;
-  }
-
-  return `No matching records were found in your CRM.`;
-}
-
-// Sub-builders to compile profiles
-function buildEmployee360(emp, context) {
-  const leads = context.leads || [];
-  const customers = context.customers || [];
-  const followups = context.followups || context.follow_ups || [];
-  const siteVisits = context.siteVisits || context.site_visits || [];
-  const deals = context.deals || [];
-  const tasks = context.tasks || [];
-  
-  const assignedLeads = leads.filter(l => String(l.assignedEmployeeId) === String(emp.id) || String(l.employeeId) === String(emp.id));
-  const assignedCustomers = customers.filter(c => String(c.assignedEmployeeId) === String(emp.id) || String(c.employeeId) === String(emp.id));
-  const pendingFollowups = followups.filter(f => (String(f.employeeId) === String(emp.id) || String(f.assignedEmployeeId) === String(emp.id)) && f.status !== 'Completed');
-  const handledVisits = siteVisits.filter(v => String(v.employeeId) === String(emp.id));
-  const handledDeals = deals.filter(d => String(d.employeeId) === String(emp.id));
-  const totalRevenue = handledDeals.reduce((sum, d) => sum + (parseFloat(String(d.salePrice || 0).replace(/[^0-9.]/g, '')) || 0), 0);
-  const employeeTasks = tasks.filter(t => String(t.assignedEmployeeId) === String(emp.id));
-
-  return `### 👤 AI Employee 360° Profile: ${emp.name} (${emp.id})
-- **Role / Profile:** ${emp.role || 'Sales Specialist'}
-- **Current Status:** ${emp.status || 'Active'}
-- **Contact Details:** Phone: ${emp.phone || 'N/A'} • Email: ${emp.email || 'N/A'}
-
-#### 📈 Sales Performance Metrics
-- **Assigned Leads Pool:** **${assignedLeads.length}** active leads.
-- **Assigned Customers:** **${assignedCustomers.length}** clients.
-- **Pending Follow-ups:** **${pendingFollowups.length}** outstanding calls.
-- **Conducted Site Visits:** **${handledVisits.length}** showings.
-- **Deals Closed (Bookings):** **${handledDeals.length}** conversions.
-- **Revenue Generated:** **₹${totalRevenue.toLocaleString('en-IN')}**
-- **Conversion Rate:** ${assignedLeads.length > 0 ? ((handledDeals.length / assignedLeads.length) * 100).toFixed(1) : '0.0'}%
-
-#### 🗓️ Attendance & Leaves
-- **Attendance Status:** Clocked In today.
-- **Leaves Taken:** 0 days this month.
-
-#### 📋 Task Checklist
-- **Active Tasks:** ${employeeTasks.length} pending items.
-${employeeTasks.map(t => `  - [ ] ${t.title} (Due: ${t.dueDate || 'N/A'} • Priority: ${t.priority || 'Medium'})`).join('\n')}
-
-#### 🧠 AI Performance Summary & Recommendations
-${emp.name} is demonstrating strong client engagement metrics. With ₹${totalRevenue.toLocaleString('en-IN')} closed revenue, they are a high-performing asset. **Recommended Action:** Assign pending premium leads in locality request areas.`;
-}
-
-function buildCustomer360(c, context) {
-  const followups = (context.followups || context.follow_ups || []).filter(f => String(f.customerId) === String(c.id));
-  const siteVisits = (context.siteVisits || context.site_visits || []).filter(v => String(v.customerId) === String(c.id));
-  const pitches = (context.pitches || context.property_pitch_history || []).filter(p => String(p.customerId) === String(c.id));
-  const deals = (context.deals || []).filter(d => String(d.customerId) === String(c.id));
-  const tasks = (context.tasks || []).filter(t => String(t.customerId) === String(c.id));
-  
-  return `### 🤝 AI Customer 360° Profile: ${c.name} (${c.id})
-- **Contact Details:** Phone: ${c.phone || 'N/A'} • Email: ${c.email || 'N/A'}
-- **Current CRM Stage:** **${c.status || c.stage || 'Fresh Lead'}**
-- **Budget Constraint:** **${c.budget || 'N/A'}**
-- **Preferred Locations:** ${c.locality || c.preferredLocation || 'Any'}
-- **Property Type Preference:** ${c.propertyType || c.preferredType || 'Any'}
-- **Assigned RM (Manager):** ${c.assignedEmployeeId || 'EMP-001'}
-
-#### 📞 Interaction & Journey History
-- **Total Calls/Follow-ups logged:** **${followups.length}** contacts.
-- **Logged Site Visits:** **${siteVisits.length}** visits completed.
-- **Logged Pitches:** **${pitches.length}** listings shown.
-- **Sales Bookings Closed:** **${deals.length}** bookings.
-
-#### 📋 Tasks & Documents Checklist
-- **Outstanding Tasks:** ${tasks.length} pending reminders.
-- **Attached Files:** ${c.documents || '0'} verified documents in vault.
-
-#### 🧠 Journey Summary & Recommended Actions
-Customer is in the **${c.status || c.stage || 'Negotiation'}** stage with a budget of ${c.budget || 'N/A'}. They have completed ${siteVisits.length} site visits.
-**Recommended Next Best Action:** Contact within 24 hours to review payment plans or schedule secondary site visit.`;
-}
-
-function buildProperty360(p, context) {
-  const pitches = (context.pitches || context.property_pitch_history || []).filter(h => String(h.propertyId) === String(p.id));
-  const deals = (context.deals || []).filter(d => String(d.propertyId) === String(p.id));
-
-  return `### 🏠 AI Property 360° Profile: ${p.propertyName || p.name || `Property ${p.id}`}
-- **Project Name:** ${p.projectName || 'Gagan Realtech Projects'}
-- **Builder Details:** Gagan Builders & Developers
-- **Current Pipeline Status:** **${p.status || p.propertyStatus || 'Available'}**
-- **Current Registered Owner:** ${p.contact_person_name || 'Seller'} (Phone: ${p.phone || 'N/A'})
-
-#### 🏷️ Financials & Parameters
-- **Quoted Price/Demand:** **${p.demand || p.price || 'Contact Owner'}**
-- **Dimensions / Size:** ${p.size || 'N/A'}
-- **Property Type:** ${p.propertyType || 'N/A'}
-- **Locality Sector:** ${p.locality || 'N/A'}
-
-#### 📞 Transaction & Pitch History
-- **Pitched Count:** Shown to **${pitches.length}** prospective buyers.
-- **Sales Bookings:** **${deals.length}** transactions executed.
-
-#### 🧠 AI Recommendation & Matching Analysis
-This unit is located in a high-demand sector with maximum click activity. RMs should pitch this to active buyers seeking ${p.propertyType || 'Villas'} in ${p.locality || 'Mohali'}.`;
+  return "No matching records were found in your CRM.";
 }
 
 module.exports = {

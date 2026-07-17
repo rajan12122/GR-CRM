@@ -56,6 +56,7 @@ const Settings = () => {
   const [permSelectedModule, setPermSelectedModule] = useState('customers');
   const [passwordSelectedEmp, setPasswordSelectedEmp] = useState('');
   const [newPasswordVal, setNewPasswordVal] = useState('');
+  const [confirmPasswordVal, setConfirmPasswordVal] = useState('');
   const [selectedUserForPerms, setSelectedUserForPerms] = useState('');
   const [userPermSelectedModule, setUserPermSelectedModule] = useState('leads');
 
@@ -726,25 +727,42 @@ const Settings = () => {
 
   const handleUpdatePassword = async (e) => {
     e.preventDefault();
-    if (!passwordSelectedEmp || !newPasswordVal.trim()) {
-      showStatus('error', 'Please select an employee and enter a new password.');
+    if (!passwordSelectedEmp || !newPasswordVal || !confirmPasswordVal) {
+      showStatus('error', 'Please fill in all fields.');
       return;
     }
 
-    const employeesList = moduleData.employees || [];
-    const emp = employeesList.find(emp => emp.id === passwordSelectedEmp);
-    if (!emp) {
-      showStatus('error', 'Employee account not found.');
+    if (newPasswordVal !== confirmPasswordVal) {
+      showStatus('error', 'Passwords do not match.');
       return;
     }
 
-    const updatedPayload = { ...emp, password: newPasswordVal.trim() };
-    const res = await updateRecord('employees', passwordSelectedEmp, updatedPayload);
-    if (res.success) {
-      showStatus('success', `Password for '${emp.name}' updated successfully!`);
-      setNewPasswordVal('');
-    } else {
-      showStatus('error', res.message);
+    // Password strength validation regex
+    const strengthRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+    if (!strengthRegex.test(newPasswordVal)) {
+      showStatus('error', 'Password must be at least 8 characters, with an uppercase letter, a lowercase letter, a number, and a special character.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('gr_crm_token');
+      const response = await axios.post(`${API_BASE_URL}/auth/admin/reset-password`, {
+        employeeId: passwordSelectedEmp,
+        password: newPasswordVal,
+        confirmPassword: confirmPasswordVal
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (response.data.success) {
+        showStatus('success', response.data.message || 'Password updated successfully!');
+        setNewPasswordVal('');
+        setConfirmPasswordVal('');
+      } else {
+        showStatus('error', response.data.message || 'Failed to update password.');
+      }
+    } catch (err) {
+      showStatus('error', err.response?.data?.message || 'Server error. Password update failed.');
     }
   };
 
@@ -2015,7 +2033,7 @@ const Settings = () => {
                     <Grid item xs={12}>
                       <TextField
                         label="New Login Password"
-                        type="text"
+                        type="password"
                         fullWidth
                         size="medium"
                         value={newPasswordVal}
@@ -2023,6 +2041,32 @@ const Settings = () => {
                         placeholder="Enter secure new password"
                         required
                       />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <TextField
+                        label="Confirm New Password"
+                        type="password"
+                        fullWidth
+                        size="medium"
+                        value={confirmPasswordVal}
+                        onChange={(e) => setConfirmPasswordVal(e.target.value)}
+                        placeholder="Confirm secure new password"
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <Box sx={{ p: 2, bgcolor: '#F8FAFC', borderRadius: '8px', border: '1px solid #E2E8F0' }}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: '#475569', display: 'block', mb: 1 }}>
+                          Password Complexity Requirements:
+                        </Typography>
+                        <ul style={{ margin: 0, paddingLeft: '16px', fontSize: '11px', color: '#64748B' }}>
+                          <li style={{ color: newPasswordVal.length >= 8 ? '#16A34A' : '#64748B', fontWeight: newPasswordVal.length >= 8 ? 700 : 400 }}>Minimum 8 characters</li>
+                          <li style={{ color: /[A-Z]/.test(newPasswordVal) ? '#16A34A' : '#64748B', fontWeight: /[A-Z]/.test(newPasswordVal) ? 700 : 400 }}>At least one uppercase letter (A-Z)</li>
+                          <li style={{ color: /[a-z]/.test(newPasswordVal) ? '#16A34A' : '#64748B', fontWeight: /[a-z]/.test(newPasswordVal) ? 700 : 400 }}>At least one lowercase letter (a-z)</li>
+                          <li style={{ color: /\d/.test(newPasswordVal) ? '#16A34A' : '#64748B', fontWeight: /\d/.test(newPasswordVal) ? 700 : 400 }}>At least one number (0-9)</li>
+                          <li style={{ color: /[^A-Za-z0-9]/.test(newPasswordVal) ? '#16A34A' : '#64748B', fontWeight: /[^A-Za-z0-9]/.test(newPasswordVal) ? 700 : 400 }}>At least one special character (e.g. @, #, $, !)</li>
+                        </ul>
+                      </Box>
                     </Grid>
                     <Grid item xs={12}>
                       <Button 

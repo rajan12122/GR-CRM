@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import * as Icons from 'lucide-react';
 import axios from 'axios';
-import { decryptData } from '../utils/crypto';
 import { API_BASE_URL } from '../context/AppContext';
 
 // Dynamically load Leaflet CDN assets for a keyless maps implementation
@@ -79,12 +78,10 @@ const LocationTracker = () => {
       });
       
       const decryptedData = res.data.map(log => {
-        const latStr = decryptData(log.latitude);
-        const lngStr = decryptData(log.longitude);
         return {
           ...log,
-          lat: parseFloat(latStr) || 0,
-          lng: parseFloat(lngStr) || 0
+          lat: Number(log.latitude) || 0,
+          lng: Number(log.longitude) || 0
         };
       }).filter(item => item.lat !== 0 && item.lng !== 0);
 

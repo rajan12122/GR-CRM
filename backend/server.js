@@ -9,7 +9,7 @@ const { syncToSheets, syncFromSheets, getSheetsConfig, processSyncQueue } = requ
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const JWT_SECRET = 'GR_CRM_SUPER_SECRET_KEY';
+const JWT_SECRET = process.env.JWT_SECRET || 'GR_CRM_SUPER_SECRET_KEY';
 
 app.use(cors());
 app.use(express.json({ limit: '100mb' }));
@@ -174,9 +174,17 @@ function authenticateToken(req, res, next) {
   
   if (!token) return res.status(401).json({ message: 'Authentication token required.' });
 
-  jwt.verify(token, JWT_SECRET, (err, user) => {
+  jwt.verify(token, JWT_SECRET, (err, decodedUser) => {
     if (err) return res.status(403).json({ message: 'Invalid or expired token.' });
-    req.user = user;
+    
+    // Check session validity & token version
+    const db = readDb();
+    const employee = (db.employees || []).find(e => e.id === decodedUser.id);
+    if (!employee || employee.status !== 'Active' || (employee.tokenVersion !== undefined && employee.tokenVersion !== decodedUser.tokenVersion)) {
+      return res.status(403).json({ message: 'Session has expired or been revoked. Please log in again.' });
+    }
+    
+    req.user = decodedUser;
     next();
   });
 }
@@ -213,27 +221,40 @@ app.post('/api/auth/login', (req, res) => {
   const employee = db.employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
 
   if (!employee) {
-    return res.status(404).json({ message: 'No employee account found with this email.' });
+    return res.status(401).json({ message: 'Invalid credentials.' });
   }
 
   if (employee.status !== 'Active') {
     return res.status(403).json({ message: 'Employee account is inactive.' });
   }
 
-  // Authenticate against database password, fall back to seed password if undefined.
-  const storedPassword = employee.password || (employee.role === 'Admin' ? 'admin123' : 'pass123');
-  const isValidPassword = password === storedPassword;
+  // Strictly check bcrypt hash
+  const hash = employee.passwordHash;
+  if (!hash) {
+    return res.status(401).json({ message: 'Account is not configured with a login password. Please contact the Admin.' });
+  }
+
+  const isValidPassword = bcrypt.compareSync(password, hash);
   if (!isValidPassword) {
     return res.status(401).json({ message: 'Invalid credentials.' });
   }
 
+  const tokenVersion = employee.tokenVersion || 1;
   const token = jwt.sign(
-    { id: employee.id, name: employee.name, email: employee.email, role: employee.role },
+    { id: employee.id, name: employee.name, email: employee.email, role: employee.role, tokenVersion },
     JWT_SECRET,
-    { expiresIn: '24h' }
+    { expiresIn: '8h' }
   );
 
-  res.json({ token, user: employee });
+  const sanitizedUser = {
+    id: employee.id,
+    name: employee.name,
+    email: employee.email,
+    role: employee.role,
+    status: employee.status
+  };
+
+  res.json({ token, user: sanitizedUser });
 });
 
 app.get('/api/auth/me', authenticateToken, (req, res) => {
@@ -241,6 +262,60 @@ app.get('/api/auth/me', authenticateToken, (req, res) => {
   const employee = db.employees.find(emp => emp.id === req.user.id);
   if (!employee) return res.status(404).json({ message: 'Profile not found.' });
   res.json(employee);
+});
+
+app.post('/api/auth/admin/reset-password', authenticateToken, (req, res) => {
+  // Enforce Admin role authorization in the backend
+  if (req.user.role !== 'Admin') {
+    return res.status(403).json({ message: 'Access denied: Only Admins can set or reset employee passwords.' });
+  }
+
+  const { employeeId, password, confirmPassword } = req.body;
+  if (!employeeId || !password || !confirmPassword) {
+    return res.status(400).json({ message: 'Employee ID, password, and confirm password fields are required.' });
+  }
+
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: 'Passwords do not match.' });
+  }
+
+  // Password strength validation (min 8 chars, 1 uppercase, 1 lowercase, 1 number, 1 special character)
+  const strengthRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+  if (!strengthRegex.test(password)) {
+    return res.status(400).json({ message: 'Password must be at least 8 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character.' });
+  }
+
+  const db = readDb();
+  const employee = db.employees.find(e => e.id === employeeId);
+  if (!employee) {
+    return res.status(404).json({ message: 'Employee account not found.' });
+  }
+
+  // Hash using secure cost factor (12 rounds)
+  const salt = bcrypt.genSaltSync(12);
+  const hash = bcrypt.hashSync(password, salt);
+
+  employee.passwordHash = hash;
+  
+  // Invalidate any active sessions by incrementing version
+  employee.tokenVersion = (employee.tokenVersion || 1) + 1;
+
+  // Remove any legacy plaintext password field
+  delete employee.password;
+
+  // Add audit log
+  const auditLog = {
+    id: `LOG-AUD-${Date.now()}`,
+    employeeName: req.user.name,
+    action: `Reset password for employee: ${employee.name} (${employee.id})`,
+    dateTime: new Date().toLocaleString()
+  };
+  if (!db.activity_logs) db.activity_logs = [];
+  db.activity_logs.unshift(auditLog);
+
+  writeDb(db);
+
+  res.json({ success: true, message: `Password for employee ${employee.name} updated successfully. Active sessions revoked.` });
 });
 
 // --- METADATA ROUTES (Schema changes) ---
@@ -1497,6 +1572,12 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   const db = readDb();
   const payload = req.body;
 
+  if (module === 'employees') {
+    delete payload.password;
+    delete payload.passwordHash;
+    delete payload.tokenVersion;
+  }
+
   // Generate automated primary key if not provided (e.g. CUST-003)
   if (!payload.id) {
     const prefixMap = {
@@ -1771,6 +1852,12 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   const { module, id } = req.params;
   const db = readDb();
   const payload = req.body;
+
+  if (module === 'employees') {
+    delete payload.password;
+    delete payload.passwordHash;
+    delete payload.tokenVersion;
+  }
 
   const index = db[module].findIndex(rec => String(rec.id) === String(id));
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
@@ -2270,9 +2357,12 @@ app.post('/api/data/:module/bulk-delete', authenticateToken, checkPermission('se
   res.json({ success: true, message: `Successfully deleted ${ids.length} records.` });
 });
 
-const SECRET_KEY = "GAGAN_REALTECH_SECURE_LOCATION_KEY_2026";
-function decryptData(hash) {
+const ALGORITHM = 'aes-256-gcm';
+const IV_LENGTH = 12;
+
+function decryptLegacyXOR(hash) {
   if (!hash) return "";
+  const LEGACY_KEY = "GAGAN_REALTECH_SECURE_LOCATION_KEY_2026";
   try {
     let str = hash;
     try {
@@ -2281,12 +2371,57 @@ function decryptData(hash) {
     let result = "";
     for (let i = 0; i < str.length; i++) {
       const charCode = str.charCodeAt(i);
-      const keyChar = SECRET_KEY.charCodeAt(i % SECRET_KEY.length);
+      const keyChar = LEGACY_KEY.charCodeAt(i % LEGACY_KEY.length);
       result += String.fromCharCode(charCode ^ keyChar);
     }
     return result;
   } catch (e) {
     return "";
+  }
+}
+
+function encryptLocation(latitude, longitude) {
+  const keyHex = process.env.DB_ENCRYPTION_KEY;
+  if (!keyHex || keyHex.length !== 64) {
+    return `${latitude}:${longitude}`;
+  }
+  try {
+    const key = Buffer.from(keyHex, 'hex');
+    const iv = crypto.randomBytes(IV_LENGTH);
+    const data = JSON.stringify({ lat: Number(latitude), lng: Number(longitude) });
+    const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
+    let encrypted = cipher.update(data, 'utf8', 'hex');
+    encrypted += cipher.final('hex');
+    const authTag = cipher.getAuthTag().toString('hex');
+    return `${iv.toString('hex')}:${authTag}:${encrypted}`;
+  } catch (e) {
+    return `${latitude}:${longitude}`;
+  }
+}
+
+function decryptLocation(encryptedString) {
+  const keyHex = process.env.DB_ENCRYPTION_KEY;
+  if (!keyHex || keyHex.length !== 64) {
+    const parts = String(encryptedString).split(':');
+    return { lat: parseFloat(parts[0]) || 0, lng: parseFloat(parts[1]) || 0 };
+  }
+  try {
+    const parts = String(encryptedString).split(':');
+    if (parts.length < 3) {
+      return { lat: parseFloat(parts[0]) || 0, lng: parseFloat(parts[1]) || 0 };
+    }
+    const iv = Buffer.from(parts[0], 'hex');
+    const tag = Buffer.from(parts[1], 'hex');
+    const payload = parts[2];
+    const key = Buffer.from(keyHex, 'hex');
+    const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+    decipher.setAuthTag(tag);
+    let decrypted = decipher.update(payload, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    return JSON.parse(decrypted);
+  } catch (e) {
+    const parts = String(encryptedString).split(':');
+    return { lat: parseFloat(parts[0]) || 0, lng: parseFloat(parts[1]) || 0 };
   }
 }
 
@@ -2310,15 +2445,24 @@ app.post('/api/location/log', authenticateToken, (req, res) => {
   if (!db.location_logs) db.location_logs = [];
   if (!db.active_paths) db.active_paths = {};
 
-  const decLat = parseFloat(decryptData(latitude)) || 0;
-  const decLng = parseFloat(decryptData(longitude)) || 0;
+  // Support direct floats or legacy XOR strings
+  let decLat = parseFloat(latitude);
+  let decLng = parseFloat(longitude);
+
+  if (isNaN(decLat) || isNaN(decLng)) {
+    decLat = parseFloat(decryptLegacyXOR(latitude)) || 0;
+    decLng = parseFloat(decryptLegacyXOR(longitude)) || 0;
+  }
+
+  // Encrypt at rest in db using AES-256-GCM
+  const encryptedCoords = encryptLocation(decLat, decLng);
 
   const logEntry = {
     id: `LOC-${Date.now()}`,
     employeeId,
     employeeName,
-    latitude,
-    longitude,
+    latitude: encryptedCoords, // Coordinates encrypted at rest
+    longitude: "",
     status,
     timestamp: new Date().toISOString()
   };
@@ -2337,7 +2481,7 @@ app.post('/api/location/log', authenticateToken, (req, res) => {
     } else {
       const lastPoint = currentPath[currentPath.length - 1];
       const dist = calculateDistanceKm(lastPoint.lat, lastPoint.lng, decLat, decLng);
-      // Only capture when moved more than 10 meters (0.01 km) to avoid GPS drift but capture steps
+      // Only capture when moved more than 10 meters (0.01 km) to avoid GPS drift
       if (dist >= 0.01) {
         currentPath.push({
           lat: decLat,
@@ -2372,8 +2516,12 @@ app.post('/api/location/log', authenticateToken, (req, res) => {
   res.json({ success: true, log: logEntry });
 });
 
-// Fetch active coordinates path
+// Fetch active coordinates path (Admin and Manager only)
 app.get('/api/location/path/:employeeId', authenticateToken, (req, res) => {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
+    return res.status(403).json({ message: 'Access denied: Location query restricted.' });
+  }
+
   const { employeeId } = req.params;
   const db = readDb();
   const path = db.active_paths?.[employeeId] || [];
@@ -2385,8 +2533,12 @@ app.get('/api/location/path/:employeeId', authenticateToken, (req, res) => {
   res.json({ path, distance: parseFloat(distance.toFixed(2)) });
 });
 
-// Fetch active location logs
+// Fetch active location logs (Admin and Manager only)
 app.get('/api/location/active', authenticateToken, (req, res) => {
+  if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
+    return res.status(403).json({ message: 'Access denied: Location query restricted.' });
+  }
+
   const db = readDb();
   const logs = db.location_logs || [];
   
@@ -2404,7 +2556,18 @@ app.get('/api/location/active', authenticateToken, (req, res) => {
   const result = Object.values(activeLocs).filter(loc => 
     loc.status === 'sharing' && new Date(loc.timestamp) > fiveMinutesAgo
   );
-  res.json(result);
+
+  // Decrypt latitude/longitude for client
+  const decryptedResult = result.map(loc => {
+    const coords = decryptLocation(loc.latitude);
+    return {
+      ...loc,
+      latitude: coords.lat,
+      longitude: coords.lng
+    };
+  });
+
+  res.json(decryptedResult);
 });
 
 // Fetch set message templates config
@@ -3122,15 +3285,54 @@ app.get('/api/public/lookup/:module', (req, res) => {
   }
 });
 
-// Public Customer Intake Form Submission
-app.post('/api/public/lead-intake', (req, res) => {
-  const { name, phone, locality, sector, propertyType, optionType, size, plc, budget, queryType = 'Buy Property' } = req.body;
-  const db = readDb();
-  
-  if (!db.leads) db.leads = [];
+// Lightweight memory-based IP rate limiter
+const ipRequests = {};
+function ipRateLimiter(windowMs, maxRequests) {
+  return (req, res, next) => {
+    const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const now = Date.now();
+    if (!ipRequests[ip]) {
+      ipRequests[ip] = [];
+    }
+    ipRequests[ip] = ipRequests[ip].filter(time => now - time < windowMs);
+    if (ipRequests[ip].length >= maxRequests) {
+      return res.status(429).json({ success: false, message: 'Too many requests from this network. Please try again in 15 minutes.' });
+    }
+    ipRequests[ip].push(now);
+    next();
+  };
+}
 
-  // Enforce Phone uniqueness across leads and customers - if duplicate, auto-create Query!
-  const cleanPhone = String(phone).trim();
+// Public Customer Intake Form Submission (Rate-limited, validated, and anti-spam checked)
+app.post('/api/public/lead-intake', ipRateLimiter(15 * 60 * 1000, 10), (req, res) => {
+  const { website_url, name, phone, locality, sector, propertyType, optionType, size, plc, budget, queryType = 'Buy Property' } = req.body;
+  
+  // 1. Honeypot check (Bots fill this invisible input)
+  if (website_url) {
+    console.warn(`[Anti-Spam] Honeypot triggered from IP: ${req.ip}`);
+    return res.status(200).json({ success: true, message: "Welcome back! Your new requirements query has been registered." });
+  }
+
+  // 2. Strict inputs validation
+  if (!name || String(name).trim().length < 2) {
+    return res.status(400).json({ message: 'Name must be at least 2 characters long.' });
+  }
+
+  const cleanPhone = String(phone || '').trim();
+  if (!cleanPhone || cleanPhone.length !== 10 || isNaN(Number(cleanPhone))) {
+    return res.status(400).json({ message: 'Phone number must be exactly 10 digits.' });
+  }
+
+  // Block potential XSS/spam content injections
+  const spamPattern = /<[^>]*>|http|https|www\./i;
+  if (spamPattern.test(name) || spamPattern.test(locality) || spamPattern.test(sector)) {
+    console.warn(`[Anti-Spam] Suspicious content blocked from IP: ${req.ip}`);
+    return res.status(400).json({ message: 'Invalid characters or links detected in submission.' });
+  }
+
+  const db = readDb();
+  if (!db.leads) db.leads = [];
+  
   const existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
   const existingLead = (db.leads || []).find(l => l.phone && String(l.phone).trim() === cleanPhone);
   
@@ -3259,10 +3461,39 @@ app.post('/api/public/lead-intake', (req, res) => {
 });
 
 // Public Employee Quick-Add Intake Portal Form Submission
-app.post('/api/public/quick-add', (req, res) => {
-  const { module, payload, key } = req.body;
+app.post('/api/public/quick-add', ipRateLimiter(15 * 60 * 1000, 10), (req, res) => {
+  const { website_url, module, payload, key } = req.body;
+
+  // 1. Honeypot check
+  if (website_url) {
+    return res.status(200).json({ success: true, message: "Record added successfully." });
+  }
+
   if (key !== 'gagan_employee_intake_2026') {
     return res.status(403).json({ error: "Invalid access token." });
+  }
+
+  // 2. Whitelist allowed modules to block backend backdoors
+  const allowedModules = ['leads', 'customers', 'properties', 'queries'];
+  if (!allowedModules.includes(module)) {
+    return res.status(403).json({ error: "Access denied. Action not allowed on this module from the public intake portal." });
+  }
+
+  if (!payload || typeof payload !== 'object') {
+    return res.status(400).json({ error: "Invalid payload." });
+  }
+
+  // Sanitize payload from security fields
+  delete payload.password;
+  delete payload.passwordHash;
+  delete payload.tokenVersion;
+
+  // Enforce phone validation if phone present
+  if (payload.phone) {
+    const cleanPhone = String(payload.phone).trim();
+    if (cleanPhone.length > 0 && (cleanPhone.length !== 10 || isNaN(Number(cleanPhone)))) {
+      return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+    }
   }
 
   const db = readDb();

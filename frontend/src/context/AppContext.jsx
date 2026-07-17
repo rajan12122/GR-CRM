@@ -195,13 +195,11 @@ export const AppProvider = ({ children }) => {
   // Log employee coordinates securely
   const logEmployeeLocation = async (lat, lng, status) => {
     try {
-      const encLat = encryptData(lat);
-      const encLng = encryptData(lng);
       await axios.post(`${API_BASE_URL}/location/log`, {
         employeeId: user?.id,
         employeeName: user?.name,
-        latitude: encLat,
-        longitude: encLng,
+        latitude: lat,
+        longitude: lng,
         status
       });
       return { success: true };

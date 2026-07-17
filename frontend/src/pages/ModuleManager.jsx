@@ -348,7 +348,8 @@ const ModuleManager = () => {
           (r.dateAdded && r.dateAdded === todayStr) ||
           (r.date && r.date.includes(todayLocalStr)) ||
           r.status === 'Open' || 
-          r.status === 'New Lead'
+          r.status === 'New Lead' ||
+          r.leadType === 'Seller'
         );
         const pending = activeLeads.filter(r => 
           r.status !== 'Lost' && r.status !== 'Dead' && r.status !== 'Closed/Lost' &&
@@ -704,7 +705,8 @@ const ModuleManager = () => {
           const isNew = (rec.dateAdded && rec.dateAdded === todayStr) ||
                         (rec.date && rec.date.includes(todayLocalStr)) ||
                         rec.status === 'Open' || 
-                        rec.status === 'New Lead';
+                        rec.status === 'New Lead' ||
+                        rec.leadType === 'Seller';
           if (!isNew || isConv) return false;
         }
         if (stackedFilters._special === 'convertedLeads') {

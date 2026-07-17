@@ -22,6 +22,40 @@ import {
 import { useApp } from '../context/AppContext';
 import { Home } from 'lucide-react';
 
+const parseIndianNumber = (val) => {
+  if (val === undefined || val === null || val === '') return 0;
+  if (typeof val === 'number') return val;
+  
+  let cleanStr = String(val).toLowerCase().replace(/,/g, '').trim();
+  
+  // Match Cr/Crore
+  if (cleanStr.includes('cr') || cleanStr.includes('crore')) {
+    const numPart = parseFloat(cleanStr.replace(/cr(ore)?/g, '').trim());
+    if (!isNaN(numPart)) {
+      return numPart * 10000000;
+    }
+  }
+  
+  // Match L/Lakh/Lac
+  if (cleanStr.includes('lakh') || cleanStr.includes('lac') || cleanStr.match(/\bl\b/) || (cleanStr.endsWith('l') && !cleanStr.endsWith('al'))) {
+    const numPart = parseFloat(cleanStr.replace(/lakh|lac|l/g, '').trim());
+    if (!isNaN(numPart)) {
+      return numPart * 100000;
+    }
+  }
+  
+  // Match k/thousand
+  if (cleanStr.endsWith('k') || cleanStr.includes('thousand')) {
+    const numPart = parseFloat(cleanStr.replace(/k|thousand/g, '').trim());
+    if (!isNaN(numPart)) {
+      return numPart * 1000;
+    }
+  }
+  
+  const parsed = parseFloat(cleanStr);
+  return isNaN(parsed) ? 0 : parsed;
+};
+
 const getSingularLabel = (label) => {
   if (!label) return '';
   if (label.toLowerCase() === 'queries') return 'Query';
@@ -103,6 +137,9 @@ const DynamicForm = ({
       if (f.name === 'booked_by_customer_id') {
         return formData.dealer_owner_booked === 'Booked By Us';
       }
+    }
+    if (moduleKey === 'follow_ups') {
+      if (f.name === 'queryId') return false;
     }
     return true;
   });
@@ -494,6 +531,9 @@ const DynamicForm = ({
           if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
             payload[f.name] = customValues[f.name] || '';
           }
+          if (f.type === 'number' && payload[f.name] !== undefined && payload[f.name] !== null && String(payload[f.name]).trim() !== '') {
+            payload[f.name] = parseIndianNumber(payload[f.name]);
+          }
         });
         payload = compileSize(payload, false);
         payload = await resolveDealerId(payload);
@@ -514,6 +554,9 @@ const DynamicForm = ({
         fields.forEach(f => {
           if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
             payload[f.name] = customValues[f.name] || '';
+          }
+          if (f.type === 'number' && payload[f.name] !== undefined && payload[f.name] !== null && String(payload[f.name]).trim() !== '') {
+            payload[f.name] = parseIndianNumber(payload[f.name]);
           }
         });
         payload = compileSize(payload, false);

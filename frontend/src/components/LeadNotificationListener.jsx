@@ -63,7 +63,7 @@ const LeadNotificationListener = () => {
         headers: { Authorization: `Bearer ${token}` }
       });
       stopRinging();
-      window.location.reload(); // Refresh the page to show the accepted lead
+      window.location.href = '/module/follow_ups'; // Redirect to followup page to show the accepted lead
     } catch (e) {
       console.error(e);
       stopRinging();

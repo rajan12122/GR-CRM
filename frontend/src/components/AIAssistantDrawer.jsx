@@ -235,42 +235,51 @@ export default function AIAssistantDrawer() {
   return (
     <>
       {/* Premium Floating Sphere Trigger Button */}
-      <Tooltip title="Gagan Copilot AI" placement="left">
-        <IconButton
-          onClick={() => setOpen(true)}
-          sx={{
-            position: 'fixed',
-            bottom: 24,
-            right: 24,
-            width: 56,
-            height: 56,
-            zIndex: 1300,
-            backgroundColor: '#1E3A8A',
-            color: '#FFFFFF',
-            boxShadow: '0 8px 32px rgba(30, 58, 138, 0.4)',
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-            animation: 'pulse 2s infinite',
-            '@keyframes pulse': {
-              '0%': { boxShadow: '0 0 0 0 rgba(30, 58, 138, 0.7)' },
-              '70%': { boxShadow: '0 0 0 15px rgba(30, 58, 138, 0)' },
-              '100%': { boxShadow: '0 0 0 0 rgba(30, 58, 138, 0)' }
-            },
-            '&:hover': {
-              backgroundColor: '#1D4ED8',
-              transform: 'scale(1.1) rotate(15deg)',
-              boxShadow: '0 12px 40px rgba(29, 78, 216, 0.6)'
-            }
-          }}
-        >
-          <Icons.Cpu size={26} />
-        </IconButton>
-      </Tooltip>
+      {!open && (
+        <Tooltip title="Gagan Copilot AI" placement="left">
+          <IconButton
+            onClick={() => setOpen(true)}
+            sx={{
+              position: 'fixed',
+              bottom: 24,
+              right: 24,
+              width: 56,
+              height: 56,
+              zIndex: 1300,
+              backgroundColor: '#1E3A8A',
+              color: '#FFFFFF',
+              boxShadow: '0 8px 32px rgba(30, 58, 138, 0.4)',
+              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              animation: 'pulse 2s infinite',
+              '@keyframes pulse': {
+                '0%': { boxShadow: '0 0 0 0 rgba(30, 58, 138, 0.7)' },
+                '70%': { boxShadow: '0 0 0 15px rgba(30, 58, 138, 0)' },
+                '100%': { boxShadow: '0 0 0 0 rgba(30, 58, 138, 0)' }
+              },
+              '&:hover': {
+                backgroundColor: '#1D4ED8',
+                transform: 'scale(1.1) rotate(15deg)',
+                boxShadow: '0 12px 40px rgba(29, 78, 216, 0.6)'
+              }
+            }}
+          >
+            <Icons.Cpu size={26} />
+          </IconButton>
+        </Tooltip>
+      )}
 
       {/* Slide-out AI Panel Drawer */}
       <Drawer
         anchor="right"
         open={open}
         onClose={() => setOpen(false)}
+        hideBackdrop={true}
+        sx={{
+          pointerEvents: 'none',
+          '& .MuiDrawer-paper': {
+            pointerEvents: 'auto'
+          }
+        }}
         PaperProps={{
           sx: {
             width: { xs: '100%', sm: 400 },
@@ -278,7 +287,7 @@ export default function AIAssistantDrawer() {
             flexDirection: 'column',
             backgroundColor: '#F8FAFC',
             borderLeft: '1px solid #E2E8F0',
-            boxShadow: '-10px 0 30px rgba(0,0,0,0.05)'
+            boxShadow: '-10px 0 30px rgba(0,0,0,0.1)'
           }
         }}
       >

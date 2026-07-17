@@ -959,14 +959,26 @@ const EntityDetail = () => {
           )}
 
           {/* Intelligent Property Matcher Engine */}
-          {moduleName === 'leads' && (() => {
+          {(moduleName === 'leads' || moduleName === 'follow_ups') && (() => {
             const propertiesList = moduleData.properties || [];
             
+            // Resolve target client record for demands
+            let clientRec = record;
+            if (moduleName === 'follow_ups') {
+              const cId = record.customerId;
+              if (cId) {
+                clientRec = (moduleData.customers || []).find(c => String(c.id) === String(cId)) || 
+                            (moduleData.leads || []).find(l => String(l.id) === String(cId));
+              }
+            }
+            
+            if (!clientRec) return null;
+
             // Get lead demands
-            const leadRCI = record.r_c_i;
-            const leadType = record.propertyType;
-            const leadLocality = record.locality;
-            const leadSector = record.sector_block;
+            const leadRCI = clientRec.r_c_i;
+            const leadType = clientRec.propertyType;
+            const leadLocality = clientRec.locality;
+            const leadSector = clientRec.sector_block;
 
             // Score properties based on keyword matching
             const matchedProps = propertiesList
@@ -983,18 +995,18 @@ const EntityDetail = () => {
                   matchCount++;
                   matches.push(p.propertyType);
                 }
-                if (leadLocality && p.locality && String(p.locality).toLowerCase().includes(String(leadLocality).toLowerCase())) {
+                if (leadLocality && p.locality && String(leadLocality).toLowerCase().includes(String(leadLocality).toLowerCase())) {
                   matchCount++;
                   matches.push(p.locality);
                 }
-                if (leadSector && p.sector_block && String(p.sector_block).toLowerCase().includes(String(leadSector).toLowerCase())) {
+                if (leadSector && p.sector_block && String(leadSector).toLowerCase().includes(String(leadSector).toLowerCase())) {
                   matchCount++;
                   matches.push(p.sector_block);
                 }
 
                 // Check text description / requirements matching
-                if (record.requirements) {
-                  const reqWords = record.requirements.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+                if (clientRec.requirements) {
+                  const reqWords = clientRec.requirements.toLowerCase().split(/\s+/).filter(w => w.length > 2);
                   const searchString = `${p.propertyType || ''} ${p.locality || ''} ${p.sector_block || ''} ${p.facing || ''} ${p.location_type || ''}`.toLowerCase();
                   reqWords.forEach(w => {
                     if (searchString.includes(w)) {
@@ -1079,7 +1091,7 @@ const EntityDetail = () => {
                               variant="outlined" 
                               color="success" 
                               startIcon={<Icons.Share2 size={12} />}
-                              href={`https://wa.me/91${record.phone || ''}?text=${encodeURIComponent(compileTemplate(templates.whatsapp, record.name, propName, propPrice, p.locality, p.sector_block))}`}
+                              href={`https://wa.me/91${clientRec.phone || ''}?text=${encodeURIComponent(compileTemplate(templates.whatsapp, clientRec.name, propName, propPrice, p.locality, p.sector_block))}`}
                               target="_blank"
                               sx={{ textTransform: 'none', py: 0.2, fontSize: '10px', fontWeight: 700, borderRadius: '6px' }}
                             >

@@ -1733,15 +1733,69 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
 
   // Automatically delete all linked child records if a lead or customer is deleted
   if (module === 'leads' || module === 'customers') {
-    db.follow_ups = (db.follow_ups || []).filter(f => String(f.customerId) !== String(id));
-    db.queries = (db.queries || []).filter(q => String(q.customerId) !== String(id));
-    db.site_visits = (db.site_visits || []).filter(s => String(s.customerId) !== String(id));
-    db.property_pitch_history = (db.property_pitch_history || []).filter(p => String(p.customerId) !== String(id));
-    
+    const rec = db[module]?.find(r => String(r.id) === String(id)) || {};
+    const targetPhone = String(rec.phone || '').trim();
+    const targetEmail = String(rec.email || '').trim();
+
+    // 1. Cross-delete client/lead
+    if (module === 'leads') {
+      db.customers = (db.customers || []).filter(c => 
+        String(c.leadId) !== String(id) && 
+        (targetPhone === '' || String(c.phone).trim() !== targetPhone) && 
+        (targetEmail === '' || String(c.email).trim() !== targetEmail)
+      );
+      try { syncToSheets('customers'); } catch(e) {}
+    } else {
+      db.leads = (db.leads || []).filter(l => 
+        String(l.id) !== String(rec.leadId) && 
+        (targetPhone === '' || String(l.phone).trim() !== targetPhone) && 
+        (targetEmail === '' || String(l.email).trim() !== targetEmail)
+      );
+      try { syncToSheets('leads'); } catch(e) {}
+    }
+
+    // 2. Find all query IDs for this customer/lead
+    const customerQueries = (db.queries || []).filter(q => String(q.customerId) === String(id));
+    const customerQueryIds = new Set(customerQueries.map(q => String(q.id)));
+
+    // 3. Delete properties linked via queryId, booked_by_customer_id, or phone
+    db.properties = (db.properties || []).filter(p => {
+      if (String(p.booked_by_customer_id) === String(id)) return false;
+      if (p.linkedQueryId && customerQueryIds.has(String(p.linkedQueryId))) return false;
+      if (targetPhone !== '' && String(p.contact_number).trim() === targetPhone) return false;
+      return true;
+    });
+    try { syncToSheets('properties'); } catch(e) {}
+
+    // 4. Delete follow_ups
+    db.follow_ups = (db.follow_ups || []).filter(f => 
+      String(f.customerId) !== String(id) && 
+      (!f.queryId || !customerQueryIds.has(String(f.queryId)))
+    );
     try { syncToSheets('follow_ups'); } catch(e) {}
+
+    // 5. Delete queries
+    db.queries = (db.queries || []).filter(q => String(q.customerId) !== String(id));
     try { syncToSheets('queries'); } catch(e) {}
+
+    // 6. Delete site_visits
+    db.site_visits = (db.site_visits || []).filter(s => String(s.customerId) !== String(id));
     try { syncToSheets('site_visits'); } catch(e) {}
+
+    // 7. Delete property_pitch_history
+    db.property_pitch_history = (db.property_pitch_history || []).filter(p => String(p.customerId) !== String(id));
     try { syncToSheets('property_pitch_history'); } catch(e) {}
+
+    // 8. Delete sales bookings
+    db.sales_bookings = (db.sales_bookings || []).filter(s => 
+      String(s.customerId) !== String(id) || 
+      (targetPhone !== '' && String(s.customerPhone).trim() === targetPhone)
+    );
+    try { syncToSheets('sales_bookings'); } catch(e) {}
+
+    // 9. Delete deals
+    db.deals = (db.deals || []).filter(d => String(d.customerId) !== String(id));
+    try { syncToSheets('deals'); } catch(e) {}
   }
   if (module === 'deals') {
     db.properties = db.properties || [];
@@ -1834,16 +1888,73 @@ app.post('/api/data/:module/bulk-delete', authenticateToken, checkPermission('se
   // If lead or customer deleted, delete child followups etc.
   if (module === 'leads' || module === 'customers') {
     ids.forEach(id => {
-      db.follow_ups = (db.follow_ups || []).filter(f => String(f.customerId) !== String(id));
+      const rec = (db[module] || []).find(r => String(r.id) === String(id));
+      if (!rec) return;
+
+      const targetPhone = String(rec.phone || '').trim();
+      const targetEmail = String(rec.email || '').trim();
+
+      // 1. Cross-delete client/lead
+      if (module === 'leads') {
+        db.customers = (db.customers || []).filter(c => 
+          String(c.leadId) !== String(id) && 
+          (targetPhone === '' || String(c.phone).trim() !== targetPhone) && 
+          (targetEmail === '' || String(c.email).trim() !== targetEmail)
+        );
+      } else {
+        db.leads = (db.leads || []).filter(l => 
+          String(l.id) !== String(rec.leadId) && 
+          (targetPhone === '' || String(l.phone).trim() !== targetPhone) && 
+          (targetEmail === '' || String(l.email).trim() !== targetEmail)
+        );
+      }
+
+      // 2. Query IDs
+      const customerQueries = (db.queries || []).filter(q => String(q.customerId) === String(id));
+      const customerQueryIds = new Set(customerQueries.map(q => String(q.id)));
+
+      // 3. Properties
+      db.properties = (db.properties || []).filter(p => {
+        if (String(p.booked_by_customer_id) === String(id)) return false;
+        if (p.linkedQueryId && customerQueryIds.has(String(p.linkedQueryId))) return false;
+        if (targetPhone !== '' && String(p.contact_number).trim() === targetPhone) return false;
+        return true;
+      });
+
+      // 4. Follow ups
+      db.follow_ups = (db.follow_ups || []).filter(f => 
+        String(f.customerId) !== String(id) && 
+        (!f.queryId || !customerQueryIds.has(String(f.queryId)))
+      );
+
+      // 5. Queries
       db.queries = (db.queries || []).filter(q => String(q.customerId) !== String(id));
+
+      // 6. Site visits
       db.site_visits = (db.site_visits || []).filter(s => String(s.customerId) !== String(id));
+
+      // 7. Pitches
       db.property_pitch_history = (db.property_pitch_history || []).filter(p => String(p.customerId) !== String(id));
+
+      // 8. Sales bookings
+      db.sales_bookings = (db.sales_bookings || []).filter(s => 
+        String(s.customerId) !== String(id) || 
+        (targetPhone !== '' && String(s.customerPhone).trim() === targetPhone)
+      );
+
+      // 9. Deals
+      db.deals = (db.deals || []).filter(d => String(d.customerId) !== String(id));
     });
 
+    try { syncToSheets('leads'); } catch(e) {}
+    try { syncToSheets('customers'); } catch(e) {}
+    try { syncToSheets('properties'); } catch(e) {}
     try { syncToSheets('follow_ups'); } catch(e) {}
     try { syncToSheets('queries'); } catch(e) {}
     try { syncToSheets('site_visits'); } catch(e) {}
     try { syncToSheets('property_pitch_history'); } catch(e) {}
+    try { syncToSheets('sales_bookings'); } catch(e) {}
+    try { syncToSheets('deals'); } catch(e) {}
   }
   if (module === 'deals') {
     ids.forEach(id => {

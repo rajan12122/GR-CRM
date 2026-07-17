@@ -929,6 +929,129 @@ function syncPropertyDetailsUniversally(propId, db) {
   });
 }
 
+function syncAssignedEmployeeUniversally(sourceModule, recordId, newEmployeeId, db) {
+  if (!newEmployeeId) return;
+  
+  let leadId = '';
+  let custId = '';
+  let phones = new Set();
+  let emails = new Set();
+
+  if (sourceModule === 'leads') {
+    leadId = String(recordId);
+    const lead = (db.leads || []).find(l => String(l.id) === leadId);
+    if (lead) {
+      if (lead.phone) phones.add(String(lead.phone).trim());
+      if (lead.email) emails.add(String(lead.email).trim().toLowerCase());
+      const cust = (db.customers || []).find(c => String(c.leadId) === leadId || (lead.phone && String(c.phone).trim() === String(lead.phone).trim()));
+      if (cust) {
+        custId = String(cust.id);
+        if (cust.phone) phones.add(String(cust.phone).trim());
+        if (cust.email) emails.add(String(cust.email).trim().toLowerCase());
+      }
+    }
+  } else if (sourceModule === 'customers') {
+    custId = String(recordId);
+    const cust = (db.customers || []).find(c => String(c.id) === custId);
+    if (cust) {
+      if (cust.phone) phones.add(String(cust.phone).trim());
+      if (cust.email) emails.add(String(cust.email).trim().toLowerCase());
+      leadId = cust.leadId ? String(cust.leadId) : '';
+      const lead = (db.leads || []).find(l => String(l.id) === leadId || (cust.phone && String(l.phone).trim() === String(cust.phone).trim()));
+      if (lead) {
+        leadId = String(lead.id);
+        if (lead.phone) phones.add(String(lead.phone).trim());
+        if (lead.email) emails.add(String(lead.email).trim().toLowerCase());
+      }
+    }
+  } else if (sourceModule === 'follow_ups') {
+    const fup = (db.follow_ups || []).find(f => String(f.id) === String(recordId));
+    if (fup) {
+      const targetId = String(fup.customerId);
+      if (targetId.startsWith('LEAD-')) {
+        leadId = targetId;
+        const lead = (db.leads || []).find(l => String(l.id) === leadId);
+        if (lead) {
+          if (lead.phone) phones.add(String(lead.phone).trim());
+          if (lead.email) emails.add(String(lead.email).trim().toLowerCase());
+        }
+      } else if (targetId.startsWith('CUST-')) {
+        custId = targetId;
+        const cust = (db.customers || []).find(c => String(c.id) === custId);
+        if (cust) {
+          if (cust.phone) phones.add(String(cust.phone).trim());
+          if (cust.email) emails.add(String(cust.email).trim().toLowerCase());
+          if (cust.leadId) leadId = String(cust.leadId);
+        }
+      }
+    }
+  }
+
+  const matchClient = (idField, phoneField) => {
+    const idStr = String(idField || '');
+    const phoneStr = String(phoneField || '').trim();
+    if (leadId && idStr === leadId) return true;
+    if (custId && idStr === custId) return true;
+    if (phoneStr && phones.has(phoneStr)) return true;
+    return false;
+  };
+
+  let updated = false;
+
+  (db.leads || []).forEach(l => {
+    if (matchClient(l.id, l.phone)) {
+      if (l.assignedEmployeeId !== newEmployeeId) {
+        l.assignedEmployeeId = newEmployeeId;
+        updated = true;
+      }
+    }
+  });
+
+  (db.customers || []).forEach(c => {
+    if (matchClient(c.id, c.phone) || (leadId && String(c.leadId) === leadId)) {
+      if (c.assignedEmployeeId !== newEmployeeId) {
+        c.assignedEmployeeId = newEmployeeId;
+        updated = true;
+      }
+    }
+  });
+
+  (db.follow_ups || []).forEach(f => {
+    if (matchClient(f.customerId, '')) {
+      if (f.employeeId !== newEmployeeId) {
+        f.employeeId = newEmployeeId;
+        updated = true;
+      }
+    }
+  });
+
+  (db.queries || []).forEach(q => {
+    if (matchClient(q.customerId, '')) {
+      if (q.assignedEmployeeId !== newEmployeeId) {
+        q.assignedEmployeeId = newEmployeeId;
+        updated = true;
+      }
+    }
+  });
+
+  (db.site_visits || []).forEach(s => {
+    if (matchClient(s.customerId, '')) {
+      if (s.employeeId !== newEmployeeId) {
+        s.employeeId = newEmployeeId;
+        updated = true;
+      }
+    }
+  });
+
+  if (updated) {
+    try { syncToSheets('leads'); } catch(e) {}
+    try { syncToSheets('customers'); } catch(e) {}
+    try { syncToSheets('follow_ups'); } catch(e) {}
+    try { syncToSheets('queries'); } catch(e) {}
+    try { syncToSheets('site_visits'); } catch(e) {}
+  }
+}
+
 function handleFollowUpPipelineAction(f, db, req) {
   if (!f.pipelineAction || f.pipelineAction === 'None') return;
 
@@ -1558,6 +1681,15 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     if (payload.assignmentStatus === 'accepted') {
       createFollowUpForLead(payload, db);
     }
+    if (payload.assignedEmployeeId) {
+      syncAssignedEmployeeUniversally('leads', payload.id, payload.assignedEmployeeId, db);
+    }
+  }
+  if (module === 'customers' && payload.assignedEmployeeId) {
+    syncAssignedEmployeeUniversally('customers', payload.id, payload.assignedEmployeeId, db);
+  }
+  if (module === 'follow_ups' && payload.employeeId) {
+    syncAssignedEmployeeUniversally('follow_ups', payload.id, payload.employeeId, db);
   }
   if (module === 'follow_ups') handleFollowUpPipelineAction(payload, db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(payload, db);
@@ -1726,6 +1858,15 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     if (db[module][index].assignmentStatus === 'accepted') {
       createFollowUpForLead(db[module][index], db);
     }
+    if (db[module][index].assignedEmployeeId) {
+      syncAssignedEmployeeUniversally('leads', id, db[module][index].assignedEmployeeId, db);
+    }
+  }
+  if (module === 'customers' && db[module][index].assignedEmployeeId) {
+    syncAssignedEmployeeUniversally('customers', id, db[module][index].assignedEmployeeId, db);
+  }
+  if (module === 'follow_ups' && db[module][index].employeeId) {
+    syncAssignedEmployeeUniversally('follow_ups', id, db[module][index].employeeId, db);
   }
   if (module === 'follow_ups') handleFollowUpPipelineAction(db[module][index], db, req);
   if (module === 'dealer_calls') handleDealerCallInsertion(db[module][index], db);
@@ -3273,8 +3414,13 @@ function createFollowUpForLead(lead, db) {
   const cust = (db.customers || []).find(c => String(c.leadId) === String(lead.id) || (c.phone && String(c.phone).trim() === cleanPhone));
   const finalCustId = cust ? cust.id : lead.id;
 
-  const exists = db.follow_ups.some(f => String(f.customerId) === String(finalCustId));
-  if (!exists) {
+  const existingFollowUp = db.follow_ups.find(f => String(f.customerId) === String(finalCustId));
+  if (existingFollowUp) {
+    if (lead.assignedEmployeeId && existingFollowUp.employeeId !== lead.assignedEmployeeId) {
+      existingFollowUp.employeeId = lead.assignedEmployeeId;
+      try { syncToSheets('follow_ups'); } catch(e) {}
+    }
+  } else {
     const followUpId = `FOLLOW-${String(db.follow_ups.length + 1).padStart(3, '0')}`;
     const newFollowUp = {
       id: followUpId,

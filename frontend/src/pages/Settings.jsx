@@ -59,6 +59,103 @@ const Settings = () => {
   const [selectedUserForPerms, setSelectedUserForPerms] = useState('');
   const [userPermSelectedModule, setUserPermSelectedModule] = useState('leads');
 
+  // Google Sheets Sync Dashboard local states
+  const [syncJobs, setSyncJobs] = useState([]);
+  const [syncMetrics, setSyncMetrics] = useState({ PENDING: 0, PROCESSING: 0, SUCCESS: 0, FAILED: 0 });
+  const [syncDashLoading, setSyncDashLoading] = useState(false);
+  const [reconcileModule, setReconcileModule] = useState('leads');
+  const [reconcilePreview, setReconcilePreview] = useState(null);
+  const [selectedChanges, setSelectedChanges] = useState([]);
+  const [reconcileLoading, setReconcileLoading] = useState(false);
+  const [reconcileMessage, setReconcileMessage] = useState('');
+
+  const fetchSyncDashboard = async () => {
+    try {
+      setSyncDashLoading(true);
+      const token = localStorage.getItem('gr_crm_token') || localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const [jobsRes, metricsRes] = await Promise.all([
+        axios.get(`${API_BASE_URL}/sync/dashboard/jobs`, { headers }),
+        axios.get(`${API_BASE_URL}/sync/dashboard/metrics`, { headers })
+      ]);
+
+      if (jobsRes.data.success) setSyncJobs(jobsRes.data.data);
+      if (metricsRes.data.success) setSyncMetrics(metricsRes.data.metrics);
+    } catch (err) {
+      console.error('Failed to load sync dashboard:', err);
+    } finally {
+      setSyncDashLoading(false);
+    }
+  };
+
+  const handleRetryJob = async (jobId) => {
+    try {
+      const token = localStorage.getItem('gr_crm_token') || localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      await axios.post(`${API_BASE_URL}/sync/dashboard/retry/${jobId}`, {}, { headers });
+      fetchSyncDashboard();
+    } catch (err) {
+      alert('Retry failed: ' + (err.response?.data?.message || err.message));
+    }
+  };
+
+  const handleReconcilePreview = async () => {
+    try {
+      setReconcileLoading(true);
+      setReconcileMessage('');
+      const token = localStorage.getItem('gr_crm_token') || localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.post(`${API_BASE_URL}/sync/dashboard/reconcile-preview/${reconcileModule}`, {}, { headers });
+      if (res.data.success) {
+        setReconcilePreview(res.data.changes || []);
+        setSelectedChanges((res.data.changes || []).map((_, i) => i)); // default select all
+      } else {
+        alert(res.data.message || 'Preview failed.');
+      }
+    } catch (err) {
+      alert('Preview failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setReconcileLoading(false);
+    }
+  };
+
+  const handleConfirmReconcile = async () => {
+    if (selectedChanges.length === 0) {
+      alert('Please select at least one change to reconcile.');
+      return;
+    }
+    try {
+      setReconcileLoading(true);
+      const token = localStorage.getItem('gr_crm_token') || localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      
+      const acceptedChanges = selectedChanges.map(idx => reconcilePreview[idx].sheetRecord);
+      const res = await axios.post(`${API_BASE_URL}/sync/dashboard/reconcile-confirm/${reconcileModule}`, { acceptedChanges }, { headers });
+      
+      if (res.data.success) {
+        setReconcileMessage(res.data.message);
+        setReconcilePreview(null);
+        setSelectedChanges([]);
+        fetchSyncDashboard();
+      } else {
+        alert(res.data.message || 'Reconcile confirmation failed.');
+      }
+    } catch (err) {
+      alert('Reconcile failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setReconcileLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'sheets') {
+      fetchSyncDashboard();
+      const interval = setInterval(fetchSyncDashboard, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [activeTab]);
+
   // Lead Rotation local form states
   const [rotationActive, setRotationActive] = useState(false);
   const [rotationHours, setRotationHours] = useState('24');
@@ -1521,101 +1618,367 @@ const Settings = () => {
 
           {/* TAB 4: GOOGLE SHEETS SYNC CONTROL */}
           {activeTab === 'sheets' && (
-            <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px' }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 1, fontFamily: 'Poppins' }}>
-                  Google Sheets Synchronization Panel
-                </Typography>
-                <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
-                  Configure your Google Sheets database syncing settings using a Google Cloud Service Account credentials.
-                </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Row 1: Connection Config (Securely Decoupled) */}
+              <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 1, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Icons.Settings size={20} className="text-blue-600" /> Google Sheets Sync Settings
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                    Configure the active Spreadsheet connection details. Secrets and certificates are secured in server environment variables.
+                  </Typography>
 
-                <Divider sx={{ mb: 3 }} />
+                  <Divider sx={{ mb: 3 }} />
 
-                <Box component="form" onSubmit={handleSaveSheetsConfig}>
-                  <Grid container spacing={3}>
-                    <Grid item xs={12} display="flex" justifyContent="space-between" alignItems="center">
-                      <Box>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Google Sheets Active Synchronization</Typography>
-                        <Typography variant="caption" sx={{ color: '#64748B' }}>When active, writes auto-push and reads auto-cache from spreadsheets.</Typography>
-                      </Box>
-                      <Switch 
-                        checked={sheetsActive}
-                        onChange={(e) => setSheetsActive(e.target.checked)}
-                      />
+                  <Box component="form" onSubmit={handleSaveSheetsConfig}>
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} display="flex" justifyContent="space-between" alignItems="center">
+                        <Box>
+                          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>Active Background Sync</Typography>
+                          <Typography variant="caption" sx={{ color: '#64748B' }}>When active, background workers automatically push queue updates to Google Sheets.</Typography>
+                        </Box>
+                        <Switch 
+                          checked={sheetsActive}
+                          onChange={(e) => setSheetsActive(e.target.checked)}
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} md={8}>
+                        <TextField
+                          label="Spreadsheet ID (URL string)"
+                          fullWidth
+                          value={sheetsId}
+                          onChange={(e) => setSheetsId(e.target.value)}
+                          required
+                          placeholder="e.g. 1xABC_ExampleSpreadsheetIDHere"
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} md={4} display="flex" alignItems="center">
+                        <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '8px', p: 1.5, display: 'flex', alignItems: 'center', gap: 1, backgroundColor: '#F8FAFC', width: '100%' }}>
+                          <Icons.ShieldCheck size={18} className="text-emerald-500" />
+                          <Box>
+                            <Typography variant="caption" sx={{ fontWeight: 700, display: 'block' }}>Credentials Status</Typography>
+                            <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600 }}>Secured in server .env</Typography>
+                          </Box>
+                        </Box>
+                      </Grid>
+
+                      <Grid item xs={12}>
+                        <Button 
+                          type="submit" 
+                          variant="contained" 
+                          sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
+                        >
+                          Save Connection Settings
+                        </Button>
+                      </Grid>
                     </Grid>
+                  </Box>
+                </CardContent>
+              </Card>
 
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Spreadsheet ID (URL String identifier)"
-                        fullWidth
-                        value={sheetsId}
-                        onChange={(e) => setSheetsId(e.target.value)}
-                        required
-                      />
-                    </Grid>
+              {/* Row 2: Queue Metrics & Dashboard */}
+              <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Box>
+                      <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 0.5, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Icons.RefreshCcw size={20} className="text-indigo-600 animate-spin-slow" /> Sync Queue Status
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: '#64748B' }}>
+                        Live background sync worker logs, retries, and errors.
+                      </Typography>
+                    </Box>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={fetchSyncDashboard}
+                      disabled={syncDashLoading}
+                      startIcon={<Icons.RefreshCw size={14} />}
+                      sx={{ borderColor: '#CBD5E1', color: '#0F172A', textTransform: 'none' }}
+                    >
+                      Refresh Queue
+                    </Button>
+                  </Box>
 
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Google Developer Service Account Client Email"
-                        fullWidth
-                        value={sheetsEmail}
-                        onChange={(e) => setSheetsEmail(e.target.value)}
-                        required
-                      />
-                    </Grid>
+                  {/* Metrics Row */}
+                  <Grid container spacing={2} sx={{ mb: 4 }}>
+                    {[
+                      { label: 'Pending', count: syncMetrics.PENDING, color: '#3B82F6', bg: '#EFF6FF' },
+                      { label: 'Processing', count: syncMetrics.PROCESSING, color: '#F59E0B', bg: '#FEF3C7' },
+                      { label: 'Successful', count: syncMetrics.SUCCESS, color: '#10B981', bg: '#ECFDF5' },
+                      { label: 'Failed', count: syncMetrics.FAILED, color: '#EF4444', bg: '#FEF2F2' }
+                    ].map(metric => (
+                      <Grid item xs={6} md={3} key={metric.label}>
+                        <Box sx={{ backgroundColor: metric.bg, border: `1px solid ${metric.color}22`, borderRadius: '12px', p: 2, textAlign: 'center' }}>
+                          <Typography variant="caption" sx={{ color: '#64748B', fontWeight: 600, display: 'block', mb: 0.5 }}>{metric.label} Jobs</Typography>
+                          <Typography variant="h4" sx={{ color: metric.color, fontWeight: 800 }}>{metric.count || 0}</Typography>
+                        </Box>
+                      </Grid>
+                    ))}
+                  </Grid>
 
-                    <Grid item xs={12}>
-                      <TextField
-                        label="Private Key PEM string (including certificate blocks)"
-                        fullWidth
-                        multiline
-                        rows={4}
-                        value={sheetsKey}
-                        onChange={(e) => setSheetsKey(e.target.value)}
-                        required
-                      />
-                    </Grid>
+                  {/* Sync Jobs Table */}
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>Recent Queue Activities (Last 100)</Typography>
+                  <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E2E8F0', borderRadius: '12px', maxHeight: '300px' }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Job ID</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Module</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Record ID</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Operation</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Attempts</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Status</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Errors / Remarks</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700 }}>Last Synced</TableCell>
+                          <TableCell sx={{ backgroundColor: '#F8FAFC', fontWeight: 700, textAlign: 'center' }}>Action</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {syncJobs.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={9} align="center" sx={{ py: 3, color: '#64748B' }}>
+                              Queue is clean. No active sync jobs found.
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          syncJobs.map(job => (
+                            <TableRow key={job.id} hover>
+                              <TableCell sx={{ fontFamily: 'monospace', fontSize: '12px' }}>{job.id}</TableCell>
+                              <TableCell sx={{ textTransform: 'capitalize', fontWeight: 600 }}>{job.moduleName}</TableCell>
+                              <TableCell sx={{ fontFamily: 'monospace', fontSize: '12px' }}>{job.crmRecordId}</TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={job.operationType} 
+                                  size="small" 
+                                  sx={{ 
+                                    fontWeight: 700, 
+                                    fontSize: '10px',
+                                    height: '20px',
+                                    backgroundColor: job.operationType === 'DELETE' ? '#FEE2E2' : job.operationType === 'CREATE' ? '#D1FAE5' : '#FEF3C7',
+                                    color: job.operationType === 'DELETE' ? '#991B1B' : job.operationType === 'CREATE' ? '#065F46' : '#92400E'
+                                  }} 
+                                />
+                              </TableCell>
+                              <TableCell>{job.attemptCount} / {job.maxAttempts}</TableCell>
+                              <TableCell>
+                                <Chip 
+                                  label={job.status} 
+                                  size="small" 
+                                  sx={{ 
+                                    fontWeight: 700, 
+                                    fontSize: '10px',
+                                    height: '20px',
+                                    backgroundColor: job.status === 'SUCCESS' ? '#D1FAE5' : job.status === 'PROCESSING' ? '#FEF3C7' : job.status === 'PENDING' ? '#DBEAFE' : '#FEE2E2',
+                                    color: job.status === 'SUCCESS' ? '#065F46' : job.status === 'PROCESSING' ? '#92400E' : job.status === 'PENDING' ? '#1E40AF' : '#991B1B'
+                                  }} 
+                                />
+                              </TableCell>
+                              <TableCell sx={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#EF4444', fontSize: '11px' }} title={job.lastError || ''}>
+                                {job.lastError || '--'}
+                              </TableCell>
+                              <TableCell sx={{ fontSize: '11px', color: '#64748B' }}>
+                                {job.syncedAt ? new Date(job.syncedAt).toLocaleString('en-IN') : '--'}
+                              </TableCell>
+                              <TableCell align="center">
+                                {job.status === 'FAILED' && (
+                                  <IconButton 
+                                    size="small" 
+                                    onClick={() => handleRetryJob(job.id)} 
+                                    color="primary"
+                                    title="Manual Retry Job"
+                                  >
+                                    <Icons.RotateCcw size={14} />
+                                  </IconButton>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </CardContent>
+              </Card>
 
-                    <Grid item xs={12}>
-                      <Button 
-                        type="submit" 
-                        variant="contained" 
-                        sx={{ backgroundColor: '#10B981', '&:hover': { backgroundColor: '#059669' }, mr: 2 }}
+              {/* Row 3: Manual Sheet Import Reconciliation Workflow */}
+              <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 1, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Icons.FileSpreadsheet size={20} className="text-emerald-600" /> Manual Sheets Reconciliation Import
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                    To protect CRM data, updates made manually inside Google Sheets are not automatically synced. Choose a module below to preview cell diffs, resolve validation conflicts, and import changes safely.
+                  </Typography>
+
+                  <Divider sx={{ mb: 3 }} />
+
+                  <Box display="flex" alignItems="center" gap={2} mb={3}>
+                    <FormControl size="small" sx={{ minWidth: 200 }}>
+                      <InputLabel>Target Sync Module</InputLabel>
+                      <Select
+                        value={reconcileModule}
+                        onChange={(e) => {
+                          setReconcileModule(e.target.value);
+                          setReconcilePreview(null);
+                        }}
+                        label="Target Sync Module"
                       >
-                        Save Configuration
-                      </Button>
-                    </Grid>
-                  </Grid>
-                </Box>
+                        <MenuItem value="leads">Leads</MenuItem>
+                        <MenuItem value="customers">Customers</MenuItem>
+                        <MenuItem value="properties">Properties</MenuItem>
+                        <MenuItem value="deals">Deals</MenuItem>
+                      </Select>
+                    </FormControl>
 
-                <Divider sx={{ my: 4 }} />
+                    <Button
+                      variant="contained"
+                      onClick={handleReconcilePreview}
+                      disabled={reconcileLoading}
+                      startIcon={<Icons.Eye size={16} />}
+                      sx={{ backgroundColor: '#10B981', '&:hover': { backgroundColor: '#059669' } }}
+                    >
+                      {reconcileLoading ? 'Analyzing Sheet Rows...' : 'Analyze Sheets Diff'}
+                    </Button>
+                  </Box>
 
-                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 2 }}>Sync Actions</Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} display="flex" gap={2}>
-                    <Button 
-                      variant="outlined" 
-                      onClick={handleTestSheets}
-                      disabled={syncLoading}
-                      startIcon={<Icons.Activity size={18} />}
-                      sx={{ borderColor: '#CBD5E1', color: '#0F172A' }}
-                    >
-                      Verify Credentials Connection
-                    </Button>
-                    <Button 
-                      variant="contained" 
-                      onClick={handleSyncNow}
-                      disabled={syncLoading}
-                      startIcon={<Icons.RefreshCcw size={18} />}
-                      sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
-                    >
-                      Force Bidirectional Sync Now
-                    </Button>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
+                  {reconcileMessage && (
+                    <Alert severity="success" sx={{ mb: 3, borderRadius: '12px' }}>
+                      {reconcileMessage}
+                    </Alert>
+                  )}
+
+                  {/* Reconciliation Preview Area */}
+                  {reconcilePreview !== null && (
+                    <Box sx={{ border: '1px solid #E2E8F0', borderRadius: '12px', p: 2, backgroundColor: '#F8FAFC' }}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1 }}>
+                        Diff Preview Summary ({reconcilePreview.length} conflicting/unlinked rows detected)
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 2 }}>
+                        Choose which rows from Google Sheets should overwrite your CRM database records. Unchecked rows will be ignored.
+                      </Typography>
+
+                      {reconcilePreview.length === 0 ? (
+                        <Alert severity="info" sx={{ borderRadius: '8px' }}>
+                          No conflicts or missing rows detected. Google Sheets row values match the CRM database identically.
+                        </Alert>
+                      ) : (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mb: 3 }}>
+                          <TableContainer component={Paper} sx={{ boxShadow: 'none', border: '1px solid #E2E8F0', borderRadius: '8px', maxAttributes: '350px' }}>
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow>
+                                  <TableCell padding="checkbox">
+                                    <Checkbox
+                                      indeterminate={selectedChanges.length > 0 && selectedChanges.length < reconcilePreview.length}
+                                      checked={selectedChanges.length === reconcilePreview.length}
+                                      onChange={(e) => {
+                                        if (e.target.checked) {
+                                          setSelectedChanges(reconcilePreview.map((_, i) => i));
+                                        } else {
+                                          setSelectedChanges([]);
+                                        }
+                                      }}
+                                    />
+                                  </TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Record ID</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Name / Title</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Import Type</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Change Log Details / Values</TableCell>
+                                  <TableCell sx={{ fontWeight: 700 }}>Validation Status</TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {reconcilePreview.map((change, idx) => (
+                                  <TableRow key={idx} hover>
+                                    <TableCell padding="checkbox">
+                                      <Checkbox
+                                        checked={selectedChanges.includes(idx)}
+                                        disabled={!!change.validationError}
+                                        onChange={(e) => {
+                                          if (e.target.checked) {
+                                            setSelectedChanges([...selectedChanges, idx]);
+                                          } else {
+                                            setSelectedChanges(selectedChanges.filter(i => i !== idx));
+                                          }
+                                        }}
+                                      />
+                                    </TableCell>
+                                    <TableCell sx={{ fontFamily: 'monospace', fontSize: '12px' }}>{change.crmRecordId}</TableCell>
+                                    <TableCell sx={{ fontWeight: 600 }}>{change.name}</TableCell>
+                                    <TableCell>
+                                      <Chip
+                                        label={change.type}
+                                        size="small"
+                                        sx={{
+                                          fontWeight: 700,
+                                          fontSize: '9px',
+                                          height: '18px',
+                                          backgroundColor: change.type === 'CONFLICT' ? '#FEF3C7' : '#DBEAFE',
+                                          color: change.type === 'CONFLICT' ? '#92400E' : '#1E40AF'
+                                        }}
+                                      />
+                                    </TableCell>
+                                    <TableCell>
+                                      {change.type === 'CONFLICT' ? (
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                          {change.conflicts.map((c, cidx) => (
+                                            <Typography key={cidx} variant="caption" sx={{ display: 'block', fontSize: '11px' }}>
+                                              <strong>{c.field}</strong>: <span style={{ color: '#EF4444' }}>CRM="{c.crmValue || 'null'}"</span> ➜ <span style={{ color: '#10B981' }}>Sheet="{c.sheetValue || 'null'}"</span>
+                                            </Typography>
+                                          ))}
+                                        </Box>
+                                      ) : (
+                                        <Typography variant="caption" sx={{ color: '#64748B', fontSize: '11px' }}>
+                                          New unlinked record found in sheet. Will import as new CRM record.
+                                        </Typography>
+                                      )}
+                                    </TableCell>
+                                    <TableCell>
+                                      {change.validationError ? (
+                                        <Typography variant="caption" sx={{ color: '#EF4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                          <Icons.AlertTriangle size={12} /> {change.validationError}
+                                        </Typography>
+                                      ) : (
+                                        <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                          <Icons.CheckCircle size={12} /> Ready
+                                        </Typography>
+                                      )}
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+
+                          <Box display="flex" gap={2} mt={1}>
+                            <Button
+                              variant="contained"
+                              onClick={handleConfirmReconcile}
+                              disabled={selectedChanges.length === 0 || reconcileLoading}
+                              startIcon={<Icons.Check size={16} />}
+                              sx={{ backgroundColor: '#2563EB', '&:hover': { backgroundColor: '#1D4ED8' } }}
+                            >
+                              Apply Selected Changes into CRM
+                            </Button>
+                            <Button
+                              variant="outlined"
+                              onClick={() => setReconcilePreview(null)}
+                              sx={{ borderColor: '#CBD5E1', color: '#0F172A' }}
+                            >
+                              Cancel Import
+                            </Button>
+                          </Box>
+                        </Box>
+                      )}
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Box>
           )}
 
           {/* TAB 5: RESET PASSWORDS CONTROL */}

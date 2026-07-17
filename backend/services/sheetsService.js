@@ -1,19 +1,23 @@
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 const { google } = require('googleapis');
 
-const metadataPath = path.join(__dirname, '../config/metadata.json');
 const dbPath = path.join(__dirname, '../config/db.json');
+const metadataPath = path.join(__dirname, '../config/metadata.json');
 
-// Helper to load metadata config
+// Memory queue locks for concurrency protection
+const queueLocks = {};
+let isProcessingQueue = false;
+
+// Helper to load sheets config from environment variables
 function getSheetsConfig() {
-  try {
-    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-    return metadata.sheetsConfig || {};
-  } catch (err) {
-    console.error('Error reading sheets config:', err);
-    return {};
-  }
+  return {
+    syncActive: process.env.GOOGLE_SHEETS_SYNC_ACTIVE === 'true',
+    spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
+    clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    privateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+  };
 }
 
 // Get Authenticated Google Sheets client
@@ -30,177 +34,309 @@ function getSheetsClient(config) {
     );
     return google.sheets({ version: 'v4', auth });
   } catch (err) {
-    console.error('Google Auth Init Failed:', err);
+    console.error('Google Auth Init Failed in sheetsService:', err.message);
+    return null;
+  }
+}
+
+// Helper to get module headers
+function getModuleHeaders(moduleName) {
+  try {
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    const fields = (metadata.modules[moduleName] && metadata.modules[moduleName].fields) || [];
+    const headers = fields.map(f => f.name);
+    if (!headers.includes('crm_id')) {
+      headers.unshift('crm_id');
+    }
+    return headers;
+  } catch (e) {
+    return ['crm_id', 'id', 'name', 'status'];
+  }
+}
+
+/**
+ * Enqueue a sheet synchronization job (Asynchronous entrypoint)
+ */
+async function syncToSheets(moduleName) {
+  try {
+    const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+    db.sync_jobs = db.sync_jobs || [];
+
+    // Calculate idempotency key for this module sync operation
+    const lastRecId = db[moduleName] && db[moduleName].length > 0 ? db[moduleName][db[moduleName].length - 1].id : 'empty';
+    const hash = crypto.createHash('md5').update(`moduleSync:${moduleName}:${db[moduleName]?.length || 0}:${lastRecId}`).digest('hex');
+    const idempotencyKey = `module:${hash}`;
+
+    // Prevent duplicate enqueues if one is already pending or processing
+    const duplicateJob = db.sync_jobs.find(j => 
+      j.idempotencyKey === idempotencyKey && 
+      (j.status === 'PENDING' || j.status === 'PROCESSING')
+    );
+    if (duplicateJob) {
+      return duplicateJob.id;
+    }
+
+    const jobId = `JOB-MOD-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`;
+    const newJob = {
+      id: jobId,
+      moduleName,
+      crmRecordId: 'ALL',
+      operationType: 'MODULE_SYNC',
+      attemptCount: 0,
+      maxAttempts: 5,
+      lastError: null,
+      idempotencyKey,
+      status: 'PENDING',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      syncedAt: null,
+      nextAttemptAt: new Date().toISOString()
+    };
+
+    db.sync_jobs.push(newJob);
+    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+    
+    // Trigger the queue runner
+    setImmediate(() => processSyncQueue());
+    return jobId;
+  } catch (err) {
+    console.error(`Failed to enqueue module sync for ${moduleName}:`, err.message);
     return null;
   }
 }
 
 /**
- * Synchronize local db.json data WITH Google Sheets.
- * If sheet doesn't exist for a module, it creates the sheet and writes the header and data.
- * If the sheet exists, it updates it.
+ * Process the JSON-db sync queue
  */
-async function syncToSheets(moduleName) {
-  const config = getSheetsConfig();
-  const sheets = getSheetsClient(config);
-  if (!sheets) return false;
+async function processSyncQueue() {
+  if (isProcessingQueue) return;
+  isProcessingQueue = true;
 
   try {
-    const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
-    
-    const records = db[moduleName] || [];
-    const fields = (metadata.modules[moduleName] && metadata.modules[moduleName].fields) || [];
-    
-    if (fields.length === 0 && records.length === 0) return false;
-
-    // Headers are defined by the fields in metadata
-    const headers = fields.map(f => f.name);
-    if (!headers.includes('id')) {
-      headers.unshift('id');
+    const config = getSheetsConfig();
+    const sheets = getSheetsClient(config);
+    if (!sheets) {
+      isProcessingQueue = false;
+      return;
     }
 
-    // Convert records to a 2D array
-    const rows = [headers];
-    records.forEach(rec => {
-      const row = headers.map(h => {
-        const val = rec[h];
-        if (val === undefined || val === null) return '';
-        if (typeof val === 'object') return JSON.stringify(val);
-        return String(val);
-      });
-      rows.push(row);
-    });
-
-    const sheetName = `data_${moduleName}`;
     const spreadsheetId = config.spreadsheetId;
 
-    // Check if sheet exists, if not, create it
-    const meta = await sheets.spreadsheets.get({ spreadsheetId });
-    const sheetExists = meta.data.sheets.some(s => s.properties.title === sheetName);
+    while (true) {
+      const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+      db.sync_jobs = db.sync_jobs || [];
+      const now = new Date().toISOString();
 
-    if (!sheetExists) {
-      await sheets.spreadsheets.batchUpdate({
-        spreadsheetId,
-        requestBody: {
-          requests: [
-            {
-              addSheet: {
-                properties: { title: sheetName }
-              }
-            }
-          ]
-        }
-      });
-      console.log(`Created sheet: ${sheetName}`);
-    }
+      // Find next pending or failed job to process
+      const jobIndex = db.sync_jobs.findIndex(j => 
+        (j.status === 'PENDING' || (j.status === 'FAILED' && j.attemptCount < j.maxAttempts)) &&
+        (!j.nextAttemptAt || j.nextAttemptAt <= now)
+      );
 
-    // Clear existing data in the sheet
-    await sheets.spreadsheets.values.clear({
-      spreadsheetId,
-      range: `${sheetName}!A1:Z10000`
-    });
-
-    // Write new values
-    await sheets.spreadsheets.values.update({
-      spreadsheetId,
-      range: `${sheetName}!A1`,
-      valueInputOption: 'RAW',
-      requestBody: {
-        values: rows
+      if (jobIndex === -1) {
+        break;
       }
-    });
 
-    console.log(`Successfully synced ${moduleName} to Google Sheets (${records.length} records).`);
-    return true;
-  } catch (error) {
-    console.error(`Syncing ${moduleName} to Google Sheets failed:`, error.message);
-    return false;
+      const job = db.sync_jobs[jobIndex];
+      const lockKey = `${job.moduleName}`;
+
+      if (queueLocks[lockKey]) {
+        break; // Lock busy for this module
+      }
+
+      // Acquire Lock
+      queueLocks[lockKey] = true;
+      job.status = 'PROCESSING';
+      job.updatedAt = new Date().toISOString();
+      fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+
+      try {
+        const sheetName = `data_${job.moduleName}`;
+        
+        // Retrieve spreadsheet metadata
+        const meta = await sheets.spreadsheets.get({ spreadsheetId });
+        let sheet = meta.data.sheets.find(s => s.properties.title === sheetName);
+
+        if (!sheet) {
+          // Auto create sheet if missing
+          const addRes = await sheets.spreadsheets.batchUpdate({
+            spreadsheetId,
+            requestBody: {
+              requests: [{ addSheet: { properties: { title: sheetName } } }]
+            }
+          });
+          sheet = addRes.data.replies[0].addSheet.properties;
+        }
+
+        const sheetId = sheet.properties ? sheet.properties.sheetId : sheet.sheetId;
+        const headers = getModuleHeaders(job.moduleName);
+        const dbRecords = db[job.moduleName] || [];
+
+        // Execute row-level comparative sync
+        await syncModuleRowLevel(sheets, spreadsheetId, sheetName, sheetId, dbRecords, headers);
+
+        // Update job to success
+        const updatedDb = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+        const freshJob = updatedDb.sync_jobs.find(j => j.id === job.id);
+        if (freshJob) {
+          freshJob.status = 'SUCCESS';
+          freshJob.syncedAt = new Date().toISOString();
+          freshJob.updatedAt = new Date().toISOString();
+          freshJob.lastError = null;
+          fs.writeFileSync(dbPath, JSON.stringify(updatedDb, null, 2), 'utf8');
+        }
+
+      } catch (err) {
+        console.error(`[Queue Worker] Sync job ${job.id} failed:`, err.message);
+
+        const updatedDb = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+        const freshJob = updatedDb.sync_jobs.find(j => j.id === job.id);
+        if (freshJob) {
+          freshJob.attemptCount += 1;
+          freshJob.lastError = err.message;
+          freshJob.updatedAt = new Date().toISOString();
+
+          if (freshJob.attemptCount >= freshJob.maxAttempts) {
+            freshJob.status = 'FAILED';
+          } else {
+            // Exponential backoff
+            const delaySec = Math.pow(2, freshJob.attemptCount) * 10;
+            freshJob.nextAttemptAt = new Date(Date.now() + delaySec * 1000).toISOString();
+          }
+          fs.writeFileSync(dbPath, JSON.stringify(updatedDb, null, 2), 'utf8');
+        }
+      } finally {
+        delete queueLocks[lockKey];
+      }
+    }
+  } catch (err) {
+    console.error('[Queue Worker] Error running processing loop:', err.message);
+  } finally {
+    isProcessingQueue = false;
   }
 }
 
 /**
- * Sync from Google Sheets into the local JSON file.
- * Pulls all sheets matching data_* and merges them into db.json.
+ * Performs comparison and row-level updates/deletes/creations
  */
-async function syncFromSheets() {
-  const config = getSheetsConfig();
-  const sheets = getSheetsClient(config);
-  if (!sheets) {
-    console.log('Google Sheets Sync is inactive. Serving local cache data.');
-    return false;
+async function syncModuleRowLevel(sheets, spreadsheetId, sheetName, sheetId, dbRecords, headers) {
+  // Fetch columns up to Column Z
+  const getRes = await sheets.spreadsheets.values.get({
+    spreadsheetId,
+    range: `${sheetName}!A1:Z10000`
+  });
+
+  const sheetRows = getRes.data.values || [];
+
+  // Write headers if sheet is empty
+  if (sheetRows.length === 0) {
+    await sheets.spreadsheets.values.update({
+      spreadsheetId,
+      range: `${sheetName}!A1`,
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values: [headers] }
+    });
+    sheetRows.push(headers);
   }
 
-  try {
-    const spreadsheetId = config.spreadsheetId;
-    const meta = await sheets.spreadsheets.get({ spreadsheetId });
-    const localDb = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+  // 1. Scan DB records and determine what to write or update
+  for (const record of dbRecords) {
+    let matchedRowIndex = -1;
+    let isIdentical = false;
 
-    let dbUpdated = false;
+    const rowValues = headers.map(h => {
+      if (h === 'crm_id') return String(record.id);
+      const val = record[h];
+      if (val === undefined || val === null) return '';
+      return typeof val === 'object' ? JSON.stringify(val) : String(val);
+    });
 
-    for (const sheet of meta.data.sheets) {
-      const title = sheet.properties.title;
-      if (!title.startsWith('data_')) continue;
+    for (let i = 1; i < sheetRows.length; i++) {
+      if (sheetRows[i][0] === String(record.id)) {
+        matchedRowIndex = i + 1; // 1-indexed
 
-      const moduleName = title.replace('data_', '');
-      
-      // Fetch sheet values
-      const response = await sheets.spreadsheets.values.get({
+        // Compare values
+        isIdentical = true;
+        for (let j = 0; j < headers.length; j++) {
+          const sheetVal = sheetRows[i][j] !== undefined ? String(sheetRows[i][j]) : '';
+          const recordVal = rowValues[j];
+          if (sheetVal !== recordVal) {
+            isIdentical = false;
+            break;
+          }
+        }
+        break;
+      }
+    }
+
+    if (matchedRowIndex !== -1) {
+      if (!isIdentical) {
+        // Update row
+        await sheets.spreadsheets.values.update({
+          spreadsheetId,
+          range: `${sheetName}!A${matchedRowIndex}`,
+          valueInputOption: 'USER_ENTERED',
+          requestBody: { values: [rowValues] }
+        });
+      }
+    } else {
+      // Append row
+      await sheets.spreadsheets.values.append({
         spreadsheetId,
-        range: `${title}!A1:Z10000`
+        range: `${sheetName}!A:A`,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [rowValues] }
       });
+    }
+  }
 
-      const rows = response.data.values;
-      if (!rows || rows.length === 0) continue;
+  // 2. Scan Sheet rows and physically delete any missing keys (Soft-delete / Sync delete)
+  const deleteRowIndices = [];
+  for (let i = 1; i < sheetRows.length; i++) {
+    const crmId = sheetRows[i][0];
+    if (crmId && !dbRecords.some(r => String(r.id) === String(crmId))) {
+      deleteRowIndices.push(i + 1);
+    }
+  }
 
-      const headers = rows[0];
-      const records = [];
-
-      for (let i = 1; i < rows.length; i++) {
-        const row = rows[i];
-        const record = {};
-        headers.forEach((header, index) => {
-          let val = row[index] !== undefined ? row[index] : '';
-          
-          // Parse JSON if it looks like an array or object
-          if (typeof val === 'string' && (val.startsWith('[') || val.startsWith('{'))) {
-            try {
-              val = JSON.parse(val);
-            } catch (e) {
-              // keep as string
+  // Delete from bottom to top to preserve correct indices
+  deleteRowIndices.sort((a, b) => b - a);
+  for (const index of deleteRowIndices) {
+    await sheets.spreadsheets.batchUpdate({
+      spreadsheetId,
+      requestBody: {
+        requests: [{
+          deleteDimension: {
+            range: {
+              sheetId,
+              dimension: 'ROWS',
+              startIndex: index - 1,
+              endIndex: index
             }
           }
-          // Convert to number if numeric
-          if (val !== '' && !isNaN(val) && val.trim && val.trim() !== '') {
-            val = Number(val);
-          }
-          record[header] = val;
-        });
-        
-        if (record.id) {
-          records.push(record);
-        }
+        }]
       }
-
-      localDb[moduleName] = records;
-      dbUpdated = true;
-      console.log(`Synced ${records.length} records for ${moduleName} from Google Sheets.`);
-    }
-
-    if (dbUpdated) {
-      fs.writeFileSync(dbPath, JSON.stringify(localDb, null, 2), 'utf8');
-      console.log('Local db.json database updated from Google Sheets.');
-    }
-    return true;
-  } catch (error) {
-    console.error('Syncing from Google Sheets failed:', error.message);
-    return false;
+    });
   }
 }
+
+/**
+ * Compatibility function (Sync From Sheets) with explicit verification
+ */
+async function syncFromSheets() {
+  console.log('Direct automated imports are deprecated. Please use the Sync Dashboard Reconcile feature.');
+  return false;
+}
+
+// Background daemon interval polling
+setInterval(() => {
+  processSyncQueue();
+}, 15000);
 
 module.exports = {
   syncToSheets,
   syncFromSheets,
-  getSheetsConfig
+  getSheetsConfig,
+  processSyncQueue
 };

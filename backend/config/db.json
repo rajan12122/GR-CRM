@@ -41,20 +41,7 @@
       "password": "sakhshi123"
     }
   ],
-  "customers": [
-    {
-      "id": "CUST-001",
-      "name": "Monu",
-      "email": "Monu@gmail.com",
-      "phone": 7894411313,
-      "stage": "Converted Seller",
-      "assignedEmployeeId": "EMP-001",
-      "budget": "",
-      "city": "Aerocity",
-      "requirements": "Converted direct property seller.",
-      "dateAdded": "2026-07-17"
-    }
-  ],
+  "customers": [],
   "leads": [
     {
       "id": "LEAD-001",
@@ -119,28 +106,6 @@
       "locality": "Aerocity",
       "sector_block": "A",
       "demand": "",
-      "size": "500 Sq. yd.",
-      "dateAdded": "2026-07-17"
-    },
-    {
-      "id": "LEAD-004",
-      "name": "Monu",
-      "email": "Monu@gmail.com",
-      "phone": 7894411313,
-      "source": "Walk-in",
-      "referrer_type": "",
-      "referrer_id": "",
-      "leadType": "Seller",
-      "status": "Converted",
-      "assignedEmployeeId": "EMP-003",
-      "preferredEmployees": "EMP-001",
-      "enableRotation": "",
-      "budget": "",
-      "r_c_i": "Residential",
-      "propertyType": "Plots",
-      "locality": "Aerocity",
-      "sector_block": "A",
-      "demand": "10 Cr",
       "size": "500 Sq. yd.",
       "dateAdded": "2026-07-17"
     }

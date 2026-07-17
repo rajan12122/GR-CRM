@@ -3615,6 +3615,24 @@ app.listen(PORT, () => {
   try {
     const db = readDb();
     let updated = false;
+
+    // Self-correct ghost converted leads (if customer is deleted, reset status to In-Progress)
+    (db.leads || []).forEach(lead => {
+      if (lead.status === 'Converted') {
+        const cleanPhone = String(lead.phone || '').trim();
+        const cleanEmail = String(lead.email || '').trim().toLowerCase();
+        const hasCustomer = (db.customers || []).some(c => 
+          String(c.leadId) === String(lead.id) ||
+          (cleanPhone !== '' && String(c.phone || '').trim() === cleanPhone) ||
+          (cleanEmail !== '' && String(c.email || '').trim().toLowerCase() === cleanEmail)
+        );
+        if (!hasCustomer) {
+          lead.status = 'In-Progress';
+          updated = true;
+        }
+      }
+    });
+
     const closedDeals = (db.deals || []).filter(d => d.status === 'Closed');
     closedDeals.forEach(d => {
       const propIndex = (db.properties || []).findIndex(p => String(p.id) === String(d.propertyId));

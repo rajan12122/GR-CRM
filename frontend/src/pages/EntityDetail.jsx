@@ -3916,11 +3916,11 @@ const EntityDetail = () => {
                         {pitchItemType === 'Property' ? (
                           (moduleData.properties || []).filter(p => {
                             if (!propSearch) return true;
-                            const searchStr = `${p.locality} ${p.sector_block ? `Sector ${p.sector_block}` : ''} ${p.id}`.toLowerCase();
+                            const searchStr = `${p.propertyName || ''} ${p.locality} ${p.sector_block ? `Sector ${p.sector_block}` : ''} ${p.id}`.toLowerCase();
                             return searchStr.includes(propSearch.toLowerCase());
                           }).map(p => (
                             <MenuItem key={p.id} value={p.id}>
-                              {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
+                              {p.propertyName ? `${p.propertyName} (${p.locality})` : p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
                             </MenuItem>
                           ))
                         ) : (

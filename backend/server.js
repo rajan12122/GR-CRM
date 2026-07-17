@@ -1521,7 +1521,6 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     payload.droppedBy = [];
     if (payload.assignedEmployeeId) {
       setTimeout(() => {
-        createFollowUpForLead(payload, db);
         notifyUser(payload.assignedEmployeeId, 'new-lead', { leadId: payload.id, leadName: payload.name || payload.person_name || 'New Lead' });
       }, 500);
     }
@@ -1647,7 +1646,6 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
       payload.assignmentTime = null;
       payload.droppedBy = [];
       setTimeout(() => {
-        createFollowUpForLead(payload, db);
         notifyUser(payload.assignedEmployeeId, 'new-lead', { leadId: id, leadName: payload.name || payload.person_name || 'New Lead' });
       }, 500);
     }

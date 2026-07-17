@@ -442,15 +442,7 @@
           "showInTable": true,
           "editable": true
         },
-        {
-          "name": "booked_by_customer_id",
-          "label": "Booked By (Customer)",
-          "type": "ref",
-          "refModule": "customers",
-          "required": false,
-          "showInTable": true,
-          "editable": true
-        },
+
         {
           "name": "current_owner_id",
           "label": "Current Owner",

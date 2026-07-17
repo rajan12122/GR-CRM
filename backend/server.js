@@ -800,6 +800,8 @@ function handleLeadStatusChange(lead, db, req) {
     const cleanPhone = String(lead.phone).trim();
     let existingCust = (db.customers || []).find(c => String(c.leadId) === String(lead.id) || (c.phone && String(c.phone).trim() === cleanPhone));
     
+    const leadDemand = lead.demand || lead.budget || '';
+
     if (!existingCust) {
       const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
       existingCust = {
@@ -810,7 +812,7 @@ function handleLeadStatusChange(lead, db, req) {
         phone: lead.phone,
         stage: 'Active Seller',
         assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
-        budget: lead.demand || lead.budget || '',
+        budget: leadDemand,
         city: lead.locality || '',
         requirements: lead.remarks || 'Converted direct property seller.',
         dateAdded: new Date().toISOString().split('T')[0]
@@ -818,11 +820,33 @@ function handleLeadStatusChange(lead, db, req) {
       db.customers = db.customers || [];
       db.customers.push(existingCust);
       try { syncToSheets('customers'); } catch(e) {}
+    } else {
+      existingCust.budget = leadDemand;
+      existingCust.city = lead.locality || existingCust.city || '';
+      try { syncToSheets('customers'); } catch(e) {}
     }
 
     db.properties = db.properties || [];
-    let existingProp = db.properties.find(p => p.linkedLeadId === lead.id || String(p.booked_by_customer_id) === String(existingCust.id));
+    let existingProp = null;
+    if (lead.propertyId) {
+      existingProp = db.properties.find(p => String(p.id) === String(lead.propertyId));
+    }
     if (!existingProp) {
+      existingProp = db.properties.find(p => p.linkedLeadId === lead.id || String(p.booked_by_customer_id) === String(existingCust.id));
+    }
+
+    if (existingProp) {
+      existingProp.current_owner_id = existingCust.id;
+      existingProp.booked_by_customer_id = existingCust.id;
+      existingProp.linkedLeadId = lead.id;
+      existingProp.demand = leadDemand || existingProp.demand || '';
+      existingProp.locality = lead.locality || existingProp.locality || '';
+      existingProp.sector_block = lead.sector_block || existingProp.sector_block || '';
+      existingProp.size = lead.size || existingProp.size || '';
+      existingProp.propertyType = lead.propertyType || existingProp.propertyType || '';
+      existingProp.r_c_i = lead.r_c_i || existingProp.r_c_i || 'Residential';
+      try { syncToSheets('properties'); } catch(e) {}
+    } else {
       const propId = `PROP-${String(db.properties.length + 1).padStart(3, '0')}`;
       existingProp = {
         id: propId,
@@ -839,7 +863,7 @@ function handleLeadStatusChange(lead, db, req) {
         locality: lead.locality || '',
         sector_block: lead.sector_block || '',
         size: lead.size || '',
-        demand: lead.demand || lead.budget || '',
+        demand: leadDemand,
         lead_source: lead.source || 'Direct',
         initial_notes: lead.remarks || 'Auto-created from seller lead'
       };

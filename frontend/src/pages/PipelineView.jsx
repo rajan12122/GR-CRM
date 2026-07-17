@@ -83,7 +83,22 @@ const PipelineView = () => {
   let records = [];
   if (pipelineType === 'customers') {
     records = (moduleData.follow_ups || [])
-      .filter(f => (String(f.customerId).startsWith('LEAD-') || String(f.customerId).startsWith('CUST-')) && !f.queryId)
+      .filter(f => {
+        const isClient = (String(f.customerId).startsWith('LEAD-') || String(f.customerId).startsWith('CUST-')) && !f.queryId;
+        if (!isClient) return false;
+        
+        // Exclude seller followups from the client deal nurturing pipeline
+        const lead = (moduleData.leads || []).find(l => String(l.id) === String(f.customerId));
+        if (lead && lead.leadType === 'Seller') return false;
+        
+        const cust = (moduleData.customers || []).find(c => String(c.id) === String(f.customerId));
+        if (cust) {
+          const assocLead = (moduleData.leads || []).find(l => String(l.id) === String(cust.leadId));
+          if (assocLead && assocLead.leadType === 'Seller') return false;
+          if (cust.stage === 'Active Seller' || cust.stage === 'Converted Seller') return false;
+        }
+        return true;
+      })
       .map(f => ({
         ...f,
         pipelineAction: f.pipelineAction || 'None'

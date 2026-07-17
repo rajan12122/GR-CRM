@@ -3684,7 +3684,7 @@
     "syncActive": true
   },
   "automationConfig": {
-    "leadRotationActive": true,
+    "leadRotationActive": false,
     "rotationHours": "1",
     "rotatedSources": []
   }

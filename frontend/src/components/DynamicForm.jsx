@@ -140,6 +140,20 @@ const DynamicForm = ({
     }
     if (moduleKey === 'follow_ups') {
       if (f.name === 'queryId') return false;
+      if (f.name === 'pipelineAction') {
+        const cId = formData.customerId || initialData?.customerId;
+        if (cId) {
+          const lead = (moduleData.leads || []).find(l => String(l.id) === String(cId));
+          if (lead && lead.leadType === 'Seller') return false;
+          
+          const cust = (moduleData.customers || []).find(c => String(c.id) === String(cId));
+          if (cust) {
+            const assocLead = (moduleData.leads || []).find(l => String(l.id) === String(cust.leadId));
+            if (assocLead && assocLead.leadType === 'Seller') return false;
+            if (cust.stage === 'Active Seller' || cust.stage === 'Converted Seller') return false;
+          }
+        }
+      }
     }
     return true;
   });

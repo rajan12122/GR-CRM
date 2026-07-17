@@ -796,82 +796,113 @@ function handlePitchStatusChange(p, db, req) {
 }
 
 function handleLeadStatusChange(lead, db, req) {
-  if (lead.leadType === 'Seller' && lead.dealer_owner_booked === 'Direct') {
-    lead.status = 'Converted';
-  }
-  if (lead.status === 'Converted') {
-    if (lead.leadType !== 'Seller') {
-      // If it's a buyer lead, do NOT convert directly to customer.
-      // Buyer leads must only be converted via a Closed Deal.
-      return;
-    }
+  if (lead.leadType === 'Seller') {
     const cleanPhone = String(lead.phone).trim();
-    let existingCust = (db.customers || []).find(c => c.phone && String(c.phone).trim() === cleanPhone);
+    let existingCust = (db.customers || []).find(c => String(c.leadId) === String(lead.id) || (c.phone && String(c.phone).trim() === cleanPhone));
     
     if (!existingCust) {
       const custId = `CUST-${String((db.customers || []).length + 1).padStart(3, '0')}`;
       existingCust = {
         id: custId,
+        leadId: lead.id,
         name: lead.name,
         email: lead.email || '',
         phone: lead.phone,
-        stage: 'Converted Seller',
+        stage: 'Active Seller',
         assignedEmployeeId: lead.assignedEmployeeId || 'EMP-001',
-        budget: lead.budget || '',
+        budget: lead.demand || lead.budget || '',
         city: lead.locality || '',
         requirements: lead.remarks || 'Converted direct property seller.',
         dateAdded: new Date().toISOString().split('T')[0]
       };
       db.customers = db.customers || [];
       db.customers.push(existingCust);
-      writeDb(db);
       try { syncToSheets('customers'); } catch(e) {}
     }
 
-    db.queries = db.queries || [];
-    const queryId = `QRY-${String(db.queries.length + 1).padStart(3, '0')}`;
-    
-    const newQuery = {
-      id: queryId,
-      customerId: existingCust.id,
-      assignedEmployeeId: existingCust.assignedEmployeeId,
-      date: new Date().toLocaleDateString('en-IN'),
-      status: 'Pending Approval',
-      queryType: 'Sell Property',
-      stage: 'New Query',
-      budget: lead.budget || '',
-      demand: lead.demand || '',
-      r_c_i: lead.r_c_i || '',
-      propertyType: lead.propertyType || '',
-      locality: lead.locality || '',
-      sector_block: lead.sector_block || '',
-      size: lead.size || '',
-      remarks: `Converted from Lead ${lead.id}.`,
-      propertyId: lead.propertyId || ''
-    };
-    db.queries.push(newQuery);
-    writeDb(db);
-    try { syncToSheets('queries'); } catch(e) {}
-
-    if (lead.propertyId) {
-      db.properties = db.properties || [];
-      const prop = db.properties.find(pr => String(pr.id) === String(lead.propertyId));
-      if (prop) {
-        prop.current_owner_id = existingCust.id;
-        writeDb(db);
-        try { syncToSheets('properties'); } catch(e) {}
-      }
+    db.properties = db.properties || [];
+    let existingProp = db.properties.find(p => p.linkedLeadId === lead.id || String(p.booked_by_customer_id) === String(existingCust.id));
+    if (!existingProp) {
+      const propId = `PROP-${String(db.properties.length + 1).padStart(3, '0')}`;
+      existingProp = {
+        id: propId,
+        linkedLeadId: lead.id,
+        status: 'Available',
+        date: new Date().toLocaleDateString('en-IN'),
+        contact_person_name: lead.name,
+        contact_number: lead.phone,
+        dealer_owner_booked: 'Owner',
+        booked_by_customer_id: existingCust.id,
+        current_owner_id: existingCust.id,
+        r_c_i: lead.r_c_i || 'Residential',
+        propertyType: lead.propertyType || '',
+        locality: lead.locality || '',
+        sector_block: lead.sector_block || '',
+        size: lead.size || '',
+        demand: lead.demand || lead.budget || '',
+        lead_source: lead.source || 'Direct',
+        initial_notes: lead.remarks || 'Auto-created from seller lead'
+      };
+      db.properties.push(existingProp);
+      lead.propertyId = propId;
+      try { syncToSheets('properties'); } catch(e) {}
     }
-    
-    db.activity_logs = db.activity_logs || [];
-    db.activity_logs.unshift({
-      id: `LOG-${Date.now()}`,
-      employeeName: req.user ? req.user.name : 'System',
-      action: `Converted Lead ${lead.id} to Customer ${existingCust.id} and created Query ${queryId}`,
-      dateTime: new Date().toLocaleString()
-    });
-    writeDb(db);
   }
+}
+
+function syncPropertyDetailsUniversally(propId, db) {
+  const prop = (db.properties || []).find(p => String(p.id) === String(propId));
+  if (!prop) return;
+
+  const fieldsToSync = {
+    r_c_i: prop.r_c_i || '',
+    propertyType: prop.propertyType || '',
+    locality: prop.locality || '',
+    sector_block: prop.sector_block || '',
+    size: prop.size || '',
+    demand: prop.demand || ''
+  };
+
+  // 1. Sync to Leads (if this property belongs to a lead or is linked)
+  (db.leads || []).forEach(lead => {
+    if (String(lead.propertyId) === String(propId) || String(lead.id) === String(prop.linkedLeadId)) {
+      lead.r_c_i = fieldsToSync.r_c_i;
+      lead.propertyType = fieldsToSync.propertyType;
+      lead.locality = fieldsToSync.locality;
+      lead.sector_block = fieldsToSync.sector_block;
+      lead.size = fieldsToSync.size;
+      lead.demand = fieldsToSync.demand;
+      lead.budget = fieldsToSync.demand; // Also update budget if it's a seller lead
+    }
+  });
+
+  // 2. Sync to Customers
+  (db.customers || []).forEach(cust => {
+    if (String(cust.id) === String(prop.current_owner_id) || String(cust.id) === String(prop.booked_by_customer_id)) {
+      cust.city = fieldsToSync.locality;
+      cust.budget = fieldsToSync.demand;
+    }
+  });
+
+  // 3. Sync to Queries
+  (db.queries || []).forEach(q => {
+    if (String(q.propertyId) === String(propId)) {
+      q.r_c_i = fieldsToSync.r_c_i;
+      q.propertyType = fieldsToSync.propertyType;
+      q.locality = fieldsToSync.locality;
+      q.sector_block = fieldsToSync.sector_block;
+      q.size = fieldsToSync.size;
+      q.demand = fieldsToSync.demand;
+      q.budget = fieldsToSync.demand;
+    }
+  });
+
+  // 4. Sync to Follow Ups
+  (db.follow_ups || []).forEach(f => {
+    if (String(f.pitchedPropertyId) === String(propId)) {
+      f.pitchPrice = fieldsToSync.demand;
+    }
+  });
 }
 
 function handleFollowUpPipelineAction(f, db, req) {
@@ -1656,6 +1687,14 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
 
   // Update record preserving fixed identifiers
   db[module][index] = { ...db[module][index], ...payload, id };
+
+  if (module === 'properties') {
+    syncPropertyDetailsUniversally(id, db);
+    try { syncToSheets('leads'); } catch(e) {}
+    try { syncToSheets('customers'); } catch(e) {}
+    try { syncToSheets('queries'); } catch(e) {}
+    try { syncToSheets('follow_ups'); } catch(e) {}
+  }
 
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);
   if (module === 'deals') handleDealStatusChange(db[module][index], db, req);
@@ -2484,7 +2523,12 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
     data.deals = allDeals.filter(d => String(d.customerId) === String(id) || String(d.sellerCustomerId) === String(id));
     data.purchaseHistory = allDeals.filter(d => String(d.customerId) === String(id) && d.status === 'Closed');
     data.saleHistory = allDeals.filter(d => String(d.sellerCustomerId) === String(id) && d.status === 'Closed');
-    data.pitches = allPitches.filter(p => String(p.customerId) === String(id));
+    data.pitches = allPitches.filter(p => {
+      if (String(p.customerId) !== String(id)) return false;
+      const propExists = allProperties.some(pr => String(pr.id) === String(p.propertyId));
+      const projExists = (db.projects || []).some(pj => String(pj.id) === String(p.propertyId));
+      return propExists || projExists;
+    });
     data.referrals = (db.leads || []).filter(l => l.referrer_type === 'customers' && String(l.referrer_id) === String(id));
     data.payments = []; // No payment module exists in GR CRM metadata
   } else if (module === 'properties') {
@@ -2575,7 +2619,12 @@ app.get('/api/360/:module/:id', authenticateToken, (req, res) => {
       const rec = (db[module] || []).find(r => String(r.id) === String(id));
       if (rec) {
         const custId = rec.customerId || rec.id;
-        data.pitches = allPitches.filter(p => String(p.customerId) === String(custId)).map(p => ({
+        data.pitches = allPitches.filter(p => {
+          if (String(p.customerId) !== String(custId)) return false;
+          const propExists = allProperties.some(pr => String(pr.id) === String(p.propertyId));
+          const projExists = (db.projects || []).some(pj => String(pj.id) === String(p.propertyId));
+          return propExists || projExists;
+        }).map(p => ({
           ...p,
           property: allProperties.find(pr => String(pr.id) === String(p.propertyId))
         }));
@@ -2718,7 +2767,7 @@ app.post('/api/settings/sync-now', authenticateToken, checkPermission('settings'
 const rotateLeadsTask = () => {
   try {
     const metadata = readMetadata();
-    const config = metadata.automationConfig || { leadRotationActive: true, rotationHours: 24 };
+    const config = metadata.automationConfig || { leadRotationActive: false, rotationHours: 24 };
     
     // Check if lead rotation engine is active
     if (!config.leadRotationActive) return;
@@ -3193,12 +3242,21 @@ app.get('/api/leads/pending', authenticateToken, (req, res) => {
 
 function createFollowUpForLead(lead, db) {
   db.follow_ups = db.follow_ups || [];
-  const exists = db.follow_ups.some(f => String(f.customerId) === String(lead.id));
+  
+  if (lead.leadType === 'Seller') {
+    handleLeadStatusChange(lead, db, { user: { name: 'System' } });
+  }
+
+  const cleanPhone = String(lead.phone).trim();
+  const cust = (db.customers || []).find(c => String(c.leadId) === String(lead.id) || (c.phone && String(c.phone).trim() === cleanPhone));
+  const finalCustId = cust ? cust.id : lead.id;
+
+  const exists = db.follow_ups.some(f => String(f.customerId) === String(finalCustId));
   if (!exists) {
     const followUpId = `FOLLOW-${String(db.follow_ups.length + 1).padStart(3, '0')}`;
     const newFollowUp = {
       id: followUpId,
-      customerId: lead.id,
+      customerId: finalCustId,
       employeeId: lead.assignedEmployeeId || 'EMP-001',
       date: new Date().toLocaleDateString('en-IN'),
       time: '12:00 PM',

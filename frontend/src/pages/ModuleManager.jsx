@@ -69,7 +69,17 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
               <Icons.Folder size={20} />
             </Box>
             <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#0F172A', fontSize: '13px' }}>
+              <Typography 
+                variant="subtitle2" 
+                sx={{ 
+                  fontWeight: 800, 
+                  color: '#2563EB', 
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' }
+                }}
+                onClick={() => handleInspectClick(moduleName, rec.id)}
+              >
                 {rec.id}
               </Typography>
               {rec.status && (
@@ -127,7 +137,14 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
                         </span>
                       );
                     })() : (
-                      displayVal
+                      (f.name === 'name' || f.name === 'person_name' || f.name === 'title' || f.name === 'propertyName') ? (
+                        <span 
+                          style={{ color: '#2563EB', cursor: 'pointer', fontWeight: 700, textDecoration: 'underline' }} 
+                          onClick={() => handleInspectClick(moduleName, rec.id)}
+                        >
+                          {displayVal}
+                        </span>
+                      ) : displayVal
                     )}
                   </Typography>
                 </Box>
@@ -212,7 +229,7 @@ const ModuleManager = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [errorMsg, setErrorMsg] = useState('');
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'card'
+  const [viewMode, setViewMode] = useState('card'); // 'table' or 'card'
   const isMobile = useMediaQuery('(max-width:900px)');
 
   // Outreach call states for Dealers in table row actions
@@ -236,13 +253,7 @@ const ModuleManager = () => {
     setCallDialogOpen(true);
   };
 
-  useEffect(() => {
-    if (isMobile) {
-      setViewMode('card');
-    } else {
-      setViewMode('table');
-    }
-  }, [isMobile]);
+  // Removed isMobile viewMode useEffect to preserve card view as default on desktop and mobile
 
   // Parse URL search parameters for automatic filtering
   useEffect(() => {

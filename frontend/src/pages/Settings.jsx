@@ -831,8 +831,56 @@ const Settings = () => {
                           <TableCell sx={{ fontWeight: 600 }}>{f.name}</TableCell>
                           <TableCell>{f.label}</TableCell>
                           <TableCell><Chip label={f.type} size="small" sx={{ height: 18, fontSize: '10px', textTransform: 'uppercase' }} /></TableCell>
-                          <TableCell>{f.required ? 'Yes 🔴' : 'No'}</TableCell>
-                          <TableCell>{f.showInTable !== false ? 'Yes' : 'Hidden'}</TableCell>
+                          <TableCell>
+                            <Checkbox 
+                              size="small"
+                              checked={f.required || false}
+                              disabled={f.name === 'id'}
+                              onChange={async (e) => {
+                                const updatedFields = [...metadata.modules[selectedModule].fields];
+                                const fIdx = updatedFields.findIndex(field => field.name === f.name);
+                                if (fIdx !== -1) {
+                                  updatedFields[fIdx] = { ...f, required: e.target.checked };
+                                  const updated = {
+                                    ...metadata,
+                                    modules: {
+                                      ...metadata.modules,
+                                      [selectedModule]: {
+                                        ...metadata.modules[selectedModule],
+                                        fields: updatedFields
+                                      }
+                                    }
+                                  };
+                                  await saveMetadata(updated);
+                                }
+                              }}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Checkbox 
+                              size="small"
+                              checked={f.showInTable !== false}
+                              disabled={f.name === 'id'}
+                              onChange={async (e) => {
+                                const updatedFields = [...metadata.modules[selectedModule].fields];
+                                const fIdx = updatedFields.findIndex(field => field.name === f.name);
+                                if (fIdx !== -1) {
+                                  updatedFields[fIdx] = { ...f, showInTable: e.target.checked };
+                                  const updated = {
+                                    ...metadata,
+                                    modules: {
+                                      ...metadata.modules,
+                                      [selectedModule]: {
+                                        ...metadata.modules[selectedModule],
+                                        fields: updatedFields
+                                      }
+                                    }
+                                  };
+                                  await saveMetadata(updated);
+                                }
+                              }}
+                            />
+                          </TableCell>
                           <TableCell align="right">
                             <IconButton 
                               size="small" 

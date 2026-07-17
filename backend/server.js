@@ -1545,9 +1545,11 @@ app.post('/api/workflows/pitches', authenticateToken, (req, res) => {
 app.post('/api/workflows/deals/close', authenticateToken, (req, res) => {
   try {
     const db = readDb();
-    const result = workflow.closeDeal(db, req.body, req.user);
+    const result = workflow.closeDeal(db, req.body, req.user, req);
     writeDb(db);
-    ['deals', 'properties', 'customers', 'property_listing_cycles', 'property_history'].forEach(syncToSheets);
+    ['deals', 'properties', 'customers', 'property_listing_cycles', 'property_history', 'property_ownership_history', 'audit_logs'].forEach(m => {
+      try { syncToSheets(m); } catch (e) {}
+    });
     return res.status(201).json(result);
   } catch (error) { return res.status(400).json({ message: error.message }); }
 });
@@ -2145,8 +2147,10 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
   record.deletedBy = req.user.id;
   record.deletionReason = req.body?.reason || 'Archived through CRM delete action';
   workflow.log(db, req.user, `Archived record ${id} in ${module}`, { module, id, deletionReason: record.deletionReason });
+  workflow.audit(db, req.user, 'status', 'Active', 'Archived', `Soft delete record ${id} in module ${module}`, req);
   writeDb(db);
   syncToSheets(module);
+  try { syncToSheets('audit_logs'); } catch(e) {}
   return res.json({ success: true, message: `Record ${id} archived successfully.`, data: record });
 
   db[module].splice(index, 1);

@@ -101,11 +101,45 @@ function recordPitch(db, pitch, user) {
   log(db, user, 'Property pitch recorded.', { pitchId: pitch.id, propertyId: pitch.propertyId }); return pitch;
 }
 
-function closeDeal(db, input, user) {
+function audit(db, user, fieldName, oldValue, newValue, reason = '', req = null) {
+  const ip = req ? (req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress) : null;
+  const userAgent = req ? req.headers['user-agent'] : null;
+  ensureModule(db, 'audit_logs').unshift({
+    id: `AUD-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`,
+    uuid: uuid(),
+    fieldName,
+    oldValue: oldValue === undefined ? null : oldValue,
+    newValue: newValue === undefined ? null : newValue,
+    changedBy: user?.name || 'System',
+    role: user?.role || 'System',
+    date: now(),
+    reason,
+    ipAddress: ip || '127.0.0.1',
+    deviceInfo: userAgent || 'Server Process'
+  });
+}
+
+function closeDeal(db, input, user, req = null) {
   const property = (db.properties || []).find(p => String(p.id) === String(input.propertyId) && !p.deletedAt);
   if (!property) throw new Error('A valid property is required to close a deal.');
   if (!input.salePrice || Number(input.salePrice) <= 0) throw new Error('A valid sale price is required to close a deal.');
   if (!input.employeeId) throw new Error('An assigned employee is required to close a deal.');
+
+  // Validate: Inspection has been approved
+  const inspection = (db.property_inspections || []).find(insp => String(insp.propertyId) === String(property.id) && !insp.deletedAt);
+  if (inspection && inspection.approvalStatus !== 'Approved') {
+    throw new Error('Cannot close deal: Property inspection has not been approved.');
+  }
+
+  // Validate: Property is Available For Sale
+  const cycle = (db.property_listing_cycles || []).find(c => String(c.listingCycleId) === String(input.listingCycleId) || String(c.id) === String(input.listingCycleId)) || (db.property_listing_cycles || []).find(c => String(c.propertyId) === String(property.id) && !['Sold / Registered', 'Sold'].includes(c.listingStatus));
+  if (!cycle) throw new Error('An active property listing cycle is required to close a deal.');
+  if (cycle.listingStatus === 'Inspection Pending' || cycle.listingStatus === 'Draft') {
+    throw new Error('Cannot close deal: Property is not yet Available For Sale.');
+  }
+
+  if ((db.deals || []).some(d => String(d.propertyId) === String(property.id) && String(d.listingCycleId) === String(cycle.listingCycleId) && d.status === 'Closed')) throw new Error('This property listing cycle already has a closed deal.');
+
   let buyerId = input.customerId;
   if (input.leadId || String(buyerId || '').startsWith('LEAD-')) {
     const leadId = input.leadId || buyerId; const lead = (db.leads || []).find(l => String(l.id) === String(leadId));
@@ -118,15 +152,21 @@ function closeDeal(db, input, user) {
   if (!buyer) throw new Error('A valid buyer customer is required to close a deal.');
   const sellerId = input.sellerCustomerId || property.current_owner_id;
   if (!sellerId || !(db.customers || []).some(c => String(c.id) === String(sellerId))) throw new Error('A valid seller/current owner is required to close a deal.');
-  const cycle = (db.property_listing_cycles || []).find(c => String(c.listingCycleId) === String(input.listingCycleId) || String(c.id) === String(input.listingCycleId)) || (db.property_listing_cycles || []).find(c => String(c.propertyId) === String(property.id) && !['Sold / Registered', 'Sold'].includes(c.listingStatus));
-  if (!cycle) throw new Error('An active property listing cycle is required to close a deal.');
-  if ((db.deals || []).some(d => String(d.propertyId) === String(property.id) && String(d.listingCycleId) === String(cycle.listingCycleId) && d.status === 'Closed')) throw new Error('This property listing cycle already has a closed deal.');
+  
   const deal = { ...input, id: input.id || displayId(db, 'deals', 'DEAL'), uuid: input.uuid || uuid(), propertyId: property.id, customerId: buyer.id, sellerCustomerId: sellerId, listingCycleId: cycle.listingCycleId, status: 'Closed', closedAt: now(), createdAt: input.createdAt || now(), ...person(user) };
   ensureModule(db, 'deals').push(deal);
+  
   const previousOwner = sellerId; ensureModule(db, 'property_ownership_history').push({ ownershipHistoryId: uuid(), propertyId: property.id, previousOwnerId: previousOwner, newOwnerId: buyer.id, dealId: deal.id, salePrice: input.salePrice, transferredAt: now(), ...person(user) });
+  
   property.current_owner_id = buyer.id; property.status = 'Property Registered/Sold Out'; property.updatedAt = now(); cycle.listingStatus = 'Sold / Registered'; cycle.salePrice = input.salePrice; cycle.soldDate = now(); cycle.soldDealId = deal.id;
+  
   propertyHistory(db, property.id, 'current_owner_id', previousOwner, buyer.id, 'OWNERSHIP_TRANSFER', user, { listingCycleId: cycle.listingCycleId, linkedDealId: deal.id });
   propertyHistory(db, property.id, 'salePrice', null, input.salePrice, 'DEAL_CLOSED', user, { listingCycleId: cycle.listingCycleId, linkedDealId: deal.id });
+
+  // Append to Audit Logs
+  audit(db, user, 'current_owner_id', previousOwner, buyer.id, `Ownership transfer via Deal ${deal.id}`, req);
+  audit(db, user, 'listingStatus', 'Available for Sale', 'Sold / Registered', `Listing cycle closed via Deal ${deal.id}`, req);
+
   for (const q of db.queries || []) if (String(q.id) === String(input.queryId)) { q.status = 'Closed Won'; q.stage = 'Deal Closed'; }
   for (const p of db.property_pitch_history || []) if (String(p.id) === String(input.pitchId)) p.status = 'Closed Won';
   for (const f of db.follow_ups || []) if (String(f.id) === String(input.followUpId)) f.status = 'Closed Won';
@@ -135,10 +175,10 @@ function closeDeal(db, input, user) {
 }
 
 function migrate(db) {
-  const modules = ['leads','customers','properties','projects','queries','follow_ups','site_visits','property_pitch_history','deals','property_history','project_history','property_inspections','property_listing_cycles','property_ownership_history','assignment_history','sync_jobs','sync_logs'];
+  const modules = ['leads','customers','properties','projects','queries','follow_ups','site_visits','property_pitch_history','deals','property_history','project_history','property_inspections','property_listing_cycles','property_ownership_history','assignment_history','sync_jobs','sync_logs','audit_logs'];
   modules.forEach(m => ensureModule(db, m));
   for (const module of modules) for (const rec of db[module]) { rec.uuid ||= uuid(); rec.createdAt ||= rec.dateAdded || now(); if (module === 'follow_ups') { if (String(rec.customerId || '').startsWith('LEAD-')) { rec.leadId ||= rec.customerId; rec.customerId = null; } rec.deletedAt ||= null; } }
   db.schemaVersion = Math.max(Number(db.schemaVersion || 0), 2); db.migratedAt = now(); return db;
 }
 
-module.exports = { BUYER_STAGES, SELLER_STAGES, FEEDBACK_CATEGORIES, normalizePhone, prepareLead, prepareQuery, recordPitch, closeDeal, migrate, log, propertyHistory };
+module.exports = { BUYER_STAGES, SELLER_STAGES, FEEDBACK_CATEGORIES, normalizePhone, prepareLead, prepareQuery, recordPitch, closeDeal, migrate, log, propertyHistory, audit };

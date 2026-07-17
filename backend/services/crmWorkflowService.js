@@ -69,7 +69,12 @@ function prepareQuery(db, query, user) {
   if (!query.assignedEmployeeId) throw new Error('An employee/RM must be assigned to a query.');
   query.uuid ||= uuid(); query.stage ||= 'New Query'; query.createdAt ||= now();
   createFollowUp(db, { customerId: query.customerId, queryId: query.id, employeeId: query.assignedEmployeeId, remarks: `Initial follow-up for query ${query.id}` }, user);
-  if (query.queryType !== 'Sell Property') return { query };
+  
+  if (query.queryType !== 'Sell Property') {
+    log(db, user, `Created a Buy Query ${query.id} for Customer ${customer.id}`, { queryId: query.id, customerId: customer.id });
+    return { query };
+  }
+  
   const identity = [query.address, query.locality, query.sector_block, query.propertyType, query.size].map(x => String(x || '').trim().toLowerCase()).join('|');
   let property = (db.properties || []).find(p => String(p.current_owner_id) === String(query.customerId) && String(p.identityKey || '') === identity);
   if (!property) {
@@ -79,6 +84,8 @@ function prepareQuery(db, query, user) {
   const listing = { id: `LIST-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`, listingCycleId: uuid(), propertyId: property.id, sellerCustomerId: query.customerId, currentOwnerId: query.customerId, linkedSellQueryId: query.id, source: 'Customer Sell Query', listingStatus: 'Inspection Pending', askingPrice: query.demand || '', listingDate: now(), createdAt: now(), ...person(user) };
   ensureModule(db, 'property_listing_cycles').push(listing);
   propertyHistory(db, property.id, 'listingCycle', null, listing.listingCycleId, 'CREATE_LISTING_CYCLE', user, { linkedQueryId: query.id, listingCycleId: listing.listingCycleId });
+  
+  log(db, user, `Created a Sell Query ${query.id} for Customer ${customer.id} linking Property ${property.id}`, { queryId: query.id, customerId: customer.id, propertyId: property.id });
   return { query, property, listing };
 }
 

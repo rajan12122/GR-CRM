@@ -1512,7 +1512,20 @@ app.post('/api/workflows/queries', authenticateToken, (req, res) => {
     workflow.prepareQuery(db, query, req.user);
     db.queries.push(query);
     writeDb(db);
-    syncToSheets('queries');
+    
+    // Sync all affected modules to Google Sheets
+    ['queries', 'properties', 'property_listing_cycles', 'follow_ups', 'property_history'].forEach(m => {
+      try { syncToSheets(m); } catch (e) {}
+    });
+
+    // Notify assigned employee in real-time
+    if (query.assignedEmployeeId) {
+      notifyUser(query.assignedEmployeeId, 'query-assigned', {
+        queryId: query.id,
+        message: `New Buy/Sell Query ${query.id} has been assigned to you.`
+      });
+    }
+
     return res.status(201).json({ query });
   } catch (error) { return res.status(400).json({ message: error.message }); }
 });

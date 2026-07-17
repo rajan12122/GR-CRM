@@ -1053,7 +1053,7 @@ function syncAssignedEmployeeUniversally(sourceModule, recordId, newEmployeeId, 
 }
 
 function handleFollowUpPipelineAction(f, db, req) {
-  if (!f.pipelineAction || f.pipelineAction === 'None') return;
+  if (!f.pipelineAction) return;
 
   const action = f.pipelineAction;
   const customerId = f.customerId; // This can be LEAD-... or CUST-...
@@ -1062,12 +1062,26 @@ function handleFollowUpPipelineAction(f, db, req) {
   // Auto-create Site Visit if stage is Site Visit Arranged / Scheduled
   const isSiteVisitStage = action === 'Site Visit Arranged' || action === 'Site Visit' || action === 'Site Visit Scheduled' || action === 'Lead_VisitScheduled';
   if (isSiteVisitStage) {
-    const hasExistingVisit = (db.site_visits || []).some(sv => 
-      sv.linkedFollowUpId === f.id &&
-      sv.propertyId === (f.pitchedPropertyId || 'PROP-001') &&
-      sv.date === f.date
-    );
-    if (!hasExistingVisit) {
+    let existingVisit = (db.site_visits || []).find(sv => sv.linkedFollowUpId === f.id);
+    if (existingVisit) {
+      let changed = false;
+      if (existingVisit.date !== f.date) {
+        existingVisit.date = f.date;
+        changed = true;
+      }
+      if (existingVisit.propertyId !== (f.pitchedPropertyId || 'PROP-001')) {
+        existingVisit.propertyId = f.pitchedPropertyId || 'PROP-001';
+        changed = true;
+      }
+      if (existingVisit.employeeId !== f.employeeId) {
+        existingVisit.employeeId = f.employeeId;
+        changed = true;
+      }
+      if (changed) {
+        writeDb(db);
+        try { syncToSheets('site_visits'); } catch(e) {}
+      }
+    } else {
       const visitId = `VISIT-${String((db.site_visits || []).length + 1).padStart(3, '0')}`;
       const newVisit = {
         id: visitId,
@@ -1082,6 +1096,14 @@ function handleFollowUpPipelineAction(f, db, req) {
       };
       db.site_visits = db.site_visits || [];
       db.site_visits.push(newVisit);
+      writeDb(db);
+      try { syncToSheets('site_visits'); } catch(e) {}
+    }
+  } else {
+    // If the stage was changed away from Site Visit, delete any site visit linked to this follow-up!
+    const originalLen = (db.site_visits || []).length;
+    db.site_visits = (db.site_visits || []).filter(sv => sv.linkedFollowUpId !== f.id);
+    if ((db.site_visits || []).length !== originalLen) {
       writeDb(db);
       try { syncToSheets('site_visits'); } catch(e) {}
     }
@@ -1848,6 +1870,17 @@ app.put('/api/data/:module/:id', authenticateToken, (req, res, next) => {
     try { syncToSheets('customers'); } catch(e) {}
     try { syncToSheets('queries'); } catch(e) {}
     try { syncToSheets('follow_ups'); } catch(e) {}
+  }
+
+  if (module === 'site_visits') {
+    const sv = db[module][index];
+    if (sv && sv.linkedFollowUpId) {
+      const fup = (db.follow_ups || []).find(f => f.id === sv.linkedFollowUpId);
+      if (fup && fup.date !== sv.date) {
+        fup.date = sv.date;
+        try { syncToSheets('follow_ups'); } catch(e) {}
+      }
+    }
   }
 
   if (module === 'queries') handleQueryStageChange(db[module][index], db, req);

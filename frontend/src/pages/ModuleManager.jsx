@@ -121,11 +121,17 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
                     {f.label}
                   </Typography>
                   <Typography variant="body2" sx={{ color: '#0F172A', fontWeight: 700, fontSize: '13px' }}>
-                    {f.type === 'ref' || f.type === 'multiref' ? (() => {
+                    {f.type === 'ref' || f.type === 'multiref' || f.name === 'referrer_id' ? (() => {
                       let resolvedModule = f.refModule;
-                      if (f.refModule === 'customers' && String(val).startsWith('LEAD-')) {
+                      if (f.name === 'referrer_id') {
+                        if (String(val).startsWith('EMP-')) resolvedModule = 'employees';
+                        else if (String(val).startsWith('CUST-')) resolvedModule = 'customers';
+                        else if (String(val).startsWith('LEAD-')) resolvedModule = 'leads';
+                        else resolvedModule = 'employees';
+                      }
+                      if (resolvedModule === 'customers' && String(val).startsWith('LEAD-')) {
                         resolvedModule = 'leads';
-                      } else if (f.refModule === 'customers' && String(val).startsWith('CUST-')) {
+                      } else if (resolvedModule === 'customers' && String(val).startsWith('CUST-')) {
                         resolvedModule = 'customers';
                       }
                       const list = moduleData[resolvedModule] || [];
@@ -371,6 +377,7 @@ const ModuleManager = () => {
           r.leadType === 'Seller'
         );
         const pending = activeLeads.filter(r => 
+          (!r.assignedEmployeeId || r.assignedEmployeeId === '') &&
           r.status !== 'Lost' && r.status !== 'Dead' && r.status !== 'Closed/Lost' &&
           r.stage !== 'Lost'
         );
@@ -571,11 +578,17 @@ const ModuleManager = () => {
           r.status !== 'Removed'
         );
         const att = moduleData.attendance || [];
-        const todayDateStr = new Date().toISOString().split('T')[0];
+        const todayDateStr = new Date().toLocaleDateString('sv-SE');
         
         const presentTodayIds = new Set(
           att
-            .filter(a => String(a.date) === todayDateStr && a.inTime && a.inTime !== '--')
+            .filter(a => {
+              const matchesDate = String(a.date) === todayDateStr;
+              if (!matchesDate) return false;
+              const isPresentStatus = a.status === 'Present' || a.status === 'Late';
+              const hasInTime = a.inTime && a.inTime !== '--';
+              return isPresentStatus || hasInTime;
+            })
             .map(a => String(a.employeeId))
         );
         const presentCount = activeEmployees.filter(emp => presentTodayIds.has(String(emp.id))).length;

@@ -257,13 +257,20 @@ const DynamicTable = ({
       );
     }
 
-    if (field.type === 'ref') {
+    if (field.type === 'ref' || field.name === 'referrer_id') {
       if (!val) return '---';
+      let resolvedModule = field.refModule;
+      if (field.name === 'referrer_id') {
+        if (String(val).startsWith('EMP-')) resolvedModule = 'employees';
+        else if (String(val).startsWith('CUST-')) resolvedModule = 'customers';
+        else if (String(val).startsWith('LEAD-')) resolvedModule = 'leads';
+        else resolvedModule = 'employees';
+      }
       return (
         <EntityChip 
-          moduleName={field.refModule} 
+          moduleName={resolvedModule} 
           id={val} 
-          onClick={(actualModule, actualId) => onInspectClick(actualModule || field.refModule, actualId || val)} 
+          onClick={(actualModule, actualId) => onInspectClick(actualModule || resolvedModule, actualId || val)} 
         />
       );
     }

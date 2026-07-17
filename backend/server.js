@@ -6,6 +6,7 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { syncToSheets, syncFromSheets, getSheetsConfig, processSyncQueue } = require('./services/sheetsService');
+const workflow = require('./services/crmWorkflowService');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -126,18 +127,8 @@ function resequenceAllModules() {
   }
 }
 
-// Sync from Google Sheets on start if credentials exist
-syncFromSheets().then(res => {
-  if (res) console.log('Initial Google Sheets sync completed on boot.');
-  else console.log('Running on local JSON database cache.');
-
-  // Run automatic sequential ID healing migration
-  try {
-    resequenceAllModules();
-  } catch (err) {
-    console.error('ID Resequencing Boot Error:', err);
-  }
-});
+// The local CRM database is authoritative.  Imports are explicit admin actions only;
+// never import Sheets data or rewrite/resequence identifiers during application startup.
 
 // Helper functions to read/write DB and Metadata with in-memory caching
 let dbCache = null;
@@ -152,8 +143,15 @@ function readDb() {
 
 function writeDb(data) {
   dbCache = data;
-  fs.writeFileSync(dbPath, JSON.stringify(data, null, 2), 'utf8');
+  const tempPath = `${dbPath}.tmp`;
+  fs.writeFileSync(tempPath, JSON.stringify(data, null, 2), 'utf8');
+  fs.renameSync(tempPath, dbPath);
 }
+
+// Backward-compatible, additive migration. It only adds UUIDs/nullable references
+// and new collections; it never changes existing display IDs or removes records.
+workflow.migrate(readDb());
+writeDb(readDb());
 
 function readMetadata() {
   if (!metadataCache) {
@@ -1479,6 +1477,75 @@ function generateDynamicTimeline(moduleName, id, db) {
 
 // --- DYNAMIC DATA CRUD ROUTER ---
 
+// Authoritative workflow endpoints. Existing /api/data routes remain available for
+// legacy screens, while new screens should use these endpoints for linked writes.
+app.post('/api/workflows/leads', authenticateToken, (req, res) => {
+  try {
+    const db = readDb();
+    const lead = { ...req.body };
+    if (!lead.id) lead.id = `LEAD-${String((db.leads || []).length + 1).padStart(3, '0')}`;
+    workflow.prepareLead(db, lead, req.user);
+    db.leads.push(lead);
+    writeDb(db);
+    
+    // Sync all affected modules to Google Sheets
+    ['leads', 'customers', 'properties', 'property_listing_cycles', 'property_inspections', 'property_history', 'tasks'].forEach(m => {
+      try { syncToSheets(m); } catch (e) {}
+    });
+
+    // Notify the assigned employee in real-time
+    if (lead.assignedEmployeeId) {
+      notifyUser(lead.assignedEmployeeId, 'lead-assigned', {
+        leadId: lead.id,
+        message: `New ${lead.leadType || 'Buyer'} Lead ${lead.id} has been assigned to you.`
+      });
+    }
+
+    return res.status(201).json({ lead, customerId: lead.customerId || null });
+  } catch (error) { return res.status(400).json({ message: error.message }); }
+});
+
+app.post('/api/workflows/queries', authenticateToken, (req, res) => {
+  try {
+    const db = readDb();
+    const query = { ...req.body, id: req.body.id || `QRY-${String((db.queries || []).length + 1).padStart(3, '0')}` };
+    workflow.prepareQuery(db, query, req.user);
+    db.queries.push(query);
+    writeDb(db);
+    syncToSheets('queries');
+    return res.status(201).json({ query });
+  } catch (error) { return res.status(400).json({ message: error.message }); }
+});
+
+app.post('/api/workflows/pitches', authenticateToken, (req, res) => {
+  try {
+    const db = readDb();
+    const pitch = { ...req.body, id: req.body.id || `PITCH-${String((db.property_pitch_history || []).length + 1).padStart(3, '0')}` };
+    workflow.recordPitch(db, pitch, req.user);
+    db.property_pitch_history.push(pitch);
+    writeDb(db);
+    syncToSheets('property_pitch_history');
+    return res.status(201).json(pitch);
+  } catch (error) { return res.status(400).json({ message: error.message }); }
+});
+
+app.post('/api/workflows/deals/close', authenticateToken, (req, res) => {
+  try {
+    const db = readDb();
+    const result = workflow.closeDeal(db, req.body, req.user);
+    writeDb(db);
+    ['deals', 'properties', 'customers', 'property_listing_cycles', 'property_history'].forEach(syncToSheets);
+    return res.status(201).json(result);
+  } catch (error) { return res.status(400).json({ message: error.message }); }
+});
+
+app.get('/api/workflows/properties/:id/interest', authenticateToken, (req, res) => {
+  const db = readDb(); const propertyId = req.params.id;
+  const pitches = (db.property_pitch_history || []).filter(p => String(p.propertyId) === String(propertyId) && !p.deletedAt);
+  const visits = (db.site_visits || []).filter(v => String(v.propertyId) === String(propertyId) && !v.deletedAt);
+  res.json({ propertyId, pitchCount: pitches.length, pitches, visits, filters: { feedbackCategories: workflow.FEEDBACK_CATEGORIES } });
+});
+
 app.get('/api/data/:module', authenticateToken, (req, res, next) => {
   const { module } = req.params;
   
@@ -1617,6 +1684,8 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
     const nextNum = maxNum > 0 ? maxNum + 1 : (db[module] || []).length + 1;
     payload.id = `${prefix}-${String(nextNum).padStart(3, '0')}`;
   }
+  // Display IDs remain for people and old UI links; UUIDs are immutable identity keys.
+  payload.uuid = payload.uuid || require('crypto').randomUUID();
 
   // Populate basic date tracker if applicable
   const metadata = readMetadata();
@@ -1743,6 +1812,7 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
   }
 
   if (module === 'leads') {
+    try { workflow.prepareLead(db, payload, req.user); } catch (error) { return res.status(400).json({ message: error.message }); }
     payload.assignmentStatus = 'accepted';
     payload.assignmentTime = null;
     payload.droppedBy = [];
@@ -1752,11 +1822,14 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       }, 500);
     }
   }
+  if (module === 'queries') {
+    try { workflow.prepareQuery(db, payload, req.user); } catch (error) { return res.status(400).json({ message: error.message }); }
+  }
 
   if (!db[module]) db[module] = [];
   db[module].push(payload);
 
-  if (module === 'queries') {
+  if (module === 'queries' && !payload.uuid) {
     handleQueryStageChange(payload, db, req);
     
     if (module === 'queries' && payload.queryType !== 'Sell Property') {
@@ -1778,13 +1851,14 @@ app.post('/api/data/:module', authenticateToken, (req, res, next) => {
       try { syncToSheets('follow_ups'); } catch(e) {}
     }
   }
-  if (module === 'deals') handleDealStatusChange(payload, db, req);
-  if (module === 'property_pitch_history') handlePitchStatusChange(payload, db, req);
+  if (module === 'deals' && payload.status === 'Closed') {
+    return res.status(400).json({ message: 'Use POST /api/workflows/deals/close to close a deal and transfer ownership.' });
+  }
+  if (module === 'property_pitch_history') {
+    try { workflow.recordPitch(db, payload, req.user); } catch (error) { db[module].pop(); return res.status(400).json({ message: error.message }); }
+  }
   if (module === 'leads') {
-    handleLeadStatusChange(payload, db, req);
-    if (payload.assignmentStatus === 'accepted') {
-      createFollowUpForLead(payload, db);
-    }
+    // prepareLead already creates exactly one initial follow-up and performs seller onboarding.
     if (payload.assignedEmployeeId) {
       syncAssignedEmployeeUniversally('leads', payload.id, payload.assignedEmployeeId, db);
     }
@@ -2051,6 +2125,16 @@ app.delete('/api/data/:module/:id', authenticateToken, (req, res, next) => {
 
   const index = db[module].findIndex(rec => String(rec.id) === String(id));
   if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
+
+  // Preserve linked history. Deletes are archival state changes, never cascades.
+  const record = db[module][index];
+  record.deletedAt = new Date().toISOString();
+  record.deletedBy = req.user.id;
+  record.deletionReason = req.body?.reason || 'Archived through CRM delete action';
+  workflow.log(db, req.user, `Archived record ${id} in ${module}`, { module, id, deletionReason: record.deletionReason });
+  writeDb(db);
+  syncToSheets(module);
+  return res.json({ success: true, message: `Record ${id} archived successfully.`, data: record });
 
   db[module].splice(index, 1);
 

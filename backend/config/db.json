@@ -66,7 +66,9 @@
       "sector_block": "A",
       "demand": "",
       "size": "",
-      "dateAdded": "2026-07-01"
+      "dateAdded": "2026-07-01",
+      "uuid": "d63658b3-4201-4700-9569-3ceedd2e37e9",
+      "createdAt": "2026-07-01"
     },
     {
       "id": "LEAD-002",
@@ -88,7 +90,9 @@
       "sector_block": "",
       "demand": "",
       "size": "",
-      "dateAdded": "2026-07-03"
+      "dateAdded": "2026-07-03",
+      "uuid": "d0e17bf2-9a09-4cea-a5ca-49d88e37f9ad",
+      "createdAt": "2026-07-03"
     },
     {
       "id": "LEAD-003",
@@ -110,7 +114,9 @@
       "sector_block": "A",
       "demand": "",
       "size": "500 Sq. yd.",
-      "dateAdded": "2026-07-17"
+      "dateAdded": "2026-07-17",
+      "uuid": "308d1789-09fd-4bf1-8c13-f7bf90d869a7",
+      "createdAt": "2026-07-17"
     }
   ],
   "properties": [
@@ -140,7 +146,9 @@
       "white": "50 %",
       "time": "15-20 days",
       "demand": "1.47 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "2cba9b26-8a8c-4245-8406-f56a66ec3eb4",
+      "createdAt": "2026-07-17T13:08:06.901Z"
     },
     {
       "id": "PROP-002",
@@ -168,7 +176,9 @@
       "white": 1.5,
       "time": "",
       "demand": "3.35 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "cc6583e2-2912-43da-bb01-6694a125933a",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-003",
@@ -196,7 +206,9 @@
       "white": "Normal ",
       "time": "",
       "demand": "3.30Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "696058cd-2ac1-4304-a104-7a169cb40d39",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-004",
@@ -224,7 +236,9 @@
       "white": "Normal ",
       "time": "",
       "demand": "5.20 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "6861c87b-e725-4903-bff7-7ed4bb9c6d59",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-005",
@@ -252,7 +266,9 @@
       "white": "",
       "time": "60 days",
       "demand": "5.15 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "9ac2f7bc-5e6b-4a14-96a5-722eae7d6811",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-006",
@@ -280,7 +296,9 @@
       "white": "Normal ",
       "time": "2-3 Month",
       "demand": "1.90 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "3a7268ef-93c8-4809-b74b-85e181e88922",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-007",
@@ -308,7 +326,9 @@
       "white": "Normal ",
       "time": "",
       "demand": "4.75 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "c21768e9-31e6-49e4-96f4-5bf95f876ec1",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-008",
@@ -336,7 +356,9 @@
       "white": "",
       "time": "",
       "demand": "3.70 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "cc0db51a-2080-4d27-8c01-770a8428ad80",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-009",
@@ -364,7 +386,9 @@
       "white": "",
       "time": "",
       "demand": "3.25 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "9e58cab6-2a5e-4c48-996b-d144d6603063",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-010",
@@ -392,7 +416,9 @@
       "white": "",
       "time": "",
       "demand": "",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "3dc4be63-2017-49d3-85c4-a6d0c724d758",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-011",
@@ -420,7 +446,9 @@
       "white": "Normal ",
       "time": "",
       "demand": "8.40 Cr",
-      "lead_source": "Whatsapp"
+      "lead_source": "Whatsapp",
+      "uuid": "258e4cca-2470-4d0c-8779-679ada23bfe7",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-012",
@@ -448,7 +476,9 @@
       "white": "Normal",
       "time": "1 month",
       "demand": "1.2 Cr",
-      "lead_source": "Referral"
+      "lead_source": "Referral",
+      "uuid": "38660d97-608f-4ab6-8f47-fb2e5d8b50e8",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROP-013",
@@ -476,7 +506,9 @@
       "white": "e",
       "time": "f",
       "demand": "e",
-      "lead_source": "Gagan"
+      "lead_source": "Gagan",
+      "uuid": "dc20cae1-9533-41c0-9c3e-0cffd5ea0d58",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     }
   ],
   "projects": [
@@ -499,7 +531,9 @@
       "plc_percent": "1 Lakh on down floors",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "6f6b9259-beab-4305-85e5-cf846bafd3f4",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-002",
@@ -520,7 +554,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "006c8524-ad81-48cd-935d-64e0dd864a1f",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-003",
@@ -541,7 +577,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "6d112f9f-40a4-43f1-9c64-33c941c19eba",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-004",
@@ -562,7 +600,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "cc54a7d5-e758-4371-aa18-e10e6d42406d",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-005",
@@ -583,7 +623,9 @@
       "plc_percent": "",
       "club_house_membership": "10 to 12 Lakh",
       "parking_charges": "10 to 12 Lakh",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "3e5f8f4a-393c-4583-8453-6365e844818a",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-006",
@@ -604,7 +646,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "3b0f0795-9d5a-4e0c-8128-de070576acb8",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-007",
@@ -625,7 +669,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "9c9bfaea-f2cd-4d74-95f8-0470f295da9a",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-008",
@@ -646,7 +692,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "1e85976a-6506-4a77-913f-a735ffe3c62c",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-009",
@@ -667,7 +715,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "ea632b22-14c1-4208-bd3c-4143ebc96f94",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-010",
@@ -688,7 +738,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "89ab51fb-e564-473e-af16-9e8821c9ec5e",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-011",
@@ -709,7 +761,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "bc19dc46-39af-4c31-95d0-68f9d00ea9e3",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-012",
@@ -730,7 +784,9 @@
       "plc_percent": "",
       "club_house_membership": "1 Lakh",
       "parking_charges": "1 Lakh",
-      "other_charges": "50, 000"
+      "other_charges": "50, 000",
+      "uuid": "75d52b9e-f5fb-41c8-bed8-eeee6c0203de",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-013",
@@ -751,7 +807,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "53c48579-3bc2-4535-a300-3c43f04ff3c1",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-014",
@@ -772,7 +830,9 @@
       "plc_percent": "1 Lakh",
       "club_house_membership": "75, 000/-",
       "parking_charges": "1 Lakh",
-      "other_charges": "35, 000 and 1, 50, 000 for 3 k.v.a"
+      "other_charges": "35, 000 and 1, 50, 000 for 3 k.v.a",
+      "uuid": "a21ff4d8-0399-4c53-b553-c6f25ae3ab5c",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-015",
@@ -793,7 +853,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "e0b4fd7a-55be-4ac0-b3d2-0477559281ca",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-016",
@@ -814,7 +876,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "0e38d291-f7c4-4b92-95a7-a2281c271938",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-017",
@@ -835,7 +899,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "c1a11557-861b-4dbb-b07c-88d370231410",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-018",
@@ -856,7 +922,9 @@
       "plc_percent": "Green Facing = Rs 300 per sq.ft, corner = Rs 200 sq.ft., floor = Rs 100 per sq.ft.",
       "club_house_membership": "7, 50, 000/- and 10, 000, 00/- For villas and penthouse",
       "parking_charges": "5, 00, 000/-",
-      "other_charges": "Rs 50 per sq.ft and Rs 75 per sq.ft"
+      "other_charges": "Rs 50 per sq.ft and Rs 75 per sq.ft",
+      "uuid": "9a6fc6f5-40a9-42e2-b2e3-7d38c5afb082",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-019",
@@ -877,7 +945,9 @@
       "plc_percent": "Park Facing = Rs 300 per sq.ft, corner = Rs 300 sq.ft., floor = Rs 100 to 200per sq.ft.",
       "club_house_membership": "5, 00, 000/-",
       "parking_charges": "",
-      "other_charges": "Rs 50 per sq.ft and Rs 1, 50, 000/-"
+      "other_charges": "Rs 50 per sq.ft and Rs 1, 50, 000/-",
+      "uuid": "9c587ace-9f6f-4b65-97dc-e2aedadb85fe",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-020",
@@ -898,7 +968,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "2d04d565-cb7c-4f1d-9709-b6a1d7aac516",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-021",
@@ -919,7 +991,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "5daf3d80-8435-4489-ae0b-1dff1d3ecbe1",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-022",
@@ -940,7 +1014,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "814ecd2e-901e-4bbf-b3a4-9fa3519d52b3",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-023",
@@ -961,7 +1037,9 @@
       "plc_percent": "park facing = 2, 00, 000/-",
       "club_house_membership": "Free",
       "parking_charges": "2, 00, 000/-",
-      "other_charges": "50, 000 to 60, 000 and 1, 00, 000"
+      "other_charges": "50, 000 to 60, 000 and 1, 00, 000",
+      "uuid": "38f86fa8-8588-4fd9-a452-d242073fcab7",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-024",
@@ -982,7 +1060,9 @@
       "plc_percent": "1st floor to 4th floor = 1 Lakh to 3 Lakh",
       "club_house_membership": "1, 25, 000/-",
       "parking_charges": "2, 00, 000/-",
-      "other_charges": "50, 000 and 80, 000"
+      "other_charges": "50, 000 and 80, 000",
+      "uuid": "09b78000-942a-4e1a-a9f3-402ec65a97a4",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-025",
@@ -1003,7 +1083,9 @@
       "plc_percent": "1st Floor and Fourth Floor = Rs 1, 00, 000/-, Park facing 5%, Corner + Park Facing 7%",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": "2K.V. @1, 00, 000/-, 3k.v.@ 1, 50, 000/-"
+      "other_charges": "2K.V. @1, 00, 000/-, 3k.v.@ 1, 50, 000/-",
+      "uuid": "300c0b57-0bf0-4ec7-826b-9091449749e0",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-026",
@@ -1024,7 +1106,9 @@
       "plc_percent": "1st Floor to Fourth Floor  and 18th and above = 5%, Corner = 5%",
       "club_house_membership": "15 Lakh",
       "parking_charges": "15 Lakh for 2",
-      "other_charges": "rs 75 per sq.ft. and 3 Lakh"
+      "other_charges": "rs 75 per sq.ft. and 3 Lakh",
+      "uuid": "a9ac45c3-d9f9-4cc6-860a-bf9b727e15db",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-027",
@@ -1045,7 +1129,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "67e66e94-b1ae-46a8-a32a-0a85118cd27b",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-028",
@@ -1066,7 +1152,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "63f9d965-ecf8-4e96-88ed-44a1479c7849",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-029",
@@ -1087,7 +1175,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "aaff6f87-56d0-47a4-81b5-4084b81c1ddf",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-030",
@@ -1108,7 +1198,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "de4c9fe2-ec08-4296-8ec4-8c1ff8bd2663",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-031",
@@ -1129,7 +1221,9 @@
       "plc_percent": "",
       "club_house_membership": "",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "f6236f4a-b719-404c-8e2a-76250c1f0f06",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-032",
@@ -1150,7 +1244,9 @@
       "plc_percent": "5% for Corner facing, 7% for park facing, 10% for park facing + corner facing",
       "club_house_membership": "3, 50, 000",
       "parking_charges": "",
-      "other_charges": "75, 000+1, 20, 000"
+      "other_charges": "75, 000+1, 20, 000",
+      "uuid": "7491186d-498c-4dae-a4ac-6fbfb0f70ce2",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PROJ-033",
@@ -1171,7 +1267,9 @@
       "plc_percent": "",
       "club_house_membership": "16.5 Lakh",
       "parking_charges": "",
-      "other_charges": ""
+      "other_charges": "",
+      "uuid": "c9d6b476-d06e-48ad-97ea-fe370e305ee8",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     }
   ],
   "site_visits": [
@@ -1182,39 +1280,53 @@
       "employeeId": "EMP-001",
       "date": "15/7/2026",
       "time": "12:00 PM",
-      "result": "Scheduled"
+      "result": "Scheduled",
+      "uuid": "e0875681-79eb-4dd3-b546-3d6cf53bcab4",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     }
   ],
   "follow_ups": [
     {
       "id": "FOLLOW-001",
-      "customerId": "LEAD-001",
+      "customerId": null,
       "queryId": "",
       "employeeId": "EMP-001",
       "date": "13/7/2026",
       "time": "02:30 PM",
       "status": "Call Done",
-      "pipelineAction": "Site Visit"
+      "pipelineAction": "Site Visit",
+      "uuid": "235f0361-c687-4fd9-870b-9b41df6600ba",
+      "createdAt": "2026-07-17T13:08:06.903Z",
+      "leadId": "LEAD-001",
+      "deletedAt": null
     },
     {
       "id": "FOLLOW-002",
-      "customerId": "LEAD-003",
+      "customerId": null,
       "queryId": "",
       "employeeId": "EMP-001",
       "date": "17/7/2026",
       "time": "12:00 PM",
       "status": "Pending Call",
-      "pipelineAction": "Contacted"
+      "pipelineAction": "Contacted",
+      "uuid": "4301112c-007f-47ec-a821-c7c5cce2667b",
+      "createdAt": "2026-07-17T13:08:06.903Z",
+      "leadId": "LEAD-003",
+      "deletedAt": null
     },
     {
       "id": "FOLLOW-003",
-      "customerId": "LEAD-004",
+      "customerId": null,
       "queryId": "",
       "employeeId": "EMP-001",
       "date": "17/7/2026",
       "time": "12:00 PM",
       "status": "Pending Call",
-      "pipelineAction": "Fresh Lead"
+      "pipelineAction": "Fresh Lead",
+      "uuid": "b0e944cb-cb6a-48b4-99ec-ab344810f04c",
+      "createdAt": "2026-07-17T13:08:06.903Z",
+      "leadId": "LEAD-004",
+      "deletedAt": null
     }
   ],
   "attendance": [
@@ -1818,7 +1930,9 @@
       "interestLevel": "Site Visit Scheduled",
       "followUpDate": "",
       "remarks": "",
-      "dealerId": ""
+      "dealerId": "",
+      "uuid": "cacea7fe-d3e0-47db-bcd3-1c79973503ae",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     },
     {
       "id": "PITCH-004",
@@ -1839,7 +1953,9 @@
       "interestLevel": "Site Visit Scheduled",
       "followUpDate": "",
       "remarks": "",
-      "dealerId": ""
+      "dealerId": "",
+      "uuid": "205c161a-2c25-4717-917e-cdd17234baac",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     }
   ],
   "project_history": [],
@@ -1861,10 +1977,20 @@
       "locality": "Aerocity",
       "sector_block": "A",
       "size": "500 Sq. yd.",
-      "remarks": "Converted from Lead LEAD-004."
+      "remarks": "Converted from Lead LEAD-004.",
+      "uuid": "14e512c7-3b9d-46b3-b1cd-513740e69cd2",
+      "createdAt": "2026-07-17T13:08:06.903Z"
     }
   ],
   "notices": [],
   "deals": [],
-  "property_history": []
+  "property_history": [],
+  "property_inspections": [],
+  "property_listing_cycles": [],
+  "property_ownership_history": [],
+  "assignment_history": [],
+  "sync_jobs": [],
+  "sync_logs": [],
+  "schemaVersion": 2,
+  "migratedAt": "2026-07-17T13:08:06.903Z"
 }

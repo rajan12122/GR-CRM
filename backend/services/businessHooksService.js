@@ -543,6 +543,7 @@ function handleLeadStatusChange(lead, db, req) {
       db.customers.push(existingCust);
       try { syncToSheets('customers'); } catch(e) {}
     } else {
+      existingCust.stage = 'Active Seller';
       existingCust.budget = leadDemand;
       existingCust.city = lead.locality || existingCust.city || '';
       try { syncToSheets('customers'); } catch(e) {}
@@ -774,7 +775,7 @@ function handleFollowUpPipelineAction(f, db, req) {
   if (!f.pipelineAction) return;
 
   const action = f.pipelineAction;
-  const customerId = f.customerId;
+  const customerId = f.customerId || f.leadId;
   const queryId = f.queryId;
 
   const isSiteVisitStage = action === 'Site Visit Arranged' || action === 'Site Visit' || action === 'Site Visit Scheduled' || action === 'Lead_VisitScheduled';

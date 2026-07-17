@@ -79,6 +79,12 @@ app.listen(PORT, () => {
   console.log(`Gagan Realtech ERP+CRM API Server running on port ${PORT}`);
   
   // Trigger boot processes
+  try {
+    const { runMigration } = require('./scripts/migrateDatabase');
+    runMigration();
+  } catch (e) {
+    console.error('Failed to run startup database migration:', e);
+  }
   selfCorrectDatabase();
   startLeadRotationScheduler();
 });

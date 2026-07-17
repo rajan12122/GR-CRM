@@ -21,6 +21,8 @@ const allowedOrigins = [
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5000',
+  'https://gr-crm-frontend.onrender.com',
+  'https://gr-crm-backend.onrender.com',
   'https://gagan-realtech.onrender.com'
 ];
 app.use(cors({

@@ -27,6 +27,91 @@ export default function AIAssistantDrawer() {
     { role: 'assistant', content: 'Hello! I am your Gagan Realtech AI Copilot. How can I help you manage your sales, properties, or leads today?' }
   ]);
 
+  // Draggable positioning state
+  const [position, setPosition] = useState({ bottom: 24, right: 24 });
+  const dragRef = useRef({ isDragging: false, hasDragged: false, startX: 0, startY: 0, startBottom: 24, startRight: 24 });
+
+  const handleMouseDown = (e) => {
+    if (e.button !== 0) return; // Only drag on left click
+    dragRef.current = {
+      isDragging: true,
+      hasDragged: false,
+      startX: e.clientX,
+      startY: e.clientY,
+      startBottom: position.bottom,
+      startRight: position.right
+    };
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!dragRef.current.isDragging) return;
+    const deltaX = e.clientX - dragRef.current.startX;
+    const deltaY = e.clientY - dragRef.current.startY;
+    
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      dragRef.current.hasDragged = true;
+    }
+    
+    const nextBottom = Math.max(10, Math.min(window.innerHeight - 70, dragRef.current.startBottom - deltaY));
+    const nextRight = Math.max(10, Math.min(window.innerWidth - 70, dragRef.current.startRight - deltaX));
+    
+    setPosition({ bottom: nextBottom, right: nextRight });
+  };
+
+  const handleMouseUp = () => {
+    dragRef.current.isDragging = false;
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 0) return;
+    const touch = e.touches[0];
+    dragRef.current = {
+      isDragging: true,
+      hasDragged: false,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      startBottom: position.bottom,
+      startRight: position.right
+    };
+    document.addEventListener('touchmove', handleTouchMove, { passive: false });
+    document.addEventListener('touchend', handleTouchEnd);
+  };
+
+  const handleTouchMove = (e) => {
+    if (!dragRef.current.isDragging || e.touches.length === 0) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - dragRef.current.startX;
+    const deltaY = touch.clientY - dragRef.current.startY;
+    
+    if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+      dragRef.current.hasDragged = true;
+    }
+    
+    const nextBottom = Math.max(10, Math.min(window.innerHeight - 70, dragRef.current.startBottom - deltaY));
+    const nextRight = Math.max(10, Math.min(window.innerWidth - 70, dragRef.current.startRight - deltaX));
+    
+    setPosition({ bottom: nextBottom, right: nextRight });
+  };
+
+  const handleTouchEnd = () => {
+    dragRef.current.isDragging = false;
+    document.removeEventListener('touchmove', handleTouchMove);
+    document.removeEventListener('touchend', handleTouchEnd);
+  };
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('touchmove', handleTouchMove);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [position]);
+
   const renderMessageContent = (text, isUser) => {
     if (isUser) {
       return (
@@ -238,18 +323,31 @@ export default function AIAssistantDrawer() {
       {!open && (
         <Tooltip title="Gagan Copilot AI" placement="left">
           <IconButton
-            onClick={() => setOpen(true)}
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            onClick={(e) => {
+              if (dragRef.current.hasDragged) {
+                e.preventDefault();
+                return;
+              }
+              setOpen(true);
+            }}
             sx={{
               position: 'fixed',
-              bottom: 24,
-              right: 24,
+              bottom: position.bottom,
+              right: position.right,
               width: 56,
               height: 56,
               zIndex: 1300,
               backgroundColor: '#1E3A8A',
               color: '#FFFFFF',
               boxShadow: '0 8px 32px rgba(30, 58, 138, 0.4)',
-              transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+              cursor: 'grab',
+              userSelect: 'none',
+              '&:active': {
+                cursor: 'grabbing'
+              },
+              transition: 'box-shadow 0.3s, background-color 0.3s, transform 0.2s',
               animation: 'pulse 2s infinite',
               '@keyframes pulse': {
                 '0%': { boxShadow: '0 0 0 0 rgba(30, 58, 138, 0.7)' },
@@ -258,7 +356,7 @@ export default function AIAssistantDrawer() {
               },
               '&:hover': {
                 backgroundColor: '#1D4ED8',
-                transform: 'scale(1.1) rotate(15deg)',
+                transform: 'scale(1.1)',
                 boxShadow: '0 12px 40px rgba(29, 78, 216, 0.6)'
               }
             }}

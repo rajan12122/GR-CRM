@@ -53,7 +53,14 @@ const getSingularLabel = (label) => {
 };
 
 const formatCurrency = (val) => {
-  return Number(val || 0).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  if (val === undefined || val === null || val === '') return '';
+  const str = String(val).trim();
+  if (/[a-zA-Z]/.test(str)) {
+    return str;
+  }
+  const num = Number(str.replace(/,/g, ''));
+  if (isNaN(num)) return str;
+  return num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 };
 
 const DynamicIcon = ({ name, size = 20, color = 'currentColor', ...props }) => {
@@ -892,7 +899,13 @@ const EntityDetail = () => {
                         ))}
                       </Box>
                     ) : f.name === 'price' || f.name === 'budget' || f.name === 'salary' ? (
-                      `₹${Number(val).toLocaleString('en-IN')}`
+                      (() => {
+                        const str = String(val).trim();
+                        if (/[a-zA-Z]/.test(str)) return str;
+                        const num = Number(str.replace(/,/g, ''));
+                        if (isNaN(num)) return str;
+                        return `₹${num.toLocaleString('en-IN')}`;
+                      })()
                     ) : (
                       String(val)
                     )}
@@ -2329,7 +2342,13 @@ const EntityDetail = () => {
                                 <TableCell sx={{ fontWeight: 600 }}>{p.propertyType || p.r_c_i}</TableCell>
                                 <TableCell>{p.size || 'N/A'}</TableCell>
                                 <TableCell sx={{ fontWeight: 700, color: '#16A34A' }}>
-                                  {p.demand ? `₹${Number(p.demand).toLocaleString('en-IN')}` : 'N/A'}
+                                  {p.demand ? (() => {
+                                    const str = String(p.demand).trim();
+                                    if (/[a-zA-Z]/.test(str)) return str;
+                                    const num = Number(str.replace(/,/g, ''));
+                                    if (isNaN(num)) return str;
+                                    return `₹${num.toLocaleString('en-IN')}`;
+                                  })() : 'N/A'}
                                 </TableCell>
                                 <TableCell>{p.sector_block || 'N/A'}</TableCell>
                                 <TableCell>
@@ -2496,7 +2515,13 @@ const EntityDetail = () => {
                               />
                             </Box>
                             <Typography variant="caption" sx={{ color: '#64748B', display: 'block', mb: 1 }}>
-                              Pitch Date: {p.pitchDate} • Method: {p.pitchMethod} • Quoted: ₹{Number(p.quotedPrice || 0).toLocaleString('en-IN')}
+                              Pitch Date: {p.pitchDate} • Method: {p.pitchMethod} • Quoted: {p.quotedPrice ? (() => {
+                                const str = String(p.quotedPrice).trim();
+                                if (/[a-zA-Z]/.test(str)) return str;
+                                const num = Number(str.replace(/,/g, ''));
+                                if (isNaN(num)) return str;
+                                return `₹${num.toLocaleString('en-IN')}`;
+                              })() : 'N/A'}
                             </Typography>
                             {p.customerId && (
                               <Typography variant="body2" sx={{ mb: 1 }}>

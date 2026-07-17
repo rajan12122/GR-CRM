@@ -531,9 +531,6 @@ const DynamicForm = ({
           if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
             payload[f.name] = customValues[f.name] || '';
           }
-          if (f.type === 'number' && payload[f.name] !== undefined && payload[f.name] !== null && String(payload[f.name]).trim() !== '') {
-            payload[f.name] = parseIndianNumber(payload[f.name]);
-          }
         });
         payload = compileSize(payload, false);
         payload = await resolveDealerId(payload);
@@ -554,9 +551,6 @@ const DynamicForm = ({
         fields.forEach(f => {
           if ((f.type === 'select' || f.type === 'ref') && formData[f.name] === 'Other') {
             payload[f.name] = customValues[f.name] || '';
-          }
-          if (f.type === 'number' && payload[f.name] !== undefined && payload[f.name] !== null && String(payload[f.name]).trim() !== '') {
-            payload[f.name] = parseIndianNumber(payload[f.name]);
           }
         });
         payload = compileSize(payload, false);

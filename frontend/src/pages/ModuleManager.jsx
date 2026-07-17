@@ -94,7 +94,15 @@ const RecordCard = ({ rec, fields, handleInspectClick, handleEditClick, handleDe
                 'advanceTaken'
               ];
               if (currencyFields.includes(f.name)) {
-                displayVal = `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+                if (val !== undefined && val !== null && val !== '') {
+                  const str = String(val).trim();
+                  if (/[a-zA-Z]/.test(str)) {
+                    displayVal = str;
+                  } else {
+                    const num = Number(str.replace(/,/g, ''));
+                    displayVal = isNaN(num) ? str : `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+                  }
+                }
               }
 
               return (

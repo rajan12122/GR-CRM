@@ -291,7 +291,14 @@ const DynamicTable = ({
       'advanceTaken'
     ];
     if (currencyFields.includes(field.name)) {
-      return `₹${Number(val).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+      if (val === undefined || val === null || val === '') return '';
+      const str = String(val).trim();
+      if (/[a-zA-Z]/.test(str)) {
+        return str;
+      }
+      const num = Number(str.replace(/,/g, ''));
+      if (isNaN(num)) return str;
+      return `₹${num.toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
     }
 
     return String(val);

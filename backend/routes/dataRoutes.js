@@ -66,4 +66,45 @@ router.post('/templates', authenticateToken, (req, res) => {
   res.json({ success: true, templates: db.templates });
 });
 
+router.post('/upload', authenticateToken, (req, res) => {
+  try {
+    const { fileName, base64Data } = req.body;
+    if (!base64Data) {
+      return res.status(400).json({ error: 'No base64 image data provided.' });
+    }
+
+    const { uploadsDir } = require('../config/db');
+    const fs = require('fs');
+    const path = require('path');
+
+    let base64String = base64Data;
+    let ext = 'jpg';
+    if (base64Data.includes(';base64,')) {
+      const parts = base64Data.split(';base64,');
+      base64String = parts[1];
+      const match = parts[0].match(/data:(image\/\w+)/);
+      if (match) {
+        ext = match[1].split('/')[1] || 'jpg';
+        if (ext === 'jpeg') ext = 'jpg';
+      }
+    }
+
+    const nameWithoutExt = (fileName || 'file').replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9_-]/g, '');
+    const uniqueFileName = `${Date.now()}-${nameWithoutExt}.${ext}`;
+    const filePath = path.join(uploadsDir, uniqueFileName);
+
+    const buffer = Buffer.from(base64String, 'base64');
+    fs.writeFileSync(filePath, buffer);
+
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host = req.get('host');
+    const fullFileUrl = `${protocol}://${host}/uploads/${uniqueFileName}`;
+
+    res.json({ success: true, fileUrl: fullFileUrl, relativeUrl: `/uploads/${uniqueFileName}`, fileName: uniqueFileName });
+  } catch (err) {
+    console.error('Upload handler error:', err);
+    res.status(500).json({ error: 'Failed to process file upload.' });
+  }
+});
+
 module.exports = router;

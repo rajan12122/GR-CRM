@@ -265,7 +265,7 @@ const Settings = () => {
     if (metadata?.sheetsConfig) {
       setSheetsId(metadata.sheetsConfig.spreadsheetId || '');
       setSheetsEmail(metadata.sheetsConfig.clientEmail || '');
-      setSheetsKey(metadata.sheetsConfig.privateKey || '');
+      setSheetsKey(metadata.sheetsConfig.privateKey ? '••••••••••••••••••••••••' : '');
       setSheetsActive(metadata.sheetsConfig.syncActive || false);
     }
     if (metadata?.automationConfig) {
@@ -835,10 +835,11 @@ const Settings = () => {
     e.preventDefault();
     const updated = { ...metadata };
     const prevSheetsConfig = metadata.sheetsConfig || {};
+    const keyToSave = (sheetsKey && !sheetsKey.includes('••••')) ? sheetsKey : (prevSheetsConfig.privateKey || '');
     updated.sheetsConfig = {
       spreadsheetId: sheetsId.trim(),
       clientEmail: sheetsEmail.trim() || prevSheetsConfig.clientEmail || '',
-      privateKey: sheetsKey || prevSheetsConfig.privateKey || '',
+      privateKey: keyToSave,
       syncActive: sheetsActive
     };
     const res = await saveMetadata(updated);

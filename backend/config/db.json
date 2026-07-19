@@ -305,10 +305,10 @@
       "maxAttempts": 5,
       "lastError": null,
       "idempotencyKey": "module:af9e5e0c96fe03a518ceb0ac5927d074",
-      "status": "PENDING",
+      "status": "SUCCESS",
       "createdAt": "2026-07-19T10:23:36.609Z",
-      "updatedAt": "2026-07-19T10:23:36.609Z",
-      "syncedAt": null,
+      "updatedAt": "2026-07-19T10:26:54.184Z",
+      "syncedAt": "2026-07-19T10:26:54.184Z",
       "nextAttemptAt": "2026-07-19T10:23:36.610Z"
     },
     {
@@ -320,10 +320,10 @@
       "maxAttempts": 5,
       "lastError": null,
       "idempotencyKey": "module:0accfa3edf7af97887a07c2116531867",
-      "status": "PENDING",
+      "status": "SUCCESS",
       "createdAt": "2026-07-19T10:23:36.613Z",
-      "updatedAt": "2026-07-19T10:23:36.613Z",
-      "syncedAt": null,
+      "updatedAt": "2026-07-19T10:26:55.083Z",
+      "syncedAt": "2026-07-19T10:26:55.083Z",
       "nextAttemptAt": "2026-07-19T10:23:36.613Z"
     }
   ]

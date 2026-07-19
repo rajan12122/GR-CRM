@@ -8,6 +8,10 @@ router.get('/metadata', authenticateToken, dataController.getMetadata);
 router.post('/metadata', authenticateToken, dataController.updateMetadata);
 router.put('/metadata', authenticateToken, dataController.updateMetadata);
 
+router.get('/leads/pending', authenticateToken, (req, res, next) => {
+  require('../controllers/workflowController').getPendingLeads(req, res, next);
+});
+
 router.get('/360/:module/:id', authenticateToken, dataController.getEntity360);
 
 router.get('/data/:module', authenticateToken, (req, res, next) => {

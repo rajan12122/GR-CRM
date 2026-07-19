@@ -604,7 +604,7 @@ function deleteData(req, res) {
     record.deletedBy = req.user.id;
     record.deletionReason = req.body?.reason || 'Archived through CRM delete action';
     
-    hooks.log(db, req.user, `Archived record ${id} in ${module}`, { module, id, deletionReason: record.deletionReason });
+    workflow.log(db, req.user, `Archived record ${id} in ${module}`, { module, id, deletionReason: record.deletionReason });
     workflow.audit(db, req.user, 'status', 'Active', 'Archived', `Soft delete record ${id} in module ${module}`, req);
     
     writeDb(db);
@@ -644,7 +644,7 @@ function bulkDeleteData(req, res) {
     });
 
     if (deletedCount > 0) {
-      hooks.log(db, req.user, `Bulk archived ${deletedCount} records in ${module}`, { module, count: deletedCount });
+      workflow.log(db, req.user, `Bulk archived ${deletedCount} records in ${module}`, { module, count: deletedCount });
       writeDb(db);
       try { syncToSheets(module); } catch(e) {}
     }

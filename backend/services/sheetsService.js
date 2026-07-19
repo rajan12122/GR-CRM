@@ -640,6 +640,82 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
   return { success: true, mode: syncMode, moduleName, updatedRecords: totalUpdated, createdRecords: totalCreated };
 }
 
+// Startup Hydration: On server startup (e.g. Render redeploy), pull latest data from Google Sheets
+// to ensure attendance punch in/outs, properties, leads, and follow-ups are preserved across Render redeploys.
+async function hydrateDbFromSheets() {
+  try {
+    const config = getSheetsConfig();
+    if (!config.syncActive) return;
+    const sheets = getSheetsClient(config);
+    if (!sheets || !config.spreadsheetId) return;
+
+    const spreadsheetId = config.spreadsheetId;
+    const meta = await sheets.spreadsheets.get({ spreadsheetId });
+    const sheetTitles = (meta.data.sheets || []).map(s => s.properties.title);
+
+    const { readDb, writeDb } = require('../config/db');
+    const db = readDb();
+    let updated = false;
+
+    const modules = ['attendance', 'properties', 'customers', 'leads', 'follow_ups', 'queries', 'site_visits', 'deals', 'tasks', 'employees', 'salaries'];
+
+    for (const mod of modules) {
+      const sheetName = `data_${mod}`;
+      if (!sheetTitles.includes(sheetName)) continue;
+
+      const getRes = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${sheetName}!A1:Z10000`
+      });
+
+      const rows = getRes.data.values || [];
+      if (rows.length < 2) continue;
+
+      const headers = rows[0];
+      const idIdx = headers.indexOf('crm_id') !== -1 ? headers.indexOf('crm_id') : headers.indexOf('id');
+      if (idIdx === -1) continue;
+
+      db[mod] = db[mod] || [];
+      const existingMap = new Map();
+      db[mod].forEach(r => { if (r && r.id) existingMap.set(String(r.id), r); });
+
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        const recordId = row[idIdx];
+        if (!recordId) continue;
+
+        const existingRec = existingMap.get(String(recordId));
+        const recObj = existingRec || { id: String(recordId) };
+        let recModified = false;
+
+        headers.forEach((h, colIdx) => {
+          if (h && colIdx < row.length && row[colIdx] !== undefined && row[colIdx] !== '') {
+            if (recObj[h] !== row[colIdx]) {
+              recObj[h] = row[colIdx];
+              recModified = true;
+            }
+          }
+        });
+
+        if (!existingRec) {
+          db[mod].push(recObj);
+          existingMap.set(String(recordId), recObj);
+          updated = true;
+        } else if (recModified) {
+          updated = true;
+        }
+      }
+    }
+
+    if (updated) {
+      writeDb(db);
+      console.log('Successfully hydrated database state from Google Sheets on server boot.');
+    }
+  } catch (err) {
+    console.error('Startup Google Sheets hydration skipped/failed:', err.message);
+  }
+}
+
 // Background daemon interval polling
 setInterval(() => {
   processSyncQueue();
@@ -651,5 +727,6 @@ module.exports = {
   getSheetsConfig,
   processSyncQueue,
   manualPushToSheets,
-  manualPullFromSheets
+  manualPullFromSheets,
+  hydrateDbFromSheets
 };

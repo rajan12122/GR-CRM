@@ -99,4 +99,10 @@ app.listen(PORT, () => {
   }
   selfCorrectDatabase();
   startLeadRotationScheduler();
+  try {
+    const { hydrateDbFromSheets } = require('./services/sheetsService');
+    hydrateDbFromSheets();
+  } catch (e) {
+    console.error('Failed to run startup sheets hydration:', e);
+  }
 });

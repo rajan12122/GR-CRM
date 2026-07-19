@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { readDb, writeDb, readMetadata, writeMetadata } = require('../config/db');
+const { readDb, writeDb, readMetadata, writeMetadata, trackDeletedRecord } = require('../config/db');
 const repository = require('../repositories/dataRepository');
 const hooks = require('../services/businessHooksService');
 const { syncToSheets } = require('../services/sheetsService');
@@ -605,6 +605,9 @@ function deleteData(req, res) {
     record.deletedBy = req.user.id;
     record.deletionReason = req.body?.reason || 'Archived through CRM delete action';
     
+    trackDeletedRecord(module, record.id);
+    if (record.uuid) trackDeletedRecord(module, record.uuid);
+
     workflow.log(db, req.user, `Archived record ${id} in ${module}`, { module, id, deletionReason: record.deletionReason });
     workflow.audit(db, req.user, 'status', 'Active', 'Archived', `Soft delete record ${id} in module ${module}`, req);
     
@@ -639,6 +642,8 @@ function bulkDeleteData(req, res) {
           record.deletedAt = new Date().toISOString();
           record.deletedBy = req.user.id;
           record.deletionReason = 'Archived through CRM bulk delete action';
+          trackDeletedRecord(module, record.id);
+          if (record.uuid) trackDeletedRecord(module, record.uuid);
           deletedCount++;
         }
       }

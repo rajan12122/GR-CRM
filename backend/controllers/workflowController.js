@@ -108,10 +108,35 @@ function getPropertyInterest(req, res) {
   }
 }
 
+function getPendingLeads(req, res) {
+  try {
+    const db = readDb();
+    const leads = db.leads || [];
+    const userId = req.user?.id;
+    const role = req.user?.role;
+
+    const pendingLeads = leads.filter(l => {
+      if (l.deletedAt) return false;
+      const isUnassigned = !l.assignedEmployeeId || l.assignedEmployeeId === '';
+      const isPendingStage = l.status === 'New Lead' || l.buyerPipelineStage === 'New Lead' || l.sellerPipelineStage === 'New Seller Listing';
+      if (role === 'Admin' || role === 'Manager') {
+        return isUnassigned || isPendingStage;
+      }
+      return String(l.assignedEmployeeId) === String(userId) && isPendingStage;
+    });
+
+    res.json({ success: true, pendingLeads, count: pendingLeads.length });
+  } catch (err) {
+    console.error('Error fetching pending leads:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch pending leads.' });
+  }
+}
+
 module.exports = {
   onboardLead,
   createQuery,
   recordPitch,
   closeDeal,
-  getPropertyInterest
+  getPropertyInterest,
+  getPendingLeads
 };

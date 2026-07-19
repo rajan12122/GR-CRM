@@ -70,6 +70,56 @@ const Settings = () => {
   const [reconcileLoading, setReconcileLoading] = useState(false);
   const [reconcileMessage, setReconcileMessage] = useState('');
 
+  const [manualSyncModule, setManualSyncModule] = useState('all');
+  const [manualSyncLoading, setManualSyncLoading] = useState(false);
+
+  const handleManualPush = async (syncMode) => {
+    try {
+      setManualSyncLoading(true);
+      const token = localStorage.getItem('gr_crm_token') || localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.post(`${API_BASE_URL}/sync/manual/push`, {
+        module: manualSyncModule,
+        syncMode
+      }, { headers });
+
+      if (res.data.success) {
+        showStatus('success', res.data.message);
+        fetchSyncDashboard();
+      } else {
+        showStatus('error', res.data.message || 'Push failed.');
+      }
+    } catch (err) {
+      showStatus('error', 'Push failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setManualSyncLoading(false);
+    }
+  };
+
+  const handleManualPull = async (syncMode) => {
+    try {
+      setManualSyncLoading(true);
+      const token = localStorage.getItem('gr_crm_token') || localStorage.getItem('token');
+      const headers = { Authorization: `Bearer ${token}` };
+      const res = await axios.post(`${API_BASE_URL}/sync/manual/pull`, {
+        module: manualSyncModule,
+        syncMode
+      }, { headers });
+
+      if (res.data.success) {
+        showStatus('success', res.data.message);
+        if (triggerAppReload) triggerAppReload();
+        fetchSyncDashboard();
+      } else {
+        showStatus('error', res.data.message || 'Pull failed.');
+      }
+    } catch (err) {
+      showStatus('error', 'Pull failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setManualSyncLoading(false);
+    }
+  };
+
   const fetchSyncDashboard = async () => {
     try {
       setSyncDashLoading(true);
@@ -1694,10 +1744,96 @@ const Settings = () => {
                       </Grid>
                     </Grid>
                   </Box>
+              {/* Row 2: Manual Bidirectional Sync Control Panel */}
+              <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '18px', mb: 0.5, fontFamily: 'Poppins', display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Icons.ArrowLeftRight size={20} className="text-blue-600" /> Manual Sync Engine (Bidirectional)
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: '#64748B', mb: 3 }}>
+                    Manually push CRM edits to Google Sheets or pull Sheets edits into your webpage. Choose between selective <b>Edited-Only Sync</b> (syncs modified records) or <b>Full Sync</b>.
+                  </Typography>
+
+                  <Divider sx={{ mb: 3 }} />
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={4}>
+                      <FormControl fullWidth size="small">
+                        <InputLabel>Select Target Module</InputLabel>
+                        <Select
+                          value={manualSyncModule}
+                          label="Select Target Module"
+                          onChange={(e) => setManualSyncModule(e.target.value)}
+                        >
+                          <MenuItem value="all">⚡ All Modules (Universal Sync)</MenuItem>
+                          <MenuItem value="customers">Customers</MenuItem>
+                          <MenuItem value="leads">Leads</MenuItem>
+                          <MenuItem value="properties">Properties</MenuItem>
+                          <MenuItem value="queries">Queries</MenuItem>
+                          <MenuItem value="follow_ups">Follow-ups</MenuItem>
+                          <MenuItem value="deals">Deals</MenuItem>
+                          <MenuItem value="tasks">Tasks</MenuItem>
+                          <MenuItem value="employees">Employees</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+
+                    <Grid item xs={12} md={8} display="flex" gap={2} flexWrap="wrap" alignItems="center">
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          size="small"
+                          disabled={manualSyncLoading}
+                          onClick={() => handleManualPush('edited_only')}
+                          startIcon={<Icons.Upload size={14} />}
+                          sx={{ textTransform: 'none', fontWeight: 600 }}
+                        >
+                          Push Edited Only (CRM ➔ Sheets)
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="primary"
+                          size="small"
+                          disabled={manualSyncLoading}
+                          onClick={() => handleManualPush('full')}
+                          startIcon={<Icons.ArrowUpCircle size={14} />}
+                          sx={{ textTransform: 'none', fontWeight: 600 }}
+                        >
+                          Full Force Push
+                        </Button>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                        <Button
+                          variant="contained"
+                          color="success"
+                          size="small"
+                          disabled={manualSyncLoading}
+                          onClick={() => handleManualPull('edited_only')}
+                          startIcon={<Icons.Download size={14} />}
+                          sx={{ textTransform: 'none', fontWeight: 600, backgroundColor: '#059669', '&:hover': { backgroundColor: '#047857' } }}
+                        >
+                          Pull Edited Only (Sheets ➔ CRM)
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="success"
+                          size="small"
+                          disabled={manualSyncLoading}
+                          onClick={() => handleManualPull('full')}
+                          startIcon={<Icons.ArrowDownCircle size={14} />}
+                          sx={{ textTransform: 'none', fontWeight: 600, borderColor: '#059669', color: '#059669' }}
+                        >
+                          Full Force Pull
+                        </Button>
+                      </Box>
+                    </Grid>
+                  </Grid>
                 </CardContent>
               </Card>
 
-              {/* Row 2: Queue Metrics & Dashboard */}
+              {/* Row 3: Queue Metrics & Dashboard */}
               <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none' }}>
                 <CardContent sx={{ p: 3 }}>
                   <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>

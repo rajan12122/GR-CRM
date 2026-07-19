@@ -257,6 +257,36 @@ async function triggerFullSync(req, res) {
   }
 }
 
+async function manualPush(req, res) {
+  try {
+    const { module, syncMode } = req.body;
+    const { manualPushToSheets } = require('../services/sheetsService');
+    const result = await manualPushToSheets(module || 'all', syncMode || 'edited_only');
+    res.json({
+      success: true,
+      message: `Manual Push complete (${result.mode}): Updated ${result.updatedRecords} existing records, created ${result.createdRecords} new records in Google Sheets.`
+    });
+  } catch (err) {
+    console.error('Manual push error:', err);
+    res.status(500).json({ success: false, message: `Manual Push failed: ${err.message}` });
+  }
+}
+
+async function manualPull(req, res) {
+  try {
+    const { module, syncMode } = req.body;
+    const { manualPullFromSheets } = require('../services/sheetsService');
+    const result = await manualPullFromSheets(module || 'all', syncMode || 'edited_only');
+    res.json({
+      success: true,
+      message: `Manual Pull complete (${result.mode}): Updated ${result.updatedRecords} existing records, created ${result.createdRecords} new records in CRM.`
+    });
+  } catch (err) {
+    console.error('Manual pull error:', err);
+    res.status(500).json({ success: false, message: `Manual Pull failed: ${err.message}` });
+  }
+}
+
 module.exports = {
   getSyncMetrics,
   getSyncJobs,
@@ -264,5 +294,7 @@ module.exports = {
   reconcilePreview,
   reconcileConfirm,
   testSheetsConnection,
-  triggerFullSync
+  triggerFullSync,
+  manualPush,
+  manualPull
 };

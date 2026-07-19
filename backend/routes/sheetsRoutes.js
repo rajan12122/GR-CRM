@@ -15,5 +15,11 @@ router.post('/dashboard/reconcile-confirm/:module', authenticateToken, (req, res
 
 router.post('/test-sheets', authenticateToken, sheetsController.testSheetsConnection);
 router.post('/sync-now', authenticateToken, sheetsController.triggerFullSync);
+router.post('/manual/push', authenticateToken, (req, res, next) => {
+  checkPermission('settings', 'edit')(req, res, next);
+}, sheetsController.manualPush);
+router.post('/manual/pull', authenticateToken, (req, res, next) => {
+  checkPermission('settings', 'edit')(req, res, next);
+}, sheetsController.manualPull);
 
 module.exports = router;

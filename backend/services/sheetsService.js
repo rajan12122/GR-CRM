@@ -329,6 +329,198 @@ async function syncFromSheets() {
   return false;
 }
 
+async function manualPushToSheets(moduleName, syncMode = 'edited_only') {
+  const config = getSheetsConfig();
+  const sheets = getSheetsClient(config);
+  if (!sheets) {
+    throw new Error('Google Sheets sync is inactive or missing credentials.');
+  }
+
+  const spreadsheetId = config.spreadsheetId;
+  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+
+  const targetModules = moduleName === 'all' 
+    ? Object.keys(db).filter(k => Array.isArray(db[k]) && !['sync_jobs', 'activity_logs', 'audit_logs', 'location_logs'].includes(k)) 
+    : [moduleName];
+
+  let totalUpdated = 0;
+  let totalCreated = 0;
+
+  for (const mod of targetModules) {
+    const sheetName = `data_${mod}`;
+    const meta = await sheets.spreadsheets.get({ spreadsheetId });
+    let sheet = meta.data.sheets.find(s => s.properties.title === sheetName);
+
+    if (!sheet) {
+      const addRes = await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: { requests: [{ addSheet: { properties: { title: sheetName } } }] }
+      });
+      sheet = addRes.data.replies[0].addSheet.properties;
+    }
+
+    const headers = getModuleHeaders(mod);
+    const dbRecords = (db[mod] || []).filter(r => !r.deletedAt);
+
+    const getRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${sheetName}!A1:Z10000`
+    });
+
+    const sheetRows = getRes.data.values || [];
+
+    if (sheetRows.length === 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetName}!A1`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [headers] }
+      });
+      sheetRows.push(headers);
+    }
+
+    for (const record of dbRecords) {
+      let matchedRowIndex = -1;
+      let isIdentical = false;
+
+      const rowValues = headers.map(h => {
+        if (h === 'crm_id') return String(record.id);
+        const val = record[h];
+        if (val === undefined || val === null) return '';
+        return typeof val === 'object' ? JSON.stringify(val) : String(val);
+      });
+
+      for (let i = 1; i < sheetRows.length; i++) {
+        if (sheetRows[i][0] === String(record.id)) {
+          matchedRowIndex = i + 1;
+          isIdentical = true;
+          for (let j = 0; j < headers.length; j++) {
+            const sheetVal = sheetRows[i][j] !== undefined ? String(sheetRows[i][j]) : '';
+            const recordVal = rowValues[j];
+            if (sheetVal !== recordVal) {
+              isIdentical = false;
+              break;
+            }
+          }
+          break;
+        }
+      }
+
+      if (matchedRowIndex !== -1) {
+        if (!isIdentical || syncMode === 'full') {
+          await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${sheetName}!A${matchedRowIndex}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [rowValues] }
+          });
+          totalUpdated++;
+        }
+      } else {
+        await sheets.spreadsheets.values.append({
+          spreadsheetId,
+          range: `${sheetName}!A:A`,
+          valueInputOption: 'USER_ENTERED',
+          insertDataOption: 'INSERT_ROWS',
+          requestBody: { values: [rowValues] }
+        });
+        totalCreated++;
+      }
+    }
+  }
+
+  return { success: true, mode: syncMode, moduleName, updatedRecords: totalUpdated, createdRecords: totalCreated };
+}
+
+async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
+  const config = getSheetsConfig();
+  const sheets = getSheetsClient(config);
+  if (!sheets) {
+    throw new Error('Google Sheets sync is inactive or missing credentials.');
+  }
+
+  const spreadsheetId = config.spreadsheetId;
+  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+
+  const targetModules = moduleName === 'all' 
+    ? Object.keys(db).filter(k => Array.isArray(db[k]) && !['sync_jobs', 'activity_logs', 'audit_logs', 'location_logs'].includes(k))
+    : [moduleName];
+
+  let totalUpdated = 0;
+  let totalCreated = 0;
+
+  for (const mod of targetModules) {
+    db[mod] = db[mod] || [];
+    const sheetName = `data_${mod}`;
+
+    let response;
+    try {
+      response = await sheets.spreadsheets.values.get({
+        spreadsheetId,
+        range: `${sheetName}!A1:Z10000`
+      });
+    } catch (e) {
+      continue;
+    }
+
+    const rows = response.data.values;
+    if (!rows || rows.length <= 1) continue;
+
+    const headers = rows[0];
+    const crmIdIndex = headers.indexOf('crm_id');
+    if (crmIdIndex === -1) continue;
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i];
+      if (!row || row.length === 0) continue;
+
+      const crmId = row[crmIdIndex];
+      const sheetRecord = {};
+      headers.forEach((h, idx) => {
+        if (h === 'crm_id') return;
+        let val = row[idx] !== undefined ? row[idx] : '';
+        if (typeof val === 'string' && (val.startsWith('[') || val.startsWith('{'))) {
+          try { val = JSON.parse(val); } catch(e) {}
+        }
+        if (val !== '' && !isNaN(val) && typeof val === 'string' && val.trim() !== '') {
+          const num = Number(val);
+          if (!isNaN(num)) val = num;
+        }
+        sheetRecord[h] = val;
+      });
+
+      if (crmId) {
+        const existingIdx = db[mod].findIndex(r => String(r.id) === String(crmId));
+        if (existingIdx !== -1) {
+          const existingRec = db[mod][existingIdx];
+          let isChanged = false;
+          Object.keys(sheetRecord).forEach(k => {
+            const sheetVal = sheetRecord[k];
+            const crmVal = existingRec[k];
+            const strSheet = typeof sheetVal === 'object' ? JSON.stringify(sheetVal) : String(sheetVal ?? '');
+            const strCrm = typeof crmVal === 'object' ? JSON.stringify(crmVal) : String(crmVal ?? '');
+            if (strSheet.trim() !== strCrm.trim() && sheetVal !== '') {
+              isChanged = true;
+            }
+          });
+
+          if (isChanged || syncMode === 'full') {
+            db[mod][existingIdx] = { ...existingRec, ...sheetRecord, updatedAt: new Date().toISOString() };
+            totalUpdated++;
+          }
+        } else {
+          db[mod].push({ id: crmId, ...sheetRecord, createdAt: new Date().toISOString() });
+          totalCreated++;
+        }
+      }
+    }
+  }
+
+  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+
+  return { success: true, mode: syncMode, moduleName, updatedRecords: totalUpdated, createdRecords: totalCreated };
+}
+
 // Background daemon interval polling
 setInterval(() => {
   processSyncQueue();
@@ -338,5 +530,7 @@ module.exports = {
   syncToSheets,
   syncFromSheets,
   getSheetsConfig,
-  processSyncQueue
+  processSyncQueue,
+  manualPushToSheets,
+  manualPullFromSheets
 };

@@ -210,10 +210,59 @@ async function reconcileConfirm(req, res) {
   });
 }
 
+async function testSheetsConnection(req, res) {
+  try {
+    const config = getSheetsConfig();
+    const email = config.clientEmail;
+    const privateKey = config.privateKey;
+    const spreadsheetId = config.spreadsheetId;
+
+    if (!spreadsheetId) {
+      return res.status(400).json({ success: false, message: 'Spreadsheet ID is not configured.' });
+    }
+
+    if (!email || !privateKey) {
+      return res.status(400).json({ success: false, message: 'Google Service Account credentials (email or privateKey) are missing from server environment.' });
+    }
+
+    const auth = new google.auth.JWT(
+      email,
+      null,
+      privateKey.replace(/\\n/g, '\n'),
+      ['https://www.googleapis.com/auth/spreadsheets']
+    );
+    const sheets = google.sheets({ version: 'v4', auth });
+
+    const response = await sheets.spreadsheets.get({ spreadsheetId });
+    const title = response.data.properties.title;
+
+    res.json({ success: true, message: `Successfully connected to Google Sheet: "${title}"` });
+  } catch (err) {
+    console.error('Sheets connection test error:', err);
+    res.status(500).json({ success: false, message: `Google Sheets connection test failed: ${err.message}` });
+  }
+}
+
+async function triggerFullSync(req, res) {
+  try {
+    const metadata = require('../config/db').readMetadata();
+    const modules = Object.keys(metadata.modules || {});
+    modules.forEach(mod => {
+      try { syncToSheets(mod); } catch(e) {}
+    });
+    res.json({ success: true, message: 'Full Google Sheets synchronization triggered across all modules.' });
+  } catch (err) {
+    console.error('Full sheets sync error:', err);
+    res.status(500).json({ success: false, message: 'Failed to trigger full sheets sync.' });
+  }
+}
+
 module.exports = {
   getSyncMetrics,
   getSyncJobs,
   retrySyncJob,
   reconcilePreview,
-  reconcileConfirm
+  reconcileConfirm,
+  testSheetsConnection,
+  triggerFullSync
 };

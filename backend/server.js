@@ -67,6 +67,7 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/workflows', require('./routes/workflowRoutes'));
 app.use('/api/location', require('./routes/locationRoutes'));
 app.use('/api/sync', require('./routes/sheetsRoutes'));
+app.use('/api/settings', require('./routes/sheetsRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/public', require('./routes/publicRoutes'));
 app.use('/api', require('./routes/dataRoutes'));

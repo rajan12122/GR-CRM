@@ -5,6 +5,8 @@ const { authenticateToken, checkPermission } = require('../middleware/auth');
 const { readMetadata } = require('../config/db');
 
 router.get('/metadata', authenticateToken, dataController.getMetadata);
+router.post('/metadata', authenticateToken, dataController.updateMetadata);
+router.put('/metadata', authenticateToken, dataController.updateMetadata);
 
 router.get('/360/:module/:id', authenticateToken, dataController.getEntity360);
 

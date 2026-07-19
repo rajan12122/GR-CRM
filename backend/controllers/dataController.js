@@ -34,6 +34,25 @@ function getMetadata(req, res) {
   res.json(metadata);
 }
 
+function updateMetadata(req, res) {
+  if (req.user.role !== 'Admin') {
+    return res.status(403).json({ message: 'Access denied: Only Admins can modify metadata settings.' });
+  }
+
+  try {
+    const newMetadata = req.body;
+    if (!newMetadata || !newMetadata.modules) {
+      return res.status(400).json({ message: 'Invalid metadata payload.' });
+    }
+
+    writeMetadata(newMetadata);
+    res.json({ success: true, message: 'Metadata configuration updated successfully.', metadata: newMetadata });
+  } catch (err) {
+    console.error('Failed to update metadata:', err);
+    res.status(500).json({ message: 'Failed to update metadata configuration.' });
+  }
+}
+
 function listData(req, res) {
   const { module } = req.params;
   const { role } = req.user;
@@ -1045,6 +1064,7 @@ function getEntity360(req, res) {
 
 module.exports = {
   getMetadata,
+  updateMetadata,
   listData,
   getDataById,
   createData,

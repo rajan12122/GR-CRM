@@ -25,6 +25,13 @@ router.get('/data/:module', authenticateToken, (req, res, next) => {
 
 router.get('/data/:module/:id', authenticateToken, dataController.getDataById);
 
+router.post('/data/:module/bulk-delete', authenticateToken, (req, res, next) => {
+  const { module } = req.params;
+  const metadata = readMetadata();
+  if (!metadata.modules[module]) return next();
+  checkPermission(module, 'delete')(req, res, next);
+}, dataController.bulkDeleteData);
+
 router.post('/data/:module', authenticateToken, (req, res, next) => {
   const { module } = req.params;
   const metadata = readMetadata();

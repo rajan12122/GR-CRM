@@ -552,12 +552,8 @@ async function updateData(req, res) {
       queryId: updatedRec.id,
       message: `Your Property Query ${updatedRec.id} has been Approved.`
     });
-  }
-  if (module === 'documents') {
-    notifyUser('EMP-001', 'pending-docs-alert', {
-      docId: updatedRec.id,
-      message: `Document "${updatedRec.name}" has been updated. Verification pending.`
-    });
+  } else if (module === 'properties') {
+    hooks.syncPropertyDetailsUniversally(id, db);
   }
 
   const log = {
@@ -570,32 +566,75 @@ async function updateData(req, res) {
   db.activity_logs.unshift(log);
 
   writeDb(db);
-  syncToSheets(module);
+  try { syncToSheets(module); } catch(e) { console.error(`Sheets sync error on update ${module}:`, e); }
   res.json(db[module][index]);
 }
 
 function deleteData(req, res) {
-  const { module, id } = req.params;
-  const db = readDb();
+  try {
+    const { module, id } = req.params;
+    const db = readDb();
 
-  if (!db[module]) return res.status(404).json({ message: `Module ${module} is empty.` });
+    if (!db[module]) return res.status(404).json({ message: `Module ${module} is empty.` });
 
-  const index = db[module].findIndex(rec => String(rec.id) === String(id) || String(rec.uuid) === String(id));
-  if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
+    const index = db[module].findIndex(rec => String(rec.id) === String(id) || String(rec.uuid) === String(id));
+    if (index === -1) return res.status(404).json({ message: `Record ${id} not found.` });
 
-  const record = db[module][index];
-  record.deletedAt = new Date().toISOString();
-  record.deletedBy = req.user.id;
-  record.deletionReason = req.body?.reason || 'Archived through CRM delete action';
-  
-  hooks.log(db, req.user, `Archived record ${id} in ${module}`, { module, id, deletionReason: record.deletionReason });
-  workflow.audit(db, req.user, 'status', 'Active', 'Archived', `Soft delete record ${id} in module ${module}`, req);
-  
-  writeDb(db);
-  syncToSheets(module);
-  try { syncToSheets('audit_logs'); } catch(e) {}
-  
-  res.json({ success: true, message: `Record ${id} archived successfully.`, data: record });
+    const record = db[module][index];
+    record.deletedAt = new Date().toISOString();
+    record.deletedBy = req.user.id;
+    record.deletionReason = req.body?.reason || 'Archived through CRM delete action';
+    
+    hooks.log(db, req.user, `Archived record ${id} in ${module}`, { module, id, deletionReason: record.deletionReason });
+    workflow.audit(db, req.user, 'status', 'Active', 'Archived', `Soft delete record ${id} in module ${module}`, req);
+    
+    writeDb(db);
+    try { syncToSheets(module); } catch(e) { console.error(`Sheets sync error on delete ${module}:`, e); }
+    try { syncToSheets('audit_logs'); } catch(e) {}
+    
+    return res.json({ success: true, message: `Record ${id} archived successfully.`, data: record });
+  } catch (err) {
+    console.error(`Error deleting record from ${req.params.module}:`, err);
+    return res.status(500).json({ message: 'Internal server error during deletion.' });
+  }
+}
+
+function bulkDeleteData(req, res) {
+  try {
+    const { module } = req.params;
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: 'No record IDs provided for bulk deletion.' });
+    }
+
+    const db = readDb();
+    if (!db[module]) return res.status(404).json({ message: `Module ${module} is empty.` });
+
+    let deletedCount = 0;
+    const idSet = new Set(ids.map(String));
+
+    db[module].forEach(record => {
+      if (idSet.has(String(record.id)) || idSet.has(String(record.uuid))) {
+        if (!record.deletedAt) {
+          record.deletedAt = new Date().toISOString();
+          record.deletedBy = req.user.id;
+          record.deletionReason = 'Archived through CRM bulk delete action';
+          deletedCount++;
+        }
+      }
+    });
+
+    if (deletedCount > 0) {
+      hooks.log(db, req.user, `Bulk archived ${deletedCount} records in ${module}`, { module, count: deletedCount });
+      writeDb(db);
+      try { syncToSheets(module); } catch(e) {}
+    }
+
+    return res.json({ success: true, message: `Successfully archived ${deletedCount} records.`, count: deletedCount });
+  } catch (err) {
+    console.error(`Error bulk deleting records from ${req.params.module}:`, err);
+    return res.status(500).json({ message: 'Internal server error during bulk deletion.' });
+  }
 }
 
 function getLookup(req, res) {
@@ -1011,6 +1050,7 @@ module.exports = {
   createData,
   updateData,
   deleteData,
+  bulkDeleteData,
   getLookup,
   searchAll,
   getEntity360

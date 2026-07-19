@@ -148,38 +148,39 @@ async function createData(req, res) {
 
   if (!payload.id) {
     const prefixMap = {
-      employees: 'EMP',
-      customers: 'CUST',
-      leads: 'LEAD',
-      properties: 'PROP',
-      projects: 'PROJ',
-      site_visits: 'VISIT',
-      follow_ups: 'FOLLOW',
-      remarks: 'REM',
-      tasks: 'TASK',
-      sales: 'SALE',
-      documents: 'DOC',
-      attendance: 'ATT',
-      daily_prices: 'PRICE',
-      salaries: 'SAL',
-      queries: 'QRY',
-      deals: 'DEAL',
-      property_pitch_history: 'PITCH',
-      dealer_calls: 'CALL',
-      dealer_meetings: 'MEET'
+      employees: 'emp_',
+      customers: 'cust_',
+      leads: 'lead_',
+      properties: 'prop_',
+      projects: 'proj_',
+      site_visits: 'sv_',
+      follow_ups: 'flw_',
+      remarks: 'rem_',
+      tasks: 'task_',
+      sales: 'sale_',
+      documents: 'doc_',
+      attendance: 'att_',
+      daily_prices: 'price_',
+      salaries: 'sal_',
+      queries: 'quer_',
+      deals: 'deal_',
+      property_pitch_history: 'pitch_',
+      dealer_calls: 'call_',
+      dealer_meetings: 'meet_'
     };
-    const prefix = prefixMap[module] || module.substring(0, 4).toUpperCase();
-    const existingIds = (db[module] || []).map(r => r.id).filter(id => id && String(id).startsWith(prefix));
-    let maxNum = 0;
+    const prefix = prefixMap[module] || `${module.substring(0, 4)}_`;
+    const existingIds = (db[module] || []).map(r => r.id).filter(id => Boolean(id));
+    let maxNum = 1000;
     existingIds.forEach(id => {
-      const parts = id.split('-');
-      const num = parseInt(parts[1]);
-      if (!isNaN(num) && num > maxNum) {
-        maxNum = num;
+      const match = String(id).match(/\d{4,}$/);
+      if (match) {
+        const num = parseInt(match[0], 10);
+        if (!isNaN(num) && num < 1000000 && num > maxNum) {
+          maxNum = num;
+        }
       }
     });
-    const nextNum = maxNum > 0 ? maxNum + 1 : (db[module] || []).length + 1;
-    payload.id = `${prefix}-${String(nextNum).padStart(3, '0')}`;
+    payload.id = `${prefix}${maxNum + 1}`;
   }
   
   payload.uuid = payload.uuid || crypto.randomUUID();

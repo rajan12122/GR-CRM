@@ -10,6 +10,37 @@ const metadataPath = path.join(__dirname, '../config/metadata.json');
 const queueLocks = {};
 let isProcessingQueue = false;
 
+function generateCleanShortId(mod, existingRecords = []) {
+  const prefixMap = {
+    properties: 'prop_',
+    customers: 'cust_',
+    leads: 'lead_',
+    queries: 'quer_',
+    follow_ups: 'flw_',
+    deals: 'deal_',
+    tasks: 'task_',
+    employees: 'emp_',
+    site_visits: 'sv_'
+  };
+  const prefix = prefixMap[mod] || `${mod.slice(0, 4)}_`;
+
+  let maxNum = 1000;
+  (existingRecords || []).forEach(r => {
+    if (!r || !r.id) return;
+    const strId = String(r.id);
+    const match = strId.match(/\d{4,}$/);
+    if (match) {
+      const num = parseInt(match[0], 10);
+      if (!isNaN(num) && num < 1000000 && num > maxNum) {
+        maxNum = num;
+      }
+    }
+  });
+
+  const nextNum = maxNum + 1;
+  return `${prefix}${nextNum}`;
+}
+
 // Helper to load sheets config from environment variables
 function getSheetsConfig() {
   let metaConfig = {};
@@ -558,7 +589,7 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
           totalCreated++;
         }
       } else {
-        const newId = `${mod.slice(0, 4)}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        const newId = generateCleanShortId(mod, db[mod]);
         db[mod].push({ id: newId, ...sheetRecord, createdAt: new Date().toISOString() });
         totalCreated++;
       }

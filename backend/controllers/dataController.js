@@ -405,7 +405,7 @@ async function createData(req, res) {
   db.activity_logs.unshift(log);
 
   writeDb(db);
-  syncToSheets(module);
+  syncToSheets(module, payload.id);
   res.status(201).json(payload);
 }
 

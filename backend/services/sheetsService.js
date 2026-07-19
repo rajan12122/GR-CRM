@@ -108,52 +108,91 @@ function getModuleHeaders(moduleName) {
 }
 
 /**
- * Enqueue a sheet synchronization job (Asynchronous entrypoint)
+ * Append ONLY the CRM assigned ID to the Google Sheet for new records.
+ * Full data syncing is handled exclusively via Manual Sync (Push/Pull) per user requirement.
  */
-async function syncToSheets(moduleName) {
+async function appendCrmIdOnlyToSheet(moduleName, crmRecordId) {
+  if (!crmRecordId) return;
+  const config = getSheetsConfig();
+  if (!config.syncActive) return;
+  const sheets = getSheetsClient(config);
+  if (!sheets || !config.spreadsheetId) return;
+
   try {
-    const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-    db.sync_jobs = db.sync_jobs || [];
+    const spreadsheetId = config.spreadsheetId;
+    const sheetName = `data_${moduleName}`;
+    
+    // Get sheet metadata
+    const meta = await sheets.spreadsheets.get({ spreadsheetId });
+    let sheet = meta.data.sheets.find(s => s.properties.title === sheetName);
 
-    // Calculate idempotency key for this module sync operation
-    const lastRecId = db[moduleName] && db[moduleName].length > 0 ? db[moduleName][db[moduleName].length - 1].id : 'empty';
-    const hash = crypto.createHash('md5').update(`moduleSync:${moduleName}:${db[moduleName]?.length || 0}:${lastRecId}`).digest('hex');
-    const idempotencyKey = `module:${hash}`;
-
-    // Prevent duplicate enqueues if one is already pending or processing
-    const duplicateJob = db.sync_jobs.find(j => 
-      j.idempotencyKey === idempotencyKey && 
-      (j.status === 'PENDING' || j.status === 'PROCESSING')
-    );
-    if (duplicateJob) {
-      return duplicateJob.id;
+    if (!sheet) {
+      const addRes = await sheets.spreadsheets.batchUpdate({
+        spreadsheetId,
+        requestBody: {
+          requests: [{ addSheet: { properties: { title: sheetName } } }]
+        }
+      });
+      sheet = addRes.data.replies[0].addSheet.properties;
     }
 
-    const jobId = `JOB-MOD-${Date.now()}-${crypto.randomBytes(2).toString('hex')}`;
-    const newJob = {
-      id: jobId,
-      moduleName,
-      crmRecordId: 'ALL',
-      operationType: 'MODULE_SYNC',
-      attemptCount: 0,
-      maxAttempts: 5,
-      lastError: null,
-      idempotencyKey,
-      status: 'PENDING',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      syncedAt: null,
-      nextAttemptAt: new Date().toISOString()
-    };
+    const headers = getModuleHeaders(moduleName);
 
-    db.sync_jobs.push(newJob);
-    fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
-    
-    // Trigger the queue runner
-    setImmediate(() => processSyncQueue());
-    return jobId;
+    // Read column A
+    const getRes = await sheets.spreadsheets.values.get({
+      spreadsheetId,
+      range: `${sheetName}!A1:A10000`
+    });
+
+    const sheetRows = getRes.data.values || [];
+
+    // Write headers if sheet is empty
+    if (sheetRows.length === 0) {
+      await sheets.spreadsheets.values.update({
+        spreadsheetId,
+        range: `${sheetName}!A1`,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [headers] }
+      });
+      sheetRows.push(headers);
+    }
+
+    // Check if ID already present
+    const exists = sheetRows.some(row => row[0] && String(row[0]).trim() === String(crmRecordId).trim());
+    if (!exists) {
+      const rowValues = [String(crmRecordId)];
+      await sheets.spreadsheets.values.append({
+        spreadsheetId,
+        range: `${sheetName}!A:A`,
+        valueInputOption: 'USER_ENTERED',
+        insertDataOption: 'INSERT_ROWS',
+        requestBody: { values: [rowValues] }
+      });
+    }
   } catch (err) {
-    console.error(`Failed to enqueue module sync for ${moduleName}:`, err.message);
+    console.error(`[AutoSync ID Only] Failed to append ID ${crmRecordId} to ${moduleName}:`, err.message);
+  }
+}
+
+/**
+ * Auto-Sync entrypoint: ONLY writes/appends the assigned CRM record ID to Google Sheets.
+ * Full row data syncing is done manually on user request to prevent duplicate writing.
+ */
+async function syncToSheets(moduleName, crmRecordId = null) {
+  try {
+    if (!crmRecordId) {
+      const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+      const records = db[moduleName] || [];
+      if (records.length > 0) {
+        crmRecordId = records[records.length - 1].id;
+      }
+    }
+    if (crmRecordId) {
+      await appendCrmIdOnlyToSheet(moduleName, crmRecordId);
+    }
+    return true;
+  } catch (err) {
+    console.error(`Failed to auto-sync ID for ${moduleName}:`, err.message);
     return null;
   }
 }

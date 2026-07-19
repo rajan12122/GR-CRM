@@ -12,10 +12,10 @@ function authenticateToken(req, res, next) {
   jwt.verify(token, JWT_SECRET, (err, decodedUser) => {
     if (err) return res.status(403).json({ message: 'Invalid or expired token.' });
     
-    // Check session validity & token version
     const db = readDb();
     const employee = (db.employees || []).find(e => e.id === decodedUser.id);
-    if (!employee || employee.status !== 'Active' || (employee.tokenVersion !== undefined && employee.tokenVersion !== decodedUser.tokenVersion)) {
+    const statusStr = String(employee?.status || 'Active').trim().toLowerCase();
+    if (!employee || (employee.role !== 'Admin' && statusStr !== 'active') || (employee.tokenVersion !== undefined && employee.tokenVersion !== decodedUser.tokenVersion)) {
       return res.status(403).json({ message: 'Session has expired or been revoked. Please log in again.' });
     }
     

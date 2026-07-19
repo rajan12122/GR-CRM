@@ -32,7 +32,8 @@ function login(req, res) {
       return res.status(401).json({ message: 'Invalid email or password.' });
     }
 
-    if (employee.status !== 'Active') {
+    const statusStr = String(employee.status || 'Active').trim().toLowerCase();
+    if (employee.role !== 'Admin' && statusStr !== 'active') {
       return res.status(403).json({ message: 'Employee account is inactive.' });
     }
 

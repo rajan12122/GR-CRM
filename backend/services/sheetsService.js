@@ -18,10 +18,21 @@ function getSheetsConfig() {
     metaConfig = metadata.sheetsConfig || {};
   } catch (e) {}
 
-  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID || metaConfig.spreadsheetId || '';
-  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || metaConfig.clientEmail || '';
-  const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || metaConfig.privateKey || '';
-  const syncActive = process.env.GOOGLE_SHEETS_SYNC_ACTIVE === 'true' || metaConfig.syncActive || (Boolean(spreadsheetId) && Boolean(clientEmail) && Boolean(privateKey));
+  const spreadsheetId = (metaConfig.spreadsheetId && metaConfig.spreadsheetId.trim() !== '') 
+    ? metaConfig.spreadsheetId.trim() 
+    : (process.env.GOOGLE_SPREADSHEET_ID || '');
+
+  const clientEmail = (metaConfig.clientEmail && metaConfig.clientEmail.trim() !== '') 
+    ? metaConfig.clientEmail.trim() 
+    : (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '');
+
+  const privateKey = (metaConfig.privateKey && metaConfig.privateKey.trim() !== '') 
+    ? metaConfig.privateKey.trim() 
+    : (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || '');
+
+  const syncActive = metaConfig.syncActive !== undefined 
+    ? Boolean(metaConfig.syncActive) 
+    : (process.env.GOOGLE_SHEETS_SYNC_ACTIVE === 'true' || Boolean(spreadsheetId));
 
   return {
     syncActive,

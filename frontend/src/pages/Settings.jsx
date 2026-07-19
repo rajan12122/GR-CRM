@@ -827,10 +827,11 @@ const Settings = () => {
   const handleSaveSheetsConfig = async (e) => {
     e.preventDefault();
     const updated = { ...metadata };
+    const prevSheetsConfig = metadata.sheetsConfig || {};
     updated.sheetsConfig = {
       spreadsheetId: sheetsId.trim(),
-      clientEmail: sheetsEmail.trim(),
-      privateKey: sheetsKey,
+      clientEmail: sheetsEmail.trim() || prevSheetsConfig.clientEmail || '',
+      privateKey: sheetsKey || prevSheetsConfig.privateKey || '',
       syncActive: sheetsActive
     };
     const res = await saveMetadata(updated);
@@ -1731,6 +1732,31 @@ const Settings = () => {
                             <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600 }}>Secured in server .env</Typography>
                           </Box>
                         </Box>
+                      </Grid>
+
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Google Service Account Email (Optional)"
+                          fullWidth
+                          value={sheetsEmail}
+                          onChange={(e) => setSheetsEmail(e.target.value)}
+                          placeholder="e.g. gagan-crm-service@project.iam.gserviceaccount.com"
+                          helperText="Falls back to server .env if left blank"
+                        />
+                      </Grid>
+
+                      <Grid item xs={12} md={6}>
+                        <TextField
+                          label="Service Account Private Key (PEM Format, Optional)"
+                          fullWidth
+                          multiline
+                          rows={1}
+                          type="password"
+                          value={sheetsKey}
+                          onChange={(e) => setSheetsKey(e.target.value)}
+                          placeholder="-----BEGIN PRIVATE KEY-----\n..."
+                          helperText="Falls back to server .env if left blank"
+                        />
                       </Grid>
 
                       <Grid item xs={12}>

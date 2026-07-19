@@ -1744,6 +1744,9 @@ const Settings = () => {
                       </Grid>
                     </Grid>
                   </Box>
+                </CardContent>
+              </Card>
+
               {/* Row 2: Manual Bidirectional Sync Control Panel */}
               <Card sx={{ border: '1px solid #E2E8F0', borderRadius: '16px', boxShadow: 'none', backgroundColor: '#F8FAFC' }}>
                 <CardContent sx={{ p: 3 }}>

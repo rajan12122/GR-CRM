@@ -172,36 +172,76 @@ function getEmployeePath(req, res) {
 }
 
 function getActiveLocations(req, res) {
-  if (req.user.role !== 'Admin' && req.user.role !== 'Manager') {
-    return res.status(403).json({ message: 'Access denied: Location query restricted.' });
-  }
-
   const db = readDb();
   const logs = db.location_logs || [];
-  
-  const activeLocs = {};
-  logs.forEach(log => {
-    const empId = log.employeeId;
-    if (!activeLocs[empId] || new Date(log.timestamp) > new Date(activeLocs[empId].timestamp)) {
-      activeLocs[empId] = log;
-    }
-  });
-  
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const result = Object.values(activeLocs).filter(loc => 
-    loc.status === 'sharing' && new Date(loc.timestamp) > fiveMinutesAgo
+  const attendance = db.attendance || [];
+  const employees = db.employees || [];
+
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // 1. Find all employees currently punched in today (outTime is '--' or empty)
+  const punchedInEmpIds = new Set(
+    attendance
+      .filter(a => a.date === todayStr && (a.outTime === '--' || !a.outTime) && a.status !== 'Absent')
+      .map(a => String(a.employeeId))
   );
 
-  const decryptedResult = result.map(loc => {
-    const coords = decryptLocation(loc.latitude);
-    return {
-      ...loc,
-      latitude: coords.lat,
-      longitude: coords.lng
-    };
+  // 2. Get latest location log entry for each employee
+  const latestLogs = {};
+  logs.forEach(log => {
+    const empId = String(log.employeeId);
+    if (!latestLogs[empId] || new Date(log.timestamp) > new Date(latestLogs[empId].timestamp)) {
+      latestLogs[empId] = log;
+    }
   });
 
-  res.json(decryptedResult);
+  // 3. Active time threshold: 15 minutes for live pings
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+
+  const allEmpIds = new Set([
+    ...punchedInEmpIds,
+    ...Object.keys(latestLogs).filter(empId => {
+      const log = latestLogs[empId];
+      return log.status === 'sharing' && new Date(log.timestamp) > fifteenMinutesAgo;
+    })
+  ]);
+
+  const result = [];
+
+  allEmpIds.forEach(empId => {
+    const log = latestLogs[empId];
+    const emp = employees.find(e => String(e.id) === String(empId));
+    const empName = emp ? emp.name : (log ? log.employeeName : `Emp ${empId}`);
+
+    if (log && log.status !== 'ended') {
+      const coords = decryptLocation(log.latitude);
+      const isFresh = new Date(log.timestamp) > fifteenMinutesAgo;
+      result.push({
+        id: log.id || `LOC-${empId}`,
+        employeeId: empId,
+        employeeName: empName,
+        latitude: coords.lat,
+        longitude: coords.lng,
+        status: log.status || 'sharing',
+        isFresh,
+        timestamp: log.timestamp || new Date().toISOString()
+      });
+    } else if (punchedInEmpIds.has(empId)) {
+      // Currently punched in today, waiting for initial GPS lock
+      result.push({
+        id: `LOC-PUNCH-${empId}`,
+        employeeId: empId,
+        employeeName: empName,
+        latitude: 30.7046, // Default Tri-City coordinates until GPS locks
+        longitude: 76.7179,
+        status: 'sharing',
+        isFresh: false,
+        timestamp: new Date().toISOString()
+      });
+    }
+  });
+
+  res.json(result);
 }
 
 module.exports = {

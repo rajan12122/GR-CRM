@@ -109,7 +109,13 @@ const Settings = () => {
 
       if (res.data.success) {
         showStatus('success', res.data.message);
-        if (typeof triggerAppReload === 'function') triggerAppReload();
+        if (manualSyncModule === 'all') {
+          ['customers', 'leads', 'properties', 'queries', 'follow_ups', 'deals', 'tasks', 'employees'].forEach(m => {
+            if (typeof fetchModuleData === 'function') fetchModuleData(m);
+          });
+        } else {
+          if (typeof fetchModuleData === 'function') fetchModuleData(manualSyncModule);
+        }
         fetchSyncDashboard();
       } else {
         showStatus('error', res.data.message || 'Pull failed.');

@@ -40,7 +40,8 @@ const Settings = () => {
     triggerFullSheetsSync,
     moduleData,
     fetchModuleData,
-    updateRecord
+    updateRecord,
+    triggerAppReload
   } = useApp();
 
   useEffect(() => {
@@ -108,7 +109,7 @@ const Settings = () => {
 
       if (res.data.success) {
         showStatus('success', res.data.message);
-        if (triggerAppReload) triggerAppReload();
+        if (typeof triggerAppReload === 'function') triggerAppReload();
         fetchSyncDashboard();
       } else {
         showStatus('error', res.data.message || 'Pull failed.');

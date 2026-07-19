@@ -90,6 +90,12 @@ app.listen(PORT, () => {
   } catch (e) {
     console.error('Failed to run startup database migration:', e);
   }
+  try {
+    const { runPasswordMigration } = require('./scripts/migrate_passwords');
+    runPasswordMigration();
+  } catch (e) {
+    console.error('Failed to run startup password migration:', e);
+  }
   selfCorrectDatabase();
   startLeadRotationScheduler();
 });

@@ -4,43 +4,63 @@ const bcrypt = require('bcryptjs');
 
 const dbPath = path.join(__dirname, '..', 'config', 'db.json');
 
-if (!fs.existsSync(dbPath)) {
-  console.error('db.json not found at:', dbPath);
-  process.exit(1);
-}
-
-try {
-  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-  console.log('Starting employee credentials database migration...');
-
-  if (!db.employees) {
-    console.log('No employees array found in database.');
-    process.exit(0);
+function runPasswordMigration() {
+  if (!fs.existsSync(dbPath)) {
+    console.error('db.json not found at:', dbPath);
+    return;
   }
 
-  let count = 0;
-  db.employees.forEach(emp => {
-    // If the legacy password field exists and is not already a bcrypt hash
-    if (emp.password && !emp.password.startsWith('$2a$') && !emp.password.startsWith('$2b$')) {
-      console.log(`Hashing credentials for employee: ${emp.name} (${emp.id})`);
-      
-      const salt = bcrypt.genSaltSync(12);
-      emp.passwordHash = bcrypt.hashSync(emp.password, salt);
-      emp.tokenVersion = 1;
-      
-      // Permanently remove the plaintext password property from the database
-      delete emp.password;
-      count++;
-    } else if (!emp.password && !emp.passwordHash) {
-      // Disabled by default until set by Admin explicitly
-      emp.passwordHash = null;
-      emp.tokenVersion = 1;
+  try {
+    const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+    if (!db.employees || !Array.isArray(db.employees)) {
+      console.log('No employees array found in database.');
+      return;
     }
-  });
 
-  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
-  console.log(`Success! Migrated ${count} employee passwords to secure bcrypt hashes.`);
-} catch (err) {
-  console.error('Migration failed:', err.message);
-  process.exit(1);
+    let updated = false;
+    const defaultEmails = {
+      'EMP-001': 'admin@gaganrealtech.com',
+      'EMP-002': 'sales1@gaganrealtech.com',
+      'EMP-003': 'sales2@gaganrealtech.com'
+    };
+
+    db.employees.forEach(emp => {
+      // Seed default email if missing
+      if (!emp.email && defaultEmails[emp.id]) {
+        emp.email = defaultEmails[emp.id];
+        updated = true;
+      }
+
+      // If legacy password field exists and is not hashed
+      if (emp.password && !emp.password.startsWith('$2a$') && !emp.password.startsWith('$2b$')) {
+        console.log(`Hashing credentials for employee: ${emp.name} (${emp.id})`);
+        const salt = bcrypt.genSaltSync(12);
+        emp.passwordHash = bcrypt.hashSync(emp.password, salt);
+        emp.tokenVersion = emp.tokenVersion || 1;
+        delete emp.password;
+        updated = true;
+      } else if (!emp.passwordHash) {
+        // Seed default initial password for default accounts if unconfigured
+        const defaultPassword = emp.role === 'Admin' ? 'Admin@123' : 'Sales@123';
+        const salt = bcrypt.genSaltSync(12);
+        emp.passwordHash = bcrypt.hashSync(defaultPassword, salt);
+        emp.tokenVersion = emp.tokenVersion || 1;
+        updated = true;
+      }
+    });
+
+    if (updated) {
+      fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+      console.log('Success! Migrated and verified employee credentials & default email mappings.');
+    }
+  } catch (err) {
+    console.error('Password migration failed:', err.message);
+  }
 }
+
+if (require.main === module) {
+  runPasswordMigration();
+}
+
+module.exports = { runPasswordMigration };
+

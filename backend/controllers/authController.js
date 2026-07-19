@@ -6,48 +6,60 @@ const workflow = require('../services/crmWorkflowService');
 const JWT_SECRET = process.env.JWT_SECRET || 'GR_CRM_SUPER_SECRET_KEY';
 
 function login(req, res) {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password required.' });
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password required.' });
+    }
+
+    const db = readDb();
+    if (!db || !Array.isArray(db.employees)) {
+      return res.status(500).json({ message: 'Database state invalid or employees list unreadable.' });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const employee = db.employees.find(
+      emp => emp && emp.email && typeof emp.email === 'string' && emp.email.trim().toLowerCase() === cleanEmail
+    );
+
+    if (!employee) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    if (employee.status !== 'Active') {
+      return res.status(403).json({ message: 'Employee account is inactive.' });
+    }
+
+    const hash = employee.passwordHash;
+    if (!hash) {
+      return res.status(401).json({ message: 'Account is not configured with a login password. Please contact the Admin.' });
+    }
+
+    const isValidPassword = bcrypt.compareSync(password, hash);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Invalid email or password.' });
+    }
+
+    const tokenVersion = employee.tokenVersion || 1;
+    const token = jwt.sign(
+      { id: employee.id, name: employee.name, email: employee.email, role: employee.role, tokenVersion },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
+    const sanitizedUser = {
+      id: employee.id,
+      name: employee.name,
+      email: employee.email,
+      role: employee.role,
+      status: employee.status
+    };
+
+    res.json({ token, user: sanitizedUser });
+  } catch (err) {
+    console.error('Login error:', err);
+    res.status(500).json({ message: 'Internal server error during login processing.' });
   }
-
-  const db = readDb();
-  const employee = db.employees.find(emp => emp.email.toLowerCase() === email.toLowerCase());
-
-  if (!employee) {
-    return res.status(401).json({ message: 'Invalid credentials.' });
-  }
-
-  if (employee.status !== 'Active') {
-    return res.status(403).json({ message: 'Employee account is inactive.' });
-  }
-
-  const hash = employee.passwordHash;
-  if (!hash) {
-    return res.status(401).json({ message: 'Account is not configured with a login password. Please contact the Admin.' });
-  }
-
-  const isValidPassword = bcrypt.compareSync(password, hash);
-  if (!isValidPassword) {
-    return res.status(401).json({ message: 'Invalid credentials.' });
-  }
-
-  const tokenVersion = employee.tokenVersion || 1;
-  const token = jwt.sign(
-    { id: employee.id, name: employee.name, email: employee.email, role: employee.role, tokenVersion },
-    JWT_SECRET,
-    { expiresIn: '8h' }
-  );
-
-  const sanitizedUser = {
-    id: employee.id,
-    name: employee.name,
-    email: employee.email,
-    role: employee.role,
-    status: employee.status
-  };
-
-  res.json({ token, user: sanitizedUser });
 }
 
 function getMe(req, res) {

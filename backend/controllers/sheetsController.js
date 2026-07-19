@@ -262,13 +262,19 @@ async function manualPush(req, res) {
     const { module, syncMode } = req.body;
     const { manualPushToSheets } = require('../services/sheetsService');
     const result = await manualPushToSheets(module || 'all', syncMode || 'edited_only');
-    res.json({
+    return res.json({
       success: true,
       message: `Manual Push complete (${result.mode}): Updated ${result.updatedRecords} existing records, created ${result.createdRecords} new records in Google Sheets.`
     });
   } catch (err) {
-    console.error('Manual push error:', err);
-    res.status(500).json({ success: false, message: `Manual Push failed: ${err.message}` });
+    console.error('Manual push error:', err.message);
+    let userMessage = err.message;
+    if (err.message.includes('permission') || err.message.includes('403')) {
+      userMessage = 'Google Sheet Permission Error: Please ensure your Google Spreadsheet is shared with your Service Account email address as an Editor.';
+    } else if (err.message.includes('missing credentials') || err.message.includes('inactive')) {
+      userMessage = 'Google Sheets Connection Error: Spreadsheet ID or Service Account credentials missing. Please set them in server environment variables or Settings.';
+    }
+    return res.status(400).json({ success: false, message: `Manual Push: ${userMessage}` });
   }
 }
 
@@ -277,13 +283,19 @@ async function manualPull(req, res) {
     const { module, syncMode } = req.body;
     const { manualPullFromSheets } = require('../services/sheetsService');
     const result = await manualPullFromSheets(module || 'all', syncMode || 'edited_only');
-    res.json({
+    return res.json({
       success: true,
       message: `Manual Pull complete (${result.mode}): Updated ${result.updatedRecords} existing records, created ${result.createdRecords} new records in CRM.`
     });
   } catch (err) {
-    console.error('Manual pull error:', err);
-    res.status(500).json({ success: false, message: `Manual Pull failed: ${err.message}` });
+    console.error('Manual pull error:', err.message);
+    let userMessage = err.message;
+    if (err.message.includes('permission') || err.message.includes('403')) {
+      userMessage = 'Google Sheet Permission Error: Please ensure your Google Spreadsheet is shared with your Service Account email address as an Editor.';
+    } else if (err.message.includes('missing credentials') || err.message.includes('inactive')) {
+      userMessage = 'Google Sheets Connection Error: Spreadsheet ID or Service Account credentials missing. Please set them in server environment variables or Settings.';
+    }
+    return res.status(400).json({ success: false, message: `Manual Pull: ${userMessage}` });
   }
 }
 

@@ -359,11 +359,19 @@ async function manualPushToSheets(moduleName, syncMode = 'edited_only') {
   }
 
   const spreadsheetId = config.spreadsheetId;
-  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  const { readDb } = require('../config/db');
+  const db = readDb();
 
-  const targetModules = moduleName === 'all' 
-    ? Object.keys(db).filter(k => Array.isArray(db[k]) && !['sync_jobs', 'activity_logs', 'audit_logs', 'location_logs'].includes(k)) 
-    : [moduleName];
+  const metadataPath = path.join(__dirname, '../config/metadata.json');
+  let validModules = [];
+  try {
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    validModules = Object.keys(metadata.modules || {});
+  } catch (e) {
+    validModules = ['customers', 'leads', 'properties', 'queries', 'follow_ups', 'deals', 'tasks', 'employees'];
+  }
+
+  const targetModules = moduleName === 'all' ? validModules : [moduleName];
 
   let totalUpdated = 0;
   let totalCreated = 0;
@@ -462,11 +470,19 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
   }
 
   const spreadsheetId = config.spreadsheetId;
-  const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+  const { readDb, writeDb } = require('../config/db');
+  const db = readDb();
 
-  const targetModules = moduleName === 'all' 
-    ? Object.keys(db).filter(k => Array.isArray(db[k]) && !['sync_jobs', 'activity_logs', 'audit_logs', 'location_logs'].includes(k))
-    : [moduleName];
+  const metadataPath = path.join(__dirname, '../config/metadata.json');
+  let validModules = [];
+  try {
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    validModules = Object.keys(metadata.modules || {});
+  } catch (e) {
+    validModules = ['customers', 'leads', 'properties', 'queries', 'follow_ups', 'deals', 'tasks', 'employees'];
+  }
+
+  const targetModules = moduleName === 'all' ? validModules : [moduleName];
 
   let totalUpdated = 0;
   let totalCreated = 0;
@@ -488,18 +504,21 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
     const rows = response.data.values;
     if (!rows || rows.length <= 1) continue;
 
-    const headers = rows[0];
-    const crmIdIndex = headers.indexOf('crm_id');
-    if (crmIdIndex === -1) continue;
+    const headers = rows[0].map(h => String(h || '').trim());
+    const idIndex = headers.findIndex(h => ['crm_id', 'id', 'ID', 'Id', 'crmId'].includes(h));
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
-      if (!row || row.length === 0) continue;
+      if (!row || !Array.isArray(row) || row.length === 0) continue;
 
-      const crmId = row[crmIdIndex];
+      const hasContent = row.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
+      if (!hasContent) continue;
+
+      const rawCrmId = (idIndex !== -1 && row[idIndex] !== undefined) ? String(row[idIndex]).trim() : '';
+
       const sheetRecord = {};
       headers.forEach((h, idx) => {
-        if (h === 'crm_id') return;
+        if (!h || ['crm_id', 'id', 'ID', 'Id', 'crmId'].includes(h)) return;
         let val = row[idx] !== undefined ? row[idx] : '';
         if (typeof val === 'string' && (val.startsWith('[') || val.startsWith('{'))) {
           try { val = JSON.parse(val); } catch(e) {}
@@ -511,8 +530,12 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
         sheetRecord[h] = val;
       });
 
-      if (crmId) {
-        const existingIdx = db[mod].findIndex(r => String(r.id) === String(crmId));
+      if (mod === 'properties' && !sheetRecord.propertyName && sheetRecord.contact_person_name) {
+        sheetRecord.propertyName = `Property - ${sheetRecord.contact_person_name}`;
+      }
+
+      if (rawCrmId) {
+        const existingIdx = db[mod].findIndex(r => String(r.id) === String(rawCrmId));
         if (existingIdx !== -1) {
           const existingRec = db[mod][existingIdx];
           let isChanged = false;
@@ -531,14 +554,18 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
             totalUpdated++;
           }
         } else {
-          db[mod].push({ id: crmId, ...sheetRecord, createdAt: new Date().toISOString() });
+          db[mod].push({ id: rawCrmId, ...sheetRecord, createdAt: new Date().toISOString() });
           totalCreated++;
         }
+      } else {
+        const newId = `${mod.slice(0, 4)}_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+        db[mod].push({ id: newId, ...sheetRecord, createdAt: new Date().toISOString() });
+        totalCreated++;
       }
     }
   }
 
-  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2), 'utf8');
+  writeDb(db);
 
   return { success: true, mode: syncMode, moduleName, updatedRecords: totalUpdated, createdRecords: totalCreated };
 }

@@ -496,7 +496,7 @@ const EntityDetail = () => {
 
     if (item) {
       const rels = await fetchEntity360(moduleName, id);
-      setConnections(rels);
+      setConnections(rels || {});
       
       // Fetch pitch lookup dependencies
       await Promise.all([
@@ -716,7 +716,7 @@ const EntityDetail = () => {
       if (!customRemarkText) setRemarkInput('');
       // Reload connections
       const rels = await fetchEntity360(moduleName, id);
-      setConnections(rels);
+      setConnections(rels || {});
     }
   };
 
@@ -772,7 +772,7 @@ const EntityDetail = () => {
       setDocUrl('');
       // Reload connections
       const rels = await fetchEntity360(moduleName, id);
-      setConnections(rels);
+      setConnections(rels || {});
     }
   };
 
@@ -781,7 +781,7 @@ const EntityDetail = () => {
       const res = await deleteRecord('documents', docId);
       if (res.success) {
         const rels = await fetchEntity360(moduleName, id);
-        setConnections(rels);
+        setConnections(rels || {});
       } else {
         alert(res.message || "Failed to delete document.");
       }
@@ -3228,7 +3228,7 @@ const EntityDetail = () => {
                                 // Add remark log as well
                                 await handlePostRemark(null, `Completed Meeting Outcome: ${meetingOutcome}`);
                                 const rels = await fetchEntity360(moduleName, id);
-                                setConnections(rels);
+                                setConnections(rels || {});
                                 window.location.reload();
                               } else {
                                 alert(res.message || "Failed to submit outcome.");

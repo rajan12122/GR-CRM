@@ -6,17 +6,20 @@ const { readMetadata } = require('../config/db');
 
 router.get('/metadata', authenticateToken, dataController.getMetadata);
 
+router.get('/360/:module/:id', authenticateToken, dataController.getEntity360);
+
 router.get('/data/:module', authenticateToken, (req, res, next) => {
   const { module } = req.params;
-  if (module === 'activity_logs') return next();
   const metadata = readMetadata();
-  if (!metadata.modules[module]) {
+  const db = require('../config/db').readDb();
+  if (!metadata.modules[module] && !Array.isArray(db[module])) {
     return res.status(404).json({ message: `Module '${module}' does not exist.` });
   }
   next();
 }, (req, res, next) => {
   const { module } = req.params;
-  if (module === 'activity_logs') return next();
+  const metadata = readMetadata();
+  if (!metadata.modules[module]) return next();
   checkPermission(module, 'view')(req, res, next);
 }, dataController.listData);
 
@@ -24,16 +27,22 @@ router.get('/data/:module/:id', authenticateToken, dataController.getDataById);
 
 router.post('/data/:module', authenticateToken, (req, res, next) => {
   const { module } = req.params;
+  const metadata = readMetadata();
+  if (!metadata.modules[module]) return next();
   checkPermission(module, 'create')(req, res, next);
 }, dataController.createData);
 
 router.put('/data/:module/:id', authenticateToken, (req, res, next) => {
   const { module } = req.params;
+  const metadata = readMetadata();
+  if (!metadata.modules[module]) return next();
   checkPermission(module, 'edit')(req, res, next);
 }, dataController.updateData);
 
 router.delete('/data/:module/:id', authenticateToken, (req, res, next) => {
   const { module } = req.params;
+  const metadata = readMetadata();
+  if (!metadata.modules[module]) return next();
   checkPermission(module, 'delete')(req, res, next);
 }, dataController.deleteData);
 

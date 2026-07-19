@@ -21,9 +21,9 @@ function createMockDb() {
     activity_logs: [],
     audit_logs: [],
     employees: [
-      { id: 'EMP-001', name: 'Gagan Chopra', role: 'Admin', status: 'Active' },
-      { id: 'EMP-002', name: 'Sales RM 1', role: 'Sales', status: 'Active' },
-      { id: 'EMP-003', name: 'Sales RM 2', role: 'Sales', status: 'Active' }
+      { id: 'EMP-001', name: 'Gagan Chopra', role: 'Admin', status: 'Active', email: 'gagan@gmail.com', tokenVersion: 1 },
+      { id: 'EMP-002', name: 'Sales RM 1', role: 'Sales', status: 'Active', email: 'sales1@gaganrealtech.com', tokenVersion: 1 },
+      { id: 'EMP-003', name: 'Sales RM 2', role: 'Sales', status: 'Active', email: 'sales2@gaganrealtech.com', tokenVersion: 1 }
     ]
   };
 }

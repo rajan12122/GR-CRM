@@ -19,7 +19,7 @@ function runPasswordMigration() {
 
     let updated = false;
     const defaultEmails = {
-      'EMP-001': 'admin@gaganrealtech.com',
+      'EMP-001': 'gagan@gmail.com',
       'EMP-002': 'sales1@gaganrealtech.com',
       'EMP-003': 'sales2@gaganrealtech.com'
     };
@@ -41,7 +41,7 @@ function runPasswordMigration() {
         updated = true;
       } else if (!emp.passwordHash) {
         // Seed default initial password for default accounts if unconfigured
-        const defaultPassword = emp.role === 'Admin' ? 'Admin@123' : 'Sales@123';
+        const defaultPassword = emp.role === 'Admin' ? 'gagan123' : 'Sales@123';
         const salt = bcrypt.genSaltSync(12);
         emp.passwordHash = bcrypt.hashSync(defaultPassword, salt);
         emp.tokenVersion = emp.tokenVersion || 1;

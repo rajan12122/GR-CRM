@@ -601,6 +601,50 @@ function syncPropertyDetailsUniversally(propId, db) {
   const prop = (db.properties || []).find(p => String(p.id) === String(propId));
   if (!prop) return;
 
+  const pStatus = String(prop.status || '').toLowerCase();
+  const pListing = String(prop.listingStatus || '').toLowerCase();
+  const isSoldOrClosed = pStatus.includes('sold') || pStatus.includes('closed') || pListing.includes('sold') || pListing.includes('closed');
+
+  if (isSoldOrClosed) {
+    const finalStatus = prop.status || prop.listingStatus || 'Sold / Registered';
+    prop.status = finalStatus;
+    prop.listingStatus = finalStatus;
+
+    // Sync listing cycles
+    (db.property_listing_cycles || []).forEach(cycle => {
+      if (String(cycle.propertyId) === String(propId)) {
+        cycle.listingStatus = finalStatus;
+      }
+    });
+
+    // Sync pitch history
+    (db.property_pitch_history || []).forEach(pitch => {
+      if (String(pitch.propertyId) === String(propId)) {
+        pitch.status = 'Closed Won';
+      }
+    });
+
+    // Sync follow ups
+    (db.follow_ups || []).forEach(f => {
+      if (String(f.pitchedPropertyId) === String(propId) || (prop.current_owner_id && String(f.customerId) === String(prop.current_owner_id))) {
+        f.pipelineAction = 'Deal Closed';
+        f.status = 'Completed';
+      }
+    });
+
+    // Sync current owner customer & lead stage
+    if (prop.current_owner_id) {
+      const cust = (db.customers || []).find(c => String(c.id) === String(prop.current_owner_id));
+      if (cust) {
+        cust.stage = 'Closed Client';
+        if (cust.leadId) {
+          const lead = (db.leads || []).find(l => String(l.id) === String(cust.leadId));
+          if (lead) lead.buyerPipelineStage = 'Deal Closed';
+        }
+      }
+    }
+  }
+
   const fieldsToSync = {
     r_c_i: prop.r_c_i || '',
     propertyType: prop.propertyType || '',

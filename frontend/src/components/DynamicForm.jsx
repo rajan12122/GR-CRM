@@ -364,10 +364,20 @@ const DynamicForm = ({
   };
 
   const handleChange = (name, val, type) => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'number' && val !== '' ? Number(val) : val
-    }));
+    setFormData(prev => {
+      const updated = {
+        ...prev,
+        [name]: type === 'number' && val !== '' ? Number(val) : val
+      };
+      if (name === 'pitchedPropertyId' && val && val !== '' && val !== 'None' && !val.includes('Other')) {
+        if (moduleKey === 'follow_ups') {
+          updated.pipelineAction = 'Contacted';
+        } else if (moduleKey === 'leads') {
+          updated.buyerPipelineStage = 'Contacted';
+        }
+      }
+      return updated;
+    });
     
     // Clear validation error on type
     if (errors[name]) {
@@ -680,9 +690,11 @@ const DynamicForm = ({
                             {opt.label}
                           </MenuItem>
                         ))}
-                        <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
-                          Other (Specify...)
-                        </MenuItem>
+                        {f.name !== 'customerId' && (moduleKey !== 'follow_ups' || f.name !== 'customerId') && (
+                          <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                            Other (Specify...)
+                          </MenuItem>
+                        )}
                       </Select>
                       {errors[f.name] && <FormHelperText>{errors[f.name]}</FormHelperText>}
                     </FormControl>
@@ -767,22 +779,34 @@ const DynamicForm = ({
                                 <MenuItem value="">-- None --</MenuItem>
                                 {pitchedItemType === 'Property' ? (
                                   propertiesList.filter(p => {
+                                    const pStatus = String(p.status || '').toLowerCase();
+                                    const pListing = String(p.listingStatus || '').toLowerCase();
+                                    const isSoldOut = pStatus.includes('sold') || pStatus.includes('closed') || pListing.includes('sold') || pListing.includes('closed');
+                                    if (isSoldOut) return false;
+
                                     if (!propSearch) return true;
-                                    const searchStr = `${p.locality} {p.sector_block ? \`Sector \${p.sector_block}\` : ''} \${p.id}`.toLowerCase();
+                                    const searchStr = `${p.locality || ''} ${p.sector_block ? `Sector ${p.sector_block}` : ''} ${p.propertyName || ''} ${p.id}`.toLowerCase();
                                     return searchStr.includes(propSearch.toLowerCase());
-                                  }).map(p => (
-                                    <MenuItem key={p.id} value={p.id}>
-                                      {p.locality} {p.sector_block ? `(Sector ${p.sector_block})` : ''} - ₹{p.demand} ({p.id})
-                                    </MenuItem>
-                                  ))
+                                  }).map(p => {
+                                    const statusTag = p.status || p.listingStatus || 'Available';
+                                    const displayTitle = p.propertyName || `${p.locality || ''} ${p.sector_block ? `(Sector ${p.sector_block})` : ''}`.trim() || p.id;
+                                    return (
+                                      <MenuItem key={p.id} value={p.id}>
+                                        {displayTitle} - ₹{p.demand || 'N/A'} [{statusTag}] ({p.id})
+                                      </MenuItem>
+                                    );
+                                  })
                                 ) : (
                                   projectsList.filter(p => {
+                                    const pStatus = String(p.status || '').toLowerCase();
+                                    if (pStatus.includes('sold') || pStatus.includes('closed')) return false;
+
                                     if (!propSearch) return true;
-                                    const searchStr = `${p.name} \${p.locality} \${p.id}`.toLowerCase();
+                                    const searchStr = `${p.name || ''} ${p.locality || ''} ${p.id}`.toLowerCase();
                                     return searchStr.includes(propSearch.toLowerCase());
                                   }).map(p => (
                                     <MenuItem key={p.id} value={p.id}>
-                                      {p.name} - {p.locality} ({p.id})
+                                      {p.name} - {p.locality} [{p.status || 'Active'}] ({p.id})
                                     </MenuItem>
                                   ))
                                 )}
@@ -1208,9 +1232,11 @@ const DynamicForm = ({
                             + Add New Property Dealer
                           </MenuItem>
                         )}
-                        <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
-                          Other (Specify...)
-                        </MenuItem>
+                        {f.name !== 'customerId' && (moduleKey !== 'follow_ups' || f.name !== 'customerId') && (
+                          <MenuItem value="Other" sx={{ fontStyle: 'italic', fontWeight: 600, color: '#2563EB' }}>
+                            Other (Specify...)
+                          </MenuItem>
+                        )}
                       </Select>
                       {errors[f.name] && <FormHelperText>{errors[f.name]}</FormHelperText>}
                     </FormControl>

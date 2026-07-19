@@ -1013,7 +1013,7 @@ function getEntity360(req, res) {
       ...m,
       assignedEmployeeName: allEmployees.find(e => String(e.id) === String(m.assignedEmployeeId))?.name || m.assignedEmployeeId
     }));
-    data.properties = allProperties.filter(p => String(p.dealerId) === String(id) && !p.deletedAt);
+    data.properties = allProperties.filter(p => !p.deletedAt && (String(p.dealerId) === String(id) || String(p.associatedDealerId) === String(id) || String(p.dealer_id) === String(id)));
     data.referrals = (db.leads || []).filter(l => l.referrer_type === 'dealers' && String(l.referrer_id) === String(id) && !l.deletedAt);
   } else if (module === 'dealer_meetings') {
     const meeting = allDealerMeetings.find(m => String(m.id) === String(id) && !m.deletedAt);

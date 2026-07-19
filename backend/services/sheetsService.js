@@ -12,17 +12,28 @@ let isProcessingQueue = false;
 
 // Helper to load sheets config from environment variables
 function getSheetsConfig() {
+  let metaConfig = {};
+  try {
+    const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+    metaConfig = metadata.sheetsConfig || {};
+  } catch (e) {}
+
+  const spreadsheetId = process.env.GOOGLE_SPREADSHEET_ID || metaConfig.spreadsheetId || '';
+  const clientEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || metaConfig.clientEmail || '';
+  const privateKey = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || metaConfig.privateKey || '';
+  const syncActive = process.env.GOOGLE_SHEETS_SYNC_ACTIVE === 'true' || metaConfig.syncActive || (Boolean(spreadsheetId) && Boolean(clientEmail) && Boolean(privateKey));
+
   return {
-    syncActive: process.env.GOOGLE_SHEETS_SYNC_ACTIVE === 'true',
-    spreadsheetId: process.env.GOOGLE_SPREADSHEET_ID,
-    clientEmail: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    privateKey: process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY
+    syncActive,
+    spreadsheetId,
+    clientEmail,
+    privateKey
   };
 }
 
 // Get Authenticated Google Sheets client
 function getSheetsClient(config) {
-  if (!config.syncActive || !config.spreadsheetId || !config.clientEmail || !config.privateKey) {
+  if (!config.spreadsheetId || !config.clientEmail || !config.privateKey) {
     return null;
   }
   try {

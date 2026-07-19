@@ -10,14 +10,14 @@
       "locality": "Sector 62",
       "source": "Website",
       "status": "Converted",
-      "uuid": "d1b66430-e3a1-434a-b49d-e7dce6ce0c28",
+      "uuid": "0f71c974-989a-4e46-b23e-48f837ac2640",
       "buyerPipelineStage": "New Lead",
       "phoneNormalized": "9876543210",
       "emailNormalized": "",
-      "createdAt": "2026-07-19T08:42:33.254Z",
+      "createdAt": "2026-07-19T09:06:25.579Z",
       "pitchedPropertyId": "PROP-001",
       "customerId": "CUST-003",
-      "convertedAt": "2026-07-19T08:42:33.323Z"
+      "convertedAt": "2026-07-19T09:06:25.895Z"
     }
   ],
   "customers": [
@@ -29,7 +29,7 @@
     },
     {
       "id": "CUST-003",
-      "uuid": "0cf60bcc-ebd4-4f93-a6f4-5204a448df3d",
+      "uuid": "09121011-b543-452f-a190-ae5f65217489",
       "name": "Buyer Test Client",
       "phone": "9876543210",
       "email": "",
@@ -40,7 +40,7 @@
       "tags": [
         "Buyer"
       ],
-      "createdAt": "2026-07-19T08:42:33.323Z",
+      "createdAt": "2026-07-19T09:06:25.895Z",
       "changedByUserId": "EMP-001",
       "changedByName": "Gagan Chopra",
       "changedByRole": "Admin"
@@ -52,7 +52,7 @@
       "propertyName": "Aerocity Suite",
       "status": "Property Registered/Sold Out",
       "current_owner_id": "CUST-003",
-      "updatedAt": "2026-07-19T08:42:33.323Z",
+      "updatedAt": "2026-07-19T09:06:25.895Z",
       "owner_history": [
         {
           "dealId": "DEAL-001",
@@ -88,11 +88,11 @@
       "salePrice": "5100000",
       "registrationDate": "2026-07-20",
       "id": "DEAL-001",
-      "uuid": "2d93123e-76b1-4009-bb04-5f62715247b8",
+      "uuid": "141f7225-ac4f-4a6b-a0da-39762a0df8d3",
       "sellerCustomerId": "CUST-002",
       "status": "Closed",
-      "closedAt": "2026-07-19T08:42:33.323Z",
-      "createdAt": "2026-07-19T08:42:33.323Z",
+      "closedAt": "2026-07-19T09:06:25.895Z",
+      "createdAt": "2026-07-19T09:06:25.895Z",
       "changedByUserId": "EMP-001",
       "changedByName": "Gagan Chopra",
       "changedByRole": "Admin"
@@ -101,7 +101,7 @@
   "follow_ups": [
     {
       "id": "FOLLOW-001",
-      "uuid": "2747dfaa-8afa-4ed8-8475-f11f19dd4812",
+      "uuid": "677383b6-0603-41f5-a7cd-d5da7f040644",
       "leadId": "LEAD-X01",
       "customerId": null,
       "queryId": null,
@@ -112,7 +112,7 @@
       "status": "Pending Call",
       "pipelineAction": "Site Visit",
       "remarks": "Initial follow-up for Buyer lead LEAD-X01",
-      "createdAt": "2026-07-19T08:42:33.259Z",
+      "createdAt": "2026-07-19T09:06:25.625Z",
       "changedByUserId": "EMP-001",
       "changedByName": "Gagan Chopra",
       "changedByRole": "Admin",
@@ -161,7 +161,7 @@
       "status": "Available For Sale",
       "listingStatus": "Sold / Registered",
       "salePrice": "5100000",
-      "soldDate": "2026-07-19T08:42:33.323Z",
+      "soldDate": "2026-07-19T09:06:25.895Z",
       "soldDealId": "DEAL-001"
     }
   ],
@@ -169,14 +169,14 @@
   "remarks": [],
   "activity_logs": [
     {
-      "id": "LOG-1784450553325",
+      "id": "LOG-1784451985898",
       "employeeName": "Gagan Chopra",
       "action": "Deal DEAL-001 closed. Ownership of Property PROP-001 transferred to Customer CUST-003.",
-      "dateTime": "19/7/2026, 2:12:33 pm"
+      "dateTime": "19/7/2026, 2:36:25 pm"
     },
     {
-      "id": "LOG-1784450553323-9820",
-      "uuid": "c4ca4823-4a72-4770-aeae-e98e2a87d774",
+      "id": "LOG-1784451985896-4ca4",
+      "uuid": "62f5b739-54a6-4857-8bee-656ee46e4f18",
       "action": "Deal closed and property ownership transferred.",
       "details": {
         "dealId": "DEAL-001",
@@ -184,42 +184,42 @@
         "previousOwner": "CUST-002",
         "buyerId": "CUST-003"
       },
-      "dateTime": "2026-07-19T08:42:33.324Z",
+      "dateTime": "2026-07-19T09:06:25.897Z",
       "employeeName": "Gagan Chopra",
       "changedByUserId": "EMP-001",
       "changedByName": "Gagan Chopra",
       "changedByRole": "Admin"
     },
     {
-      "id": "LOG-1784450553315",
+      "id": "LOG-1784451985861",
       "employeeName": "Sales RM 1",
       "action": "Automatically logged pitch PITCH-001 for Property PROP-001 matching Client LEAD-X01",
-      "dateTime": "19/7/2026, 2:12:33 pm"
+      "dateTime": "19/7/2026, 2:36:25 pm"
     }
   ],
   "audit_logs": [
     {
-      "id": "AUD-1784450553323-3be8",
-      "uuid": "b6a01476-e0bc-4396-af0e-b171047232ab",
+      "id": "AUD-1784451985896-9207",
+      "uuid": "e3ba17e0-66f3-4a43-849c-2944e1e25e3e",
       "fieldName": "listingStatus",
       "oldValue": "Available for Sale",
       "newValue": "Sold / Registered",
       "changedBy": "Gagan Chopra",
       "role": "Admin",
-      "date": "2026-07-19T08:42:33.323Z",
+      "date": "2026-07-19T09:06:25.896Z",
       "reason": "Listing cycle closed via Deal DEAL-001",
       "ipAddress": "127.0.0.1",
       "deviceInfo": "NodeTestRunner"
     },
     {
-      "id": "AUD-1784450553323-8fee",
-      "uuid": "508e1c21-681e-477b-b5ac-85c3a708c51d",
+      "id": "AUD-1784451985896-f8f6",
+      "uuid": "2f753fbc-6cdd-44e7-a2e6-dbc42d1bf1ad",
       "fieldName": "current_owner_id",
       "oldValue": "CUST-002",
       "newValue": "CUST-003",
       "changedBy": "Gagan Chopra",
       "role": "Admin",
-      "date": "2026-07-19T08:42:33.323Z",
+      "date": "2026-07-19T09:06:25.896Z",
       "reason": "Ownership transfer via Deal DEAL-001",
       "ipAddress": "127.0.0.1",
       "deviceInfo": "NodeTestRunner"
@@ -233,7 +233,7 @@
       "status": "Active",
       "email": "gagan@gmail.com",
       "tokenVersion": 1,
-      "passwordHash": "$2a$12$9NNFE3THC0BqD3PbxpXil.gxfpKReqDrV7tvfJmMObMNC1jFf42fW"
+      "passwordHash": "$2a$12$tMY5bGie9T92w7xkJ2jMROM1pKpaP.I0hcTcVcCJi9r8gdhsq4WWW"
     },
     {
       "id": "EMP-002",
@@ -242,7 +242,7 @@
       "status": "Active",
       "email": "sales1@gaganrealtech.com",
       "tokenVersion": 1,
-      "passwordHash": "$2a$12$9/pR431Qh2cp76M3C6T.8e7h1eJO.kjPm24hfkqareMAljPmIpIDe"
+      "passwordHash": "$2a$12$1ZJMERDG8d6wPlQ0Q.qu/udrhYeY7uSMvUOtXo.WHUFcUkscjF74i"
     },
     {
       "id": "EMP-003",
@@ -251,18 +251,18 @@
       "status": "Active",
       "email": "sales2@gaganrealtech.com",
       "tokenVersion": 1,
-      "passwordHash": "$2a$12$e/J6Lb03inaRHRnUqDZQ8uOU327UzZSO8TVT.HfYA4ZfZaZmJIHQC"
+      "passwordHash": "$2a$12$TF0h8RXCjS8fd.UZfraaZ.FAw8u1WvnRWhJtD.HXEHf0n3Nz65huS"
     }
   ],
   "property_ownership_history": [
     {
-      "ownershipHistoryId": "37a00ecf-c8ad-4eda-bfa5-81eea7a08421",
+      "ownershipHistoryId": "b8fe2be9-a476-478b-8251-e4b0234a6716",
       "propertyId": "PROP-001",
       "previousOwnerId": "CUST-002",
       "newOwnerId": "CUST-003",
       "dealId": "DEAL-001",
       "salePrice": "5100000",
-      "transferredAt": "2026-07-19T08:42:33.323Z",
+      "transferredAt": "2026-07-19T09:06:25.895Z",
       "changedByUserId": "EMP-001",
       "changedByName": "Gagan Chopra",
       "changedByRole": "Admin"
@@ -270,28 +270,28 @@
   ],
   "property_history": [
     {
-      "id": "PROPH-1784450553323-d1b7",
-      "propertyHistoryId": "600463a9-e889-46ce-a4d7-ffd0971554d4",
+      "id": "PROPH-1784451985895-f0b5",
+      "propertyHistoryId": "97a8ed98-32cf-4cc6-aaa2-b3e826500550",
       "propertyId": "PROP-001",
       "fieldName": "current_owner_id",
       "oldValue": "CUST-002",
       "newValue": "CUST-003",
       "actionType": "OWNERSHIP_TRANSFER",
-      "changedAt": "2026-07-19T08:42:33.323Z",
+      "changedAt": "2026-07-19T09:06:25.895Z",
       "changedByUserId": "EMP-001",
       "changedByName": "Gagan Chopra",
       "changedByRole": "Admin",
       "linkedDealId": "DEAL-001"
     },
     {
-      "id": "PROPH-1784450553323-a67d",
-      "propertyHistoryId": "96e19396-2fe2-409f-956b-2a59d0a9ec23",
+      "id": "PROPH-1784451985895-bbe3",
+      "propertyHistoryId": "49b2c080-2366-458f-8e88-aa22dee45cda",
       "propertyId": "PROP-001",
       "fieldName": "salePrice",
       "oldValue": null,
       "newValue": "5100000",
       "actionType": "DEAL_CLOSED",
-      "changedAt": "2026-07-19T08:42:33.323Z",
+      "changedAt": "2026-07-19T09:06:25.895Z",
       "changedByUserId": "EMP-001",
       "changedByName": "Gagan Chopra",
       "changedByRole": "Admin",
@@ -300,7 +300,7 @@
   ],
   "sync_jobs": [
     {
-      "id": "JOB-MOD-1784450553326-1dd5",
+      "id": "JOB-MOD-1784451985909-8df2",
       "moduleName": "properties",
       "crmRecordId": "ALL",
       "operationType": "MODULE_SYNC",
@@ -309,13 +309,13 @@
       "lastError": null,
       "idempotencyKey": "module:af9e5e0c96fe03a518ceb0ac5927d074",
       "status": "PENDING",
-      "createdAt": "2026-07-19T08:42:33.327Z",
-      "updatedAt": "2026-07-19T08:42:33.327Z",
+      "createdAt": "2026-07-19T09:06:25.909Z",
+      "updatedAt": "2026-07-19T09:06:25.909Z",
       "syncedAt": null,
-      "nextAttemptAt": "2026-07-19T08:42:33.327Z"
+      "nextAttemptAt": "2026-07-19T09:06:25.909Z"
     },
     {
-      "id": "JOB-MOD-1784450553330-352c",
+      "id": "JOB-MOD-1784451985920-668c",
       "moduleName": "customers",
       "crmRecordId": "ALL",
       "operationType": "MODULE_SYNC",
@@ -324,10 +324,10 @@
       "lastError": null,
       "idempotencyKey": "module:0accfa3edf7af97887a07c2116531867",
       "status": "PENDING",
-      "createdAt": "2026-07-19T08:42:33.330Z",
-      "updatedAt": "2026-07-19T08:42:33.330Z",
+      "createdAt": "2026-07-19T09:06:25.920Z",
+      "updatedAt": "2026-07-19T09:06:25.920Z",
       "syncedAt": null,
-      "nextAttemptAt": "2026-07-19T08:42:33.330Z"
+      "nextAttemptAt": "2026-07-19T09:06:25.920Z"
     }
   ]
 }

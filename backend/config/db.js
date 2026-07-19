@@ -16,6 +16,10 @@ function readDb() {
   if (!dbCache) {
     dbCache = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
   }
+  const defaultModules = ['leads', 'customers', 'properties', 'projects', 'queries', 'follow_ups', 'site_visits', 'documents', 'deals', 'tasks', 'employees', 'property_pitch_history', 'property_history', 'project_history', 'property_inspections', 'property_listing_cycles', 'property_ownership_history', 'assignment_history', 'sync_jobs', 'sync_logs', 'audit_logs', 'location_logs'];
+  defaultModules.forEach(m => {
+    if (!Array.isArray(dbCache[m])) dbCache[m] = [];
+  });
   return dbCache;
 }
 

@@ -12,23 +12,23 @@ let isProcessingQueue = false;
 
 function generateCleanShortId(mod, existingRecords = []) {
   const prefixMap = {
-    properties: 'prop_',
-    customers: 'cust_',
-    leads: 'lead_',
-    queries: 'quer_',
-    follow_ups: 'flw_',
-    deals: 'deal_',
-    tasks: 'task_',
-    employees: 'emp_',
-    site_visits: 'sv_'
+    properties: 'PROP',
+    customers: 'CUST',
+    leads: 'LEAD',
+    queries: 'QUER',
+    follow_ups: 'FOLLOW',
+    deals: 'DEAL',
+    tasks: 'TASK',
+    employees: 'EMP',
+    site_visits: 'VISIT'
   };
-  const prefix = prefixMap[mod] || `${mod.slice(0, 4)}_`;
+  const prefix = prefixMap[mod] || mod.slice(0, 4).toUpperCase();
 
-  let maxNum = 1000;
+  let maxNum = 0;
   (existingRecords || []).forEach(r => {
     if (!r || !r.id) return;
     const strId = String(r.id);
-    const match = strId.match(/\d{4,}$/);
+    const match = strId.match(/\d+$/);
     if (match) {
       const num = parseInt(match[0], 10);
       if (!isNaN(num) && num < 1000000 && num > maxNum) {
@@ -38,7 +38,7 @@ function generateCleanShortId(mod, existingRecords = []) {
   });
 
   const nextNum = maxNum + 1;
-  return `${prefix}${nextNum}`;
+  return `${prefix}-${String(nextNum).padStart(3, '0')}`;
 }
 
 // Helper to load sheets config from environment variables
@@ -690,7 +690,7 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
       const hasContent = row.some(cell => cell !== undefined && cell !== null && String(cell).trim() !== '');
       if (!hasContent) continue;
 
-      const rawCrmId = (idIndex !== -1 && row[idIndex] !== undefined) ? String(row[idIndex]).trim() : '';
+      let rawCrmId = (idIndex !== -1 && row[idIndex] !== undefined) ? String(row[idIndex]).trim() : '';
 
       const sheetRecord = {};
       headers.forEach((h, idx) => {
@@ -710,32 +710,64 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
         sheetRecord.propertyName = `Property - ${sheetRecord.contact_person_name}`;
       }
 
-      if (rawCrmId) {
-        const existingIdx = db[mod].findIndex(r => String(r.id) === String(rawCrmId));
-        if (existingIdx !== -1) {
-          const existingRec = db[mod][existingIdx];
-          let isChanged = false;
-          Object.keys(sheetRecord).forEach(k => {
-            const sheetVal = sheetRecord[k];
-            const crmVal = existingRec[k];
-            const strSheet = typeof sheetVal === 'object' ? JSON.stringify(sheetVal) : String(sheetVal ?? '');
-            const strCrm = typeof crmVal === 'object' ? JSON.stringify(crmVal) : String(crmVal ?? '');
-            if (strSheet.trim() !== strCrm.trim() && sheetVal !== '') {
-              isChanged = true;
-            }
-          });
+      if (!rawCrmId) {
+        const normPhone = (v) => String(v || '').replace(/\D/g, '');
+        const rowPhone = normPhone(sheetRecord.phone || sheetRecord.contact_number || sheetRecord.contact_num);
+        const rowEmail = String(sheetRecord.email || '').trim().toLowerCase();
 
-          if (isChanged || syncMode === 'full') {
-            db[mod][existingIdx] = { ...existingRec, ...sheetRecord, updatedAt: new Date().toISOString() };
-            totalUpdated++;
+        const existingMatch = db[mod].find(r => {
+          if (r.deletedAt) return false;
+          if (rowPhone && rowPhone.length >= 7) {
+            const p = normPhone(r.phone || r.contact_number || r.contact_num);
+            if (p && p.length >= 7 && (p.includes(rowPhone) || rowPhone.includes(p))) return true;
           }
+          if (rowEmail && rowEmail.length > 3) {
+            const e = String(r.email || '').trim().toLowerCase();
+            if (e && e === rowEmail) return true;
+          }
+          return false;
+        });
+
+        if (existingMatch) {
+          rawCrmId = existingMatch.id;
         } else {
-          db[mod].push({ id: rawCrmId, ...sheetRecord, createdAt: new Date().toISOString() });
-          totalCreated++;
+          rawCrmId = generateCleanShortId(mod, db[mod]);
+        }
+
+        // Write the auto-generated or matched CRM ID back to Column A in the Sheet so user sees it
+        try {
+          const colLetter = String.fromCharCode(65 + (idIndex !== -1 ? idIndex : 0));
+          await sheets.spreadsheets.values.update({
+            spreadsheetId,
+            range: `${sheetName}!${colLetter}${i + 1}`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: { values: [[rawCrmId]] }
+          });
+        } catch (err) {
+          console.error(`Failed to write generated ID ${rawCrmId} to sheet:`, err.message);
+        }
+      }
+
+      const existingIdx = db[mod].findIndex(r => String(r.id) === String(rawCrmId));
+      if (existingIdx !== -1) {
+        const existingRec = db[mod][existingIdx];
+        let isChanged = false;
+        Object.keys(sheetRecord).forEach(k => {
+          const sheetVal = sheetRecord[k];
+          const crmVal = existingRec[k];
+          const strSheet = typeof sheetVal === 'object' ? JSON.stringify(sheetVal) : String(sheetVal ?? '');
+          const strCrm = typeof crmVal === 'object' ? JSON.stringify(crmVal) : String(crmVal ?? '');
+          if (strSheet.trim() !== strCrm.trim() && sheetVal !== '') {
+            isChanged = true;
+          }
+        });
+
+        if (isChanged || syncMode === 'full') {
+          db[mod][existingIdx] = { ...existingRec, ...sheetRecord, updatedAt: new Date().toISOString() };
+          totalUpdated++;
         }
       } else {
-        const newId = generateCleanShortId(mod, db[mod]);
-        db[mod].push({ id: newId, ...sheetRecord, createdAt: new Date().toISOString() });
+        db[mod].push({ id: rawCrmId, ...sheetRecord, createdAt: new Date().toISOString() });
         totalCreated++;
       }
     }

@@ -421,6 +421,70 @@ async function syncFromSheets() {
   return false;
 }
 
+function findMatchingRowsByKeyword(sheetRows, record) {
+  const matches = [];
+
+  const normPhone = (val) => String(val || '').replace(/\D/g, '');
+  const normStr = (val) => String(val || '').trim().toLowerCase();
+
+  const recPhones = [
+    normPhone(record.phone),
+    normPhone(record.contact_number),
+    normPhone(record.contact_num),
+    normPhone(record.contacted_num)
+  ].filter(p => p.length >= 7);
+
+  const recEmail = normStr(record.email);
+  const recName = normStr(record.name || record.person_name || record.contact_person_name || record.firm_name);
+  const recLocality = normStr(record.locality || record.sector_block);
+
+  for (let i = 1; i < sheetRows.length; i++) {
+    const row = sheetRows[i];
+    if (!row || row.length === 0) continue;
+
+    let isMatch = false;
+
+    // Check phone match
+    if (recPhones.length > 0) {
+      for (const cell of row) {
+        const cellPhone = normPhone(cell);
+        if (cellPhone.length >= 7 && recPhones.some(p => cellPhone.includes(p) || p.includes(cellPhone))) {
+          isMatch = true;
+          break;
+        }
+      }
+    }
+
+    // Check email match
+    if (!isMatch && recEmail && recEmail.length > 3) {
+      for (const cell of row) {
+        const cellEmail = normStr(cell);
+        if (cellEmail && cellEmail === recEmail) {
+          isMatch = true;
+          break;
+        }
+      }
+    }
+
+    // Check name + locality match
+    if (!isMatch && recName && recName.length >= 3) {
+      const rowText = row.join(' ').toLowerCase();
+      if (rowText.includes(recName) && (!recLocality || rowText.includes(recLocality))) {
+        isMatch = true;
+      }
+    }
+
+    if (isMatch) {
+      matches.push({
+        rowIndex: i + 1, // 1-indexed for Sheets API
+        rowValues: row
+      });
+    }
+  }
+
+  return matches;
+}
+
 async function manualPushToSheets(moduleName, syncMode = 'edited_only') {
   const config = getSheetsConfig();
   const sheets = getSheetsClient(config);
@@ -490,6 +554,7 @@ async function manualPushToSheets(moduleName, syncMode = 'edited_only') {
         return typeof val === 'object' ? JSON.stringify(val) : String(val);
       });
 
+      // 1. Direct ID match
       for (let i = 1; i < sheetRows.length; i++) {
         if (sheetRows[i][0] === String(record.id)) {
           matchedRowIndex = i + 1;
@@ -507,6 +572,7 @@ async function manualPushToSheets(moduleName, syncMode = 'edited_only') {
       }
 
       if (matchedRowIndex !== -1) {
+        // Row exists by direct ID match
         if (!isIdentical || syncMode === 'full') {
           await sheets.spreadsheets.values.update({
             spreadsheetId,
@@ -517,14 +583,54 @@ async function manualPushToSheets(moduleName, syncMode = 'edited_only') {
           totalUpdated++;
         }
       } else {
-        await sheets.spreadsheets.values.append({
-          spreadsheetId,
-          range: `${sheetName}!A:A`,
-          valueInputOption: 'USER_ENTERED',
-          insertDataOption: 'INSERT_ROWS',
-          requestBody: { values: [rowValues] }
-        });
-        totalCreated++;
+        // 2. Keyword matching if ID not found directly
+        const matchedKeywordRows = findMatchingRowsByKeyword(sheetRows, record);
+
+        if (matchedKeywordRows.length > 0) {
+          if (matchedKeywordRows.length > 5) {
+            // More than 5 rows matched: fill CRM ID in Column A for all matched rows
+            for (const match of matchedKeywordRows) {
+              await sheets.spreadsheets.values.update({
+                spreadsheetId,
+                range: `${sheetName}!A${match.rowIndex}`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: { values: [[String(record.id)]] }
+              });
+            }
+            totalUpdated += matchedKeywordRows.length;
+          } else {
+            // 1 to 5 rows matched: fill ID or update missing ID column
+            for (const match of matchedKeywordRows) {
+              const currentId = match.rowValues[0];
+              if (!currentId || currentId.trim() === '' || currentId !== String(record.id)) {
+                await sheets.spreadsheets.values.update({
+                  spreadsheetId,
+                  range: `${sheetName}!A${match.rowIndex}`,
+                  valueInputOption: 'USER_ENTERED',
+                  requestBody: { values: [[String(record.id)]] }
+                });
+              } else if (syncMode === 'full') {
+                await sheets.spreadsheets.values.update({
+                  spreadsheetId,
+                  range: `${sheetName}!A${match.rowIndex}`,
+                  valueInputOption: 'USER_ENTERED',
+                  requestBody: { values: [rowValues] }
+                });
+              }
+            }
+            totalUpdated += matchedKeywordRows.length;
+          }
+        } else {
+          // 3. Otherwise create new row
+          await sheets.spreadsheets.values.append({
+            spreadsheetId,
+            range: `${sheetName}!A:A`,
+            valueInputOption: 'USER_ENTERED',
+            insertDataOption: 'INSERT_ROWS',
+            requestBody: { values: [rowValues] }
+          });
+          totalCreated++;
+        }
       }
     }
   }

@@ -580,9 +580,9 @@ const Attendance = () => {
     loadData();
   }, []);
 
-  const employees = moduleData.employees || [];
-  const attendanceList = moduleData.attendance || [];
-  const leavesList = moduleData.leaves || [];
+  const employees = Array.isArray(moduleData.employees) ? moduleData.employees : [];
+  const attendanceList = Array.isArray(moduleData.attendance) ? moduleData.attendance : [];
+  const leavesList = Array.isArray(moduleData.leaves) ? moduleData.leaves : [];
 
   // Filter attendance for the logged-in user to compute metrics
   const myAttendance = useMemo(() => {

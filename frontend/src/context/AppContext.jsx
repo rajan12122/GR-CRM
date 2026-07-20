@@ -113,10 +113,12 @@ export const AppProvider = ({ children }) => {
     setLoadingData(true);
     try {
       const res = await axios.get(`${API_BASE_URL}/data/${moduleName}`);
-      setModuleData(prev => ({ ...prev, [moduleName]: res.data }));
-      return res.data;
+      const dataArray = Array.isArray(res.data) ? res.data : [];
+      setModuleData(prev => ({ ...prev, [moduleName]: dataArray }));
+      return dataArray;
     } catch (err) {
       console.error(`Error fetching ${moduleName}:`, err);
+      setModuleData(prev => ({ ...prev, [moduleName]: [] }));
       return [];
     } finally {
       setLoadingData(false);

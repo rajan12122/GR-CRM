@@ -97,6 +97,8 @@ function listData(req, res) {
       records = records.filter(r => String(r.employeeId) === String(req.user.id));
     } else if (module === 'salaries') {
       records = records.filter(r => String(r.employeeId) === String(req.user.id));
+    } else if (module === 'attendance') {
+      records = records.filter(r => String(r.employeeId) === String(req.user.id));
     }
   }
   
@@ -119,10 +121,12 @@ function listData(req, res) {
         }
         return filteredRecord;
       });
+      res.setHeader('Content-Type', 'application/json');
       return res.json(filteredRecords);
     }
   }
 
+  res.setHeader('Content-Type', 'application/json');
   res.json(records);
 }
 

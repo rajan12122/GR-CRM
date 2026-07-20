@@ -36,6 +36,14 @@ app.use(cors({
   credentials: true
 }));
 
+app.disable('x-powered-by');
+
+// Middleware to normalize response headers for Render proxy
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  next();
+});
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

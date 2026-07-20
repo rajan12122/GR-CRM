@@ -446,14 +446,32 @@ const ModuleManager = () => {
       }
 
       case 'dealers': {
-        const newMonth = Math.max(1, Math.round(total * 0.1));
+        const currentMonth = new Date().getMonth() + 1;
+        const currentYear = new Date().getFullYear();
+        const newMonthDealers = records.filter(r => {
+          if (r.dateAdded) {
+            const parts = r.dateAdded.split('-');
+            if (parts.length === 3) {
+              const year = parseInt(parts[0], 10);
+              const month = parseInt(parts[1], 10);
+              return year === currentYear && month === currentMonth;
+            }
+          } else if (r.createdAt || r.date) {
+            const dateStr = r.createdAt || r.date;
+            const d = new Date(dateStr);
+            if (!isNaN(d.getTime())) {
+              return d.getMonth() + 1 === currentMonth && d.getFullYear() === currentYear;
+            }
+          }
+          return false;
+        }).length;
         const followupsCount = records.filter(r => r.visitStatus === 'Assigned' || r.callOutcome === 'Call Done').length;
 
         return [
           createCardObj('Total Dealers', total, 'Building', '#3B82F6', 'Total dealers', Object.keys(stackedFilters).length === 0, () => {
             setStackedFilters({});
           }),
-          createCardObj('New This Month', newMonth, 'Star', '#F59E0B', 'New this month', stackedFilters._special === 'newDealers', () => {
+          createCardObj('New This Month', newMonthDealers, 'Star', '#F59E0B', 'New this month', stackedFilters._special === 'newDealers', () => {
             setStackedFilters({ _special: 'newDealers' });
           }),
           createCardObj('Follow Ups', followupsCount, 'PhoneCall', '#EC4899', 'Assigned followups', stackedFilters.visitStatus === 'Assigned', () => {

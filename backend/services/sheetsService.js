@@ -692,6 +692,11 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
 
       let rawCrmId = (idIndex !== -1 && row[idIndex] !== undefined) ? String(row[idIndex]).trim() : '';
 
+      const { readMetadata } = require('../config/db');
+      const metadata = readMetadata();
+      const deletedKeysSet = new Set(metadata.deletedRecordKeys || []);
+      if (rawCrmId && deletedKeysSet.has(`${mod}:${rawCrmId}`)) continue;
+
       const sheetRecord = {};
       headers.forEach((h, idx) => {
         if (!h || ['crm_id', 'id', 'ID', 'Id', 'crmId'].includes(h)) return;
@@ -813,6 +818,10 @@ async function hydrateDbFromSheets() {
       const idIdx = headers.indexOf('crm_id') !== -1 ? headers.indexOf('crm_id') : headers.indexOf('id');
       if (idIdx === -1) continue;
 
+      const { readMetadata } = require('../config/db');
+      const metadata = readMetadata();
+      const deletedKeysSet = new Set(metadata.deletedRecordKeys || []);
+
       db[mod] = db[mod] || [];
       const existingMap = new Map();
       db[mod].forEach(r => { if (r && r.id) existingMap.set(String(r.id), r); });
@@ -822,7 +831,11 @@ async function hydrateDbFromSheets() {
         const recordId = row[idIdx];
         if (!recordId) continue;
 
+        // SKIP RE-ADDING PREVIOUSLY DELETED RECORDS FROM GOOGLE SHEETS
+        if (deletedKeysSet.has(`${mod}:${recordId}`)) continue;
+
         const existingRec = existingMap.get(String(recordId));
+        if (existingRec && existingRec.deletedAt) continue;
         const recObj = existingRec || { id: String(recordId) };
         let recModified = false;
 

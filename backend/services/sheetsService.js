@@ -711,6 +711,17 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
         sheetRecord[h] = val;
       });
 
+      // Smart Field Auto-Alignment: Correct email placed in phone column or phone in source column
+      const rawValues = row.map(v => String(v || '').trim());
+      rawValues.forEach(val => {
+        if (!val) return;
+        if (val.includes('@') && (!sheetRecord.email || String(sheetRecord.email).trim() === '')) {
+          sheetRecord.email = val;
+        } else if (/^\d{7,12}$/.test(val.replace(/\D/g, '')) && (!sheetRecord.phone || String(sheetRecord.phone).includes('@'))) {
+          sheetRecord.phone = val.replace(/\D/g, '');
+        }
+      });
+
       if (mod === 'properties' && !sheetRecord.propertyName && sheetRecord.contact_person_name) {
         sheetRecord.propertyName = `Property - ${sheetRecord.contact_person_name}`;
       }
@@ -753,7 +764,19 @@ async function manualPullFromSheets(moduleName, syncMode = 'edited_only') {
         }
       }
 
-      const existingIdx = db[mod].findIndex(r => String(r.id) === String(rawCrmId));
+      let existingIdx = db[mod].findIndex(r => String(r.id) === String(rawCrmId));
+      if (existingIdx === -1 && (sheetRecord.phone || sheetRecord.email)) {
+        const normPhone = (v) => String(v || '').replace(/\D/g, '');
+        const p = normPhone(sheetRecord.phone);
+        const e = String(sheetRecord.email || '').trim().toLowerCase();
+        existingIdx = db[mod].findIndex(r => {
+          if (r.deletedAt) return false;
+          if (p && p.length >= 7 && normPhone(r.phone) === p) return true;
+          if (e && e.length > 3 && String(r.email || '').trim().toLowerCase() === e) return true;
+          return false;
+        });
+      }
+
       if (existingIdx !== -1) {
         const existingRec = db[mod][existingIdx];
         let isChanged = false;

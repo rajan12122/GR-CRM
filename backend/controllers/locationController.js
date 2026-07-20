@@ -88,6 +88,20 @@ function logLocation(req, res) {
   if (!db.location_logs) db.location_logs = [];
   if (!db.active_paths) db.active_paths = {};
 
+  const todayStr = new Date().toISOString().split('T')[0];
+  const attendance = db.attendance || [];
+  const isPunchedIn = attendance.some(a => 
+    String(a.employeeId) === String(employeeId) && 
+    a.date === todayStr && 
+    a.inTime && a.inTime !== '--' && 
+    (a.outTime === '--' || !a.outTime) && 
+    a.status !== 'Absent'
+  );
+
+  if (!isPunchedIn && status === 'sharing') {
+    return res.json({ success: false, message: 'Employee is not currently punched in today.' });
+  }
+
   let decLat = parseFloat(latitude);
   let decLng = parseFloat(longitude);
 
@@ -104,13 +118,13 @@ function logLocation(req, res) {
     employeeName,
     latitude: encryptedCoords,
     longitude: "",
-    status,
+    status: isPunchedIn ? status : 'ended',
     timestamp: new Date().toISOString()
   };
   
   db.location_logs.push(logEntry);
 
-  if (status === 'sharing' && decLat !== 0 && decLng !== 0) {
+  if (isPunchedIn && status === 'sharing' && decLat !== 0 && decLng !== 0) {
     db.active_paths[employeeId] = db.active_paths[employeeId] || [];
     const currentPath = db.active_paths[employeeId];
     if (currentPath.length === 0) {
@@ -130,7 +144,7 @@ function logLocation(req, res) {
         });
       }
     }
-  } else if (status === 'ended') {
+  } else if (status === 'ended' || !isPunchedIn) {
     const path = db.active_paths[employeeId] || [];
     let distance = 0;
     for (let i = 0; i < path.length - 1; i++) {
@@ -179,10 +193,10 @@ function getActiveLocations(req, res) {
 
   const todayStr = new Date().toISOString().split('T')[0];
 
-  // 1. Find all employees currently punched in today (outTime is '--' or empty)
+  // 1. Find ONLY employees currently punched in today (outTime is '--' or empty)
   const punchedInEmpIds = new Set(
     attendance
-      .filter(a => a.date === todayStr && (a.outTime === '--' || !a.outTime) && a.status !== 'Absent')
+      .filter(a => a.date === todayStr && a.inTime && a.inTime !== '--' && (a.outTime === '--' || !a.outTime) && a.status !== 'Absent')
       .map(a => String(a.employeeId))
   );
 
@@ -195,20 +209,11 @@ function getActiveLocations(req, res) {
     }
   });
 
-  // 3. Active time threshold: 15 minutes for live pings
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-
-  const allEmpIds = new Set([
-    ...punchedInEmpIds,
-    ...Object.keys(latestLogs).filter(empId => {
-      const log = latestLogs[empId];
-      return log.status === 'sharing' && new Date(log.timestamp) > fifteenMinutesAgo;
-    })
-  ]);
-
   const result = [];
 
-  allEmpIds.forEach(empId => {
+  // ONLY include employees who are currently punched in today!
+  punchedInEmpIds.forEach(empId => {
     const log = latestLogs[empId];
     const emp = employees.find(e => String(e.id) === String(empId));
     const empName = emp ? emp.name : (log ? log.employeeName : `Emp ${empId}`);
@@ -226,7 +231,7 @@ function getActiveLocations(req, res) {
         isFresh,
         timestamp: log.timestamp || new Date().toISOString()
       });
-    } else if (punchedInEmpIds.has(empId)) {
+    } else {
       // Currently punched in today, waiting for initial GPS lock
       result.push({
         id: `LOC-PUNCH-${empId}`,
